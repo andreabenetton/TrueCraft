@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.World;
 using TrueCraft.API.Networking;
 using TrueCraft.Core.Entities;
-using TrueCraft.Core.Logic.Items;
 using TrueCraft.API.Server;
 
 namespace TrueCraft.Core.Logic.Blocks

@@ -1,5 +1,4 @@
-﻿using System;
-using TrueCraft.API;
+﻿using TrueCraft.API;
 
 namespace TrueCraft.Core.Entities
 {

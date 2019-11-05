@@ -10,7 +10,6 @@ using TrueCraft.Commands;
 using TrueCraft.API.World;
 using System;
 using TrueCraft.API;
-using YamlDotNet.Serialization;
 using TrueCraft.Profiling;
 
 namespace TrueCraft

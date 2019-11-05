@@ -1,4 +1,3 @@
-using System;
 using TrueCraft.API.Networking;
 
 namespace TrueCraft.API

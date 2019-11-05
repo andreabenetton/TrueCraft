@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.IO;
-using System.IO.Compression;
-using fNbt;
-using fNbt.Serialization;
+using TrueCraft.Nbt;
+using TrueCraft.Nbt.Tags;
+using TrueCraft.Nbt.Serialization;
 using TrueCraft.API.Networking;
 
 namespace TrueCraft.API

@@ -2,7 +2,9 @@
 using TrueCraft.API.World;
 using TrueCraft.API.Networking;
 using TrueCraft.API.Server;
-using fNbt;
+using TrueCraft.Nbt;
+using TrueCraft.Nbt.Tags;
+using TrueCraft.Nbt.Serialization;
 
 namespace TrueCraft.API.Logic
 {

@@ -17,9 +17,6 @@
  * THE SOFTWARE.
  */
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using TrueCraft.API;
 
 namespace TrueCraft.Core.TerrainGen.Noise

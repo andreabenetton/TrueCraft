@@ -116,7 +116,7 @@ namespace TrueCraft.Client.Rendering
                             (int)(glyph.Width * scale),
                             (int)(glyph.Height * scale));
 
-                        spriteBatch.Draw(font.GetTexture(glyph.Page), shadowRectangle, sourceRectangle, new Color(21, 21, 21, alpha));
+                        spriteBatch.Draw(font.GetTexture(glyph.Page), shadowRectangle, sourceRectangle, new Color(21, 21, 21, (int)alpha));
                         spriteBatch.Draw(font.GetTexture(glyph.Page), destRectangle, sourceRectangle, new Color(color, alpha));
                         dx += (int)(glyph.XAdvance * scale);
                     }

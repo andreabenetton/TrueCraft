@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TrueCraft.API
+﻿namespace TrueCraft.API
 {
     /// <summary>
     /// Enumerates the different game modes in TrueCraft.

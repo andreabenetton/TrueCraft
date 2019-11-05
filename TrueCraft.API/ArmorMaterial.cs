@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace TrueCraft.API
+﻿namespace TrueCraft.API
 {
     /// <summary>
     /// Enumerates the materials armor can be crafted from.

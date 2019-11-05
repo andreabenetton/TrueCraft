@@ -5,7 +5,8 @@ using TrueCraft.API.World;
 using TrueCraft.API.Networking;
 using TrueCraft.Core.Logic.Items;
 using TrueCraft.Core.Networking.Packets;
-using fNbt;
+using TrueCraft.Nbt;
+using TrueCraft.Nbt.Tags;
 
 namespace TrueCraft.Core.Logic.Blocks
 {

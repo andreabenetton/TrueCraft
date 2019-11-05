@@ -8,7 +8,9 @@ using TrueCraft.API.Entities;
 using TrueCraft.API.Server;
 using TrueCraft.Core.Logic.Blocks;
 using System.Linq;
-using fNbt;
+using TrueCraft.Nbt;
+using TrueCraft.Nbt.Tags;
+using TrueCraft.Nbt.Serialization;
 using TrueCraft.Core.Logic.Items;
 using TrueCraft.API.Physics;
 

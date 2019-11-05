@@ -7,7 +7,6 @@ using Matrix = Microsoft.Xna.Framework.Matrix;
 using XVector3 = Microsoft.Xna.Framework.Vector3;
 using TVector3 = TrueCraft.API.Vector3;
 using TRay = TrueCraft.API.Ray;
-using TrueCraft.Core.Logic.Blocks;
 
 namespace TrueCraft.Client.Modules
 {

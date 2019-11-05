@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TrueCraft.Client.Input
+﻿namespace TrueCraft.Client.Input
 {
     /// <summary>
     /// 

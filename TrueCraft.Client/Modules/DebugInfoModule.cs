@@ -5,7 +5,6 @@ using TrueCraft.Client.Input;
 using TrueCraft.Client.Rendering;
 using TrueCraft.API;
 using System;
-using System.Text;
 
 namespace TrueCraft.Client.Modules
 {

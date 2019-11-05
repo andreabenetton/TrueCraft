@@ -6,8 +6,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using TrueCraft.API;
-using System.Linq;
-using System.Threading;
 using TrueCraft.Client.Events;
 using TrueCraft.API.World;
 using TrueCraft.Core.Lighting;

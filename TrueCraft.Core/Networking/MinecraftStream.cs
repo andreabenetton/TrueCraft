@@ -185,7 +185,7 @@ namespace TrueCraft.Core.Networking
                     if (n == 0)
                         break;
                     System.Threading.Thread.Sleep(1);
-                }
+            }
             return result;
         }
 

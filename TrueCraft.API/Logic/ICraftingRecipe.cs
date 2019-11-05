@@ -1,5 +1,3 @@
-using TrueCraft.API;
-
 namespace TrueCraft.API.Logic
 {
     public interface ICraftingRecipe

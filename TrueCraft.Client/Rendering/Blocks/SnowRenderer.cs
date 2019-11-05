@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
 using TrueCraft.Core.Logic.Blocks;
 using TrueCraft.API.Logic;

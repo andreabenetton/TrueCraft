@@ -1,13 +1,12 @@
 using System;
 using TrueCraft.API;
-using TrueCraft.Core.Logic.Items;
 using TrueCraft.API.Logic;
 using TrueCraft.API.World;
 using TrueCraft.API.Networking;
-using fNbt;
+using TrueCraft.Nbt;
 using TrueCraft.Core.Windows;
-using System.Collections.Generic;
 using TrueCraft.Core.Entities;
+using TrueCraft.Nbt.Tags;
 
 namespace TrueCraft.Core.Logic.Blocks
 {

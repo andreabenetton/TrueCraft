@@ -1,6 +1,4 @@
-﻿using System;
-using Xwt;
-using System.Diagnostics;
+﻿using Xwt;
 using Xwt.Drawing;
 using TrueCraft.Launcher.Views;
 using TrueCraft.Core;

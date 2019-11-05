@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace TrueCraft.Core.TerrainGen.Noise
+﻿namespace TrueCraft.Core.TerrainGen.Noise
 {
     public class ScaledNoise : NoiseGen
     {

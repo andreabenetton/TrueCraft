@@ -5,7 +5,6 @@ using TrueCraft.API.Networking;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.API;
 using TrueCraft.Core.Entities;
-using TrueCraft.API.World;
 
 namespace TrueCraft.Handlers
 {

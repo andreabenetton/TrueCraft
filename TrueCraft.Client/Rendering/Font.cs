@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -32,12 +30,12 @@ namespace TrueCraft.Client.Rendering
         /// <param name="contentManager"></param>
         /// <param name="name"></param>
         /// <param name="style"></param>
-        public Font(ContentManager contentManager, string name, FontStyle style = FontStyle.Regular)
+        public Font(GraphicsDevice graphicsDevice, ContentManager contentManager, string name, FontStyle style = FontStyle.Regular)
         {
             Name = name;
             Style = style;
 
-            LoadContent(contentManager);
+            LoadContent(graphicsDevice, contentManager);
             GenerateGlyphs();
         }
 
@@ -67,7 +65,7 @@ namespace TrueCraft.Client.Rendering
         /// 
         /// </summary>
         /// <param name="contentManager"></param>
-        private void LoadContent(ContentManager contentManager)
+        private void LoadContent(GraphicsDevice graphicsDevice, ContentManager contentManager)
         {
             var definitionPath = string.Format("{0}_{1}.fnt", Name, Style);
             using (var contents = File.OpenRead(Path.Combine(contentManager.RootDirectory, definitionPath)))
@@ -86,7 +84,12 @@ namespace TrueCraft.Client.Rendering
             for (int i = 0; i < _definition.Pages.Count; i++)
             {
                 var texturePath = string.Format("{0}_{1}_{2}.png", Name, Style, i);
-                _textures[i] = contentManager.Load<Texture2D>(texturePath);
+                //_textures[i] = contentManager.Load<Texture2D>(texturePath);
+
+                FileStream fileStream = new FileStream(Path.Combine(contentManager.RootDirectory, texturePath), FileMode.Open);
+                _textures[i] = Texture2D.FromStream(graphicsDevice, fileStream);
+                fileStream.Dispose();
+
             }
         }
 

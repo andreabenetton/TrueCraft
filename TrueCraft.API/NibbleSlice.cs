@@ -1,5 +1,6 @@
-using fNbt;
-using fNbt.Serialization;
+using TrueCraft.Nbt;
+using TrueCraft.Nbt.Tags;
+using TrueCraft.Nbt.Serialization;
 using System;
 using System.Collections.ObjectModel;
 

@@ -1,8 +1,5 @@
-﻿using System;
-using TrueCraft.Core.Logic.Blocks;
+﻿using TrueCraft.Core.Logic.Blocks;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using TrueCraft.API.Logic;
 
 namespace TrueCraft.Client.Rendering.Blocks
 {

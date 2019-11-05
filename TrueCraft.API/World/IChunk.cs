@@ -1,5 +1,7 @@
 ﻿using System;
-using fNbt;
+using TrueCraft.Nbt;
+using TrueCraft.Nbt.Tags;
+using TrueCraft.Nbt.Serialization;
 using System.Collections.Generic;
 
 namespace TrueCraft.API.World

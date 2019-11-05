@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TrueCraft.API.Logging
+﻿namespace TrueCraft.API.Logging
 {
     public interface ILogProvider
     {

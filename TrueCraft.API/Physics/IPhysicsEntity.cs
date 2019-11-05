@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace TrueCraft.API.Physics
+﻿namespace TrueCraft.API.Physics
 {
     public interface IPhysicsEntity
     {

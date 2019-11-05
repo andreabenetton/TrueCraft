@@ -1,10 +1,9 @@
-﻿using System;
-using TrueCraft.API.World;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TrueCraft.API;
+using TrueCraft.API.World;
 using TrueCraft.Core.World;
 
-namespace TrueCraft.Core
+namespace TrueCraft.Core.TerrainGen
 {
     public class EmptyGenerator : IChunkProvider
     {

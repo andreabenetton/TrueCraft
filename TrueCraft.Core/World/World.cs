@@ -6,7 +6,9 @@ using System.Threading;
 using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.API.Logic;
-using fNbt;
+using TrueCraft.Nbt;
+using TrueCraft.Nbt.Tags;
+using TrueCraft.Nbt.Serialization;
 using System.Collections;
 
 namespace TrueCraft.Core.World

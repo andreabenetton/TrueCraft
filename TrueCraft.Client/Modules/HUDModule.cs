@@ -1,7 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.Client.Rendering;
-using TrueCraft.Core.Logic.Items;
 using TrueCraft.API.Logic;
 
 namespace TrueCraft.Client.Modules

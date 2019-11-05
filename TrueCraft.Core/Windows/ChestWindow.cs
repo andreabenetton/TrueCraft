@@ -1,6 +1,4 @@
-﻿using System;
-using TrueCraft.API.Windows;
-using TrueCraft.Core.Windows;
+﻿using TrueCraft.API.Windows;
 using TrueCraft.API;
 
 namespace TrueCraft.Core.Windows

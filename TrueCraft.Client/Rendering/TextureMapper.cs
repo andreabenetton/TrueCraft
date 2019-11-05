@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Collections;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.Core;
 using Ionic.Zip;

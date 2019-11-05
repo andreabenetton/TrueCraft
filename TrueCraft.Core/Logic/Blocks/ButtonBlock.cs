@@ -1,4 +1,3 @@
-using System;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 

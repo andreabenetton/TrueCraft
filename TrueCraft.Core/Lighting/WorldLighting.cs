@@ -4,7 +4,6 @@ using TrueCraft.Core.World;
 using TrueCraft.API.Logic;
 using TrueCraft.API;
 using System.Collections.Generic;
-using System.Diagnostics;
 using TrueCraft.Profiling;
 using System.Collections.Concurrent;
 

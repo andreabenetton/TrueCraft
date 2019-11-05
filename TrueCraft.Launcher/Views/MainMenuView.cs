@@ -1,5 +1,4 @@
-﻿using System;
-using Xwt;
+﻿using Xwt;
 
 namespace TrueCraft.Launcher.Views
 {

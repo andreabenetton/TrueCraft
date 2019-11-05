@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.Core.Logic.Blocks;
-using TrueCraft.Core.World;
 
 namespace TrueCraft.Core.TerrainGen.Decorations
 {

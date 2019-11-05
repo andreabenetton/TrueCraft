@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TrueCraft.API.Networking
+﻿namespace TrueCraft.API.Networking
 {
     public interface IPacket
     {

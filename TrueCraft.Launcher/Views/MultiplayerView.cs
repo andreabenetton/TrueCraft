@@ -1,6 +1,5 @@
 ﻿using System;
 using Xwt;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Xwt.Drawing;
 using System.Reflection;

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace TrueCraft.API.World
+﻿namespace TrueCraft.API.World
 {
     public interface IDecoration
     {

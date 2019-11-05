@@ -2,7 +2,6 @@ using System;
 using TrueCraft.API.Logic;
 using TrueCraft.API;
 using TrueCraft.API.World;
-using TrueCraft.Core.World;
 using TrueCraft.API.Server;
 using TrueCraft.API.Networking;
 

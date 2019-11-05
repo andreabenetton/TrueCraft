@@ -78,6 +78,7 @@ namespace TrueCraft.Client
             Window.Title = "TrueCraft";
             Content.RootDirectory = "Content";
             Graphics = new GraphicsDeviceManager(this);
+            Graphics.PreparingDeviceSettings += Graphics_PreparingDeviceSettings;
             Graphics.SynchronizeWithVerticalRetrace = false;
             Graphics.IsFullScreen = UserSettings.Local.IsFullscreen;
             Graphics.PreferredBackBufferWidth = UserSettings.Local.WindowResolution.Width;
@@ -100,6 +101,11 @@ namespace TrueCraft.Client
 
             GamePadComponent = new GamePadHandler(this);
             Components.Add(GamePadComponent);
+        }
+
+        private void Graphics_PreparingDeviceSettings(object sender, PreparingDeviceSettingsEventArgs e)
+        {
+            e.GraphicsDeviceInformation.GraphicsProfile = GraphicsProfile.HiDef;
         }
 
         void Window_ClientSizeChanged(object sender, EventArgs e)
@@ -217,9 +223,9 @@ namespace TrueCraft.Client
                     UserSettings.Local.SelectedTexturePack)));
 
             Pixel = new FontRenderer(
-                new Font(Content, "Fonts/Pixel"),
-                new Font(Content, "Fonts/Pixel", FontStyle.Bold), null, null,
-                new Font(Content, "Fonts/Pixel", FontStyle.Italic));
+                new Font(GraphicsDevice, Content, "Fonts/Pixel"),
+                new Font(GraphicsDevice, Content, "Fonts/Pixel", FontStyle.Bold), null, null,
+                new Font(GraphicsDevice, Content, "Fonts/Pixel", FontStyle.Italic));
 
             base.LoadContent();
         }

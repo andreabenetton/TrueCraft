@@ -1,5 +1,4 @@
 ﻿using System;
-using TrueCraft.API.Entities;
 using TrueCraft.API.World;
 
 namespace TrueCraft.API.Physics

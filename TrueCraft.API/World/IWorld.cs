@@ -1,7 +1,8 @@
 ﻿using System;
 using TrueCraft.API.Logic;
-using fNbt;
+using TrueCraft.Nbt;
 using System.Collections.Generic;
+using TrueCraft.Nbt.Tags;
 
 namespace TrueCraft.API.World
 {

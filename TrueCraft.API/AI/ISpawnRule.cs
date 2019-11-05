@@ -1,5 +1,4 @@
-﻿using System;
-using TrueCraft.API.World;
+﻿using TrueCraft.API.World;
 using TrueCraft.API.Server;
 
 namespace TrueCraft.API.AI

@@ -1,11 +1,8 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Linq;
 using System.Net.Sockets;
 using TrueCraft.Core;
-using System.Threading;
-using System.Reflection;
 
 namespace TrueCraft.Client
 {
@@ -17,9 +14,10 @@ namespace TrueCraft.Client
             UserSettings.Local = new UserSettings();
             UserSettings.Local.Load();
 
-            var user = new TrueCraftUser { Username = args[1] };
+            var user = new TrueCraftUser { Username = "andbene" };
+            //var user = new TrueCraftUser { Username = args[1] };
             var client = new MultiplayerClient(user);
-            var game = new TrueCraftGame(client, ParseEndPoint(args[0]));
+            var game = new TrueCraftGame(client, ParseEndPoint("127.0.0.1:25565")); //args[0]
             game.Run();
             client.Disconnect();
         }

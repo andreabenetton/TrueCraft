@@ -1,5 +1,4 @@
 using System;
-using TrueCraft.API.Logic;
 
 namespace TrueCraft.Core.Logic.Items
 {

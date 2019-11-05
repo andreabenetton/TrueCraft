@@ -1,6 +1,5 @@
 ﻿using System;
 using TrueCraft.API.Logic;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
 
 namespace TrueCraft.Client.Rendering

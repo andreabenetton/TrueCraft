@@ -1,9 +1,6 @@
-﻿using System;
-using TrueCraft.API;
-using TrueCraft.API.Server;
+﻿using TrueCraft.API.Server;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.API.Networking;
-using TrueCraft.API.Logging;
 using TrueCraft.Exceptions;
 
 namespace TrueCraft.Handlers

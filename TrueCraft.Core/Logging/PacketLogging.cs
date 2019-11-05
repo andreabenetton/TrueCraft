@@ -1,5 +1,4 @@
-﻿using System;
-using TrueCraft.API.Networking;
+﻿using TrueCraft.API.Networking;
 using TrueCraft.API.Logging;
 
 namespace TrueCraft.Core.Logging

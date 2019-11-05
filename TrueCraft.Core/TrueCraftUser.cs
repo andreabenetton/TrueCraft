@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TrueCraft.Core
+﻿namespace TrueCraft.Core
 {
     public class TrueCraftUser
     {

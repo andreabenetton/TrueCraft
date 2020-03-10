@@ -17,7 +17,6 @@ using TrueCraft.Client.Input;
 using TrueCraft.Client.Modules;
 using TrueCraft.Client.Rendering;
 using TVector3 = TrueCraft.API.Vector3;
-using XVector3 = Microsoft.Xna.Framework.Vector3;
 using TrueCraft.Core.Logic;
 using System.Threading;
 
@@ -63,13 +62,7 @@ namespace TrueCraft.Client
 
         public static readonly int Reach = 3;
 
-        public IBlockRepository BlockRepository
-        {
-            get
-            {
-                return Client.World.World.BlockRepository;
-            }
-        }
+        public IBlockRepository BlockRepository => Client.World.World.BlockRepository;
 
         public IItemRepository ItemRepository { get; set; }
 
@@ -77,13 +70,16 @@ namespace TrueCraft.Client
         {
             Window.Title = "TrueCraft";
             Content.RootDirectory = "Content";
-            Graphics = new GraphicsDeviceManager(this);
+            Graphics = new GraphicsDeviceManager(this)
+            {
+                SynchronizeWithVerticalRetrace = false,
+                IsFullScreen = UserSettings.Local.IsFullscreen,
+                PreferredBackBufferWidth = UserSettings.Local.WindowResolution.Width,
+                PreferredBackBufferHeight = UserSettings.Local.WindowResolution.Height
+            };
             Graphics.PreparingDeviceSettings += Graphics_PreparingDeviceSettings;
-            Graphics.SynchronizeWithVerticalRetrace = false;
-            Graphics.IsFullScreen = UserSettings.Local.IsFullscreen;
-            Graphics.PreferredBackBufferWidth = UserSettings.Local.WindowResolution.Width;
-            Graphics.PreferredBackBufferHeight = UserSettings.Local.WindowResolution.Height;
             Graphics.ApplyChanges();
+
             Window.ClientSizeChanged += Window_ClientSizeChanged;
             Client = client;
             EndPoint = endPoint;
@@ -132,7 +128,7 @@ namespace TrueCraft.Client
             UpdateCamera();
 
             White1x1 = new Texture2D(GraphicsDevice, 1, 1);
-            White1x1.SetData<Color>(new[] { Color.White });
+            White1x1.SetData(new[] { Color.White });
 
             Audio = new AudioManager();
             Audio.LoadDefaultPacks(Content);
@@ -234,8 +230,7 @@ namespace TrueCraft.Client
         {
             foreach (var module in InputModules)
             {
-                var input = module as IInputModule;
-                if (input != null)
+                if (module is IInputModule input)
                 {
                     if (input.KeyDown(GameTime, e))
                         break;
@@ -247,8 +242,7 @@ namespace TrueCraft.Client
         {
             foreach (var module in InputModules)
             {
-                var input = module as IInputModule;
-                if (input != null)
+                if (module is IInputModule input)
                 {
                     if (input.KeyUp(GameTime, e))
                         break;
@@ -260,8 +254,7 @@ namespace TrueCraft.Client
         {
             foreach (var module in InputModules)
             {
-                var input = module as IInputModule;
-                if (input != null)
+                if (module is IInputModule input)
                 {
                     if (input.GamePadButtonUp(GameTime, e))
                         break;
@@ -273,8 +266,7 @@ namespace TrueCraft.Client
         {
             foreach (var module in InputModules)
             {
-                var input = module as IInputModule;
-                if (input != null)
+                if (module is IInputModule input)
                 {
                     if (input.GamePadButtonDown(GameTime, e))
                         break;
@@ -286,8 +278,7 @@ namespace TrueCraft.Client
         {
             foreach (var module in InputModules)
             {
-                var input = module as IInputModule;
-                if (input != null)
+                if (module is IInputModule input)
                 {
                     if (input.MouseScroll(GameTime, e))
                         break;
@@ -299,8 +290,7 @@ namespace TrueCraft.Client
         {
             foreach (var module in InputModules)
             {
-                var input = module as IInputModule;
-                if (input != null)
+                if (module is IInputModule input)
                 {
                     if (input.MouseButtonDown(GameTime, e))
                         break;
@@ -312,8 +302,7 @@ namespace TrueCraft.Client
         {
             foreach (var module in InputModules)
             {
-                var input = module as IInputModule;
-                if (input != null)
+                if (module is IInputModule input)
                 {
                     if (input.MouseButtonUp(GameTime, e))
                         break;
@@ -325,8 +314,7 @@ namespace TrueCraft.Client
         {
             foreach (var module in InputModules)
             {
-                var input = module as IInputModule;
-                if (input != null)
+                if (module is IInputModule input)
                 {
                     if (input.MouseMove(GameTime, e))
                         break;
@@ -346,8 +334,7 @@ namespace TrueCraft.Client
 
         public void FlushMainThreadActions()
         {
-            Action action;
-            while (PendingMainThreadActions.TryTake(out action))
+            while (PendingMainThreadActions.TryTake(out var action))
                 action();
         }
 
@@ -355,13 +342,11 @@ namespace TrueCraft.Client
         {
             GameTime = gameTime;
 
-            Action action;
-            if (PendingMainThreadActions.TryTake(out action))
+            if (PendingMainThreadActions.TryTake(out var action))
                 action();
 
-            IChunk chunk;
             var adjusted = Client.World.World.FindBlockPosition(
-                new Coordinates3D((int)Client.Position.X, 0, (int)Client.Position.Z), out chunk);
+                new Coordinates3D((int)Client.Position.X, 0, (int)Client.Position.Z), out var chunk);
             if (chunk != null && Client.LoggedIn)
             {
                 if (chunk.GetHeight((byte)adjusted.X, (byte)adjusted.Z) != 0)
@@ -412,8 +397,7 @@ namespace TrueCraft.Client
             Mesh.ResetStats();
             foreach (var module in GraphicalModules)
             {
-                var drawable = module as IGraphicalModule;
-                if (drawable != null)
+                if (module is IGraphicalModule drawable)
                     drawable.Draw(gameTime);
             }
 

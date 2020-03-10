@@ -26,16 +26,15 @@ namespace TrueCraft.Nbt {
         /// <exception cref="ArgumentException"> If given tag is unnamed. </exception>
         [NotNull]
         public NbtCompound RootTag {
-            get { return rootTag; }
+            get => _rootTag;
             set {
-                if (value == null) throw new ArgumentNullException("value");
+                if (value == null) throw new ArgumentNullException(nameof(value));
                 if (value.Name == null) throw new ArgumentException("Root tag must be named.");
-                rootTag = value;
+                _rootTag = value;
             }
         }
 
-        [NotNull]
-        NbtCompound rootTag;
+        [NotNull] private NbtCompound _rootTag;
 
         /// <summary> Whether new NbtFiles should default to big-endian encoding (default: true). </summary>
         public static bool BigEndianByDefault { get; set; }
@@ -47,31 +46,31 @@ namespace TrueCraft.Nbt {
         /// Set to 0 to disable buffering by default. </summary>
         /// <exception cref="ArgumentOutOfRangeException"> value is negative. </exception>
         public static int DefaultBufferSize {
-            get { return defaultBufferSize; }
+            get => defaultBufferSize;
             set {
                 if (value < 0) {
-                    throw new ArgumentOutOfRangeException("value", value, "DefaultBufferSize cannot be negative.");
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "DefaultBufferSize cannot be negative.");
                 }
                 defaultBufferSize = value;
             }
         }
 
-        static int defaultBufferSize = 8*1024;
+        private static int defaultBufferSize = 8*1024;
 
         /// <summary> Gets or sets the size of internal buffer used for reading files and streams.
         /// Initialized to value of <c>DefaultBufferSize</c> property. </summary>
         /// <exception cref="ArgumentOutOfRangeException"> value is negative. </exception>
         public int BufferSize {
-            get { return bufferSize; }
+            get => _bufferSize;
             set {
                 if (value < 0) {
-                    throw new ArgumentOutOfRangeException("value", value, "BufferSize cannot be negative.");
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "BufferSize cannot be negative.");
                 }
-                bufferSize = value;
+                _bufferSize = value;
             }
         }
 
-        int bufferSize;
+        private int _bufferSize;
 
 
         #region Constructors
@@ -87,7 +86,7 @@ namespace TrueCraft.Nbt {
         public NbtFile() {
             BigEndian = BigEndianByDefault;
             BufferSize = DefaultBufferSize;
-            rootTag = new NbtCompound("");
+            _rootTag = new NbtCompound("");
         }
 
 
@@ -96,7 +95,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="ArgumentException"> If given <paramref name="rootTag"/> is unnamed. </exception>
         public NbtFile([NotNull] NbtCompound rootTag)
             : this() {
-            if (rootTag == null) throw new ArgumentNullException("rootTag");
+            if (rootTag == null) throw new ArgumentNullException(nameof(rootTag));
             RootTag = rootTag;
         }
 
@@ -112,7 +111,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
         public NbtFile([NotNull] string fileName)
             : this() {
-            if (fileName == null) throw new ArgumentNullException("fileName");
+            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
             LoadFromFile(fileName, NbtCompression.AutoDetect, null);
         }
 
@@ -149,7 +148,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
         public long LoadFromFile([NotNull] string fileName, NbtCompression compression, [CanBeNull] TagSelector selector) {
-            if (fileName == null) throw new ArgumentNullException("fileName");
+            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
 
             using (
                 var readFileStream = new FileStream(fileName,
@@ -183,7 +182,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         public long LoadFromBuffer([NotNull] byte[] buffer, int index, int length, NbtCompression compression,
                                    [CanBeNull] TagSelector selector) {
-            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
 
             using (var ms = new MemoryStream(buffer, index, length)) {
                 LoadFromStream(ms, compression, selector);
@@ -208,7 +207,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="InvalidDataException"> If file compression could not be detected or decompressing failed. </exception>
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         public long LoadFromBuffer([NotNull] byte[] buffer, int index, int length, NbtCompression compression) {
-            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
 
             using (var ms = new MemoryStream(buffer, index, length)) {
                 LoadFromStream(ms, compression, null);
@@ -231,7 +230,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="InvalidDataException"> If file compression could not be detected, decompressing failed, or given stream does not support reading. </exception>
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         public long LoadFromStream([NotNull] Stream stream, NbtCompression compression, [CanBeNull] TagSelector selector) {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
 
             FileName = null;
 
@@ -253,8 +252,8 @@ namespace TrueCraft.Nbt {
             switch (FileCompression) {
                 case NbtCompression.GZip:
                     using (var decStream = new GZipStream(stream, CompressionMode.Decompress, true)) {
-                        if (bufferSize > 0) {
-                            LoadFromStreamInternal(new BufferedStream(decStream, bufferSize), selector);
+                        if (_bufferSize > 0) {
+                            LoadFromStreamInternal(new BufferedStream(decStream, _bufferSize), selector);
                         } else {
                             LoadFromStreamInternal(decStream, selector);
                         }
@@ -271,8 +270,8 @@ namespace TrueCraft.Nbt {
                     }
                     stream.ReadByte();
                     using (var decStream = new DeflateStream(stream, CompressionMode.Decompress, true)) {
-                        if (bufferSize > 0) {
-                            LoadFromStreamInternal(new BufferedStream(decStream, bufferSize), selector);
+                        if (_bufferSize > 0) {
+                            LoadFromStreamInternal(new BufferedStream(decStream, _bufferSize), selector);
                         } else {
                             LoadFromStreamInternal(decStream, selector);
                         }
@@ -280,15 +279,15 @@ namespace TrueCraft.Nbt {
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException("compression");
+                    throw new ArgumentOutOfRangeException(nameof(compression));
             }
 
             // report bytes read
             if (stream.CanSeek) {
                 return stream.Position - startOffset;
-            } else {
-                return ((ByteCountingStream)stream).BytesRead;
             }
+
+            return ((ByteCountingStream)stream).BytesRead;
         }
 
 
@@ -375,7 +374,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="NbtFormatException"> If one of the NbtCompound tags contained unnamed tags;
         /// or if an NbtList tag had Unknown list type and no elements. </exception>
         public long SaveToFile([NotNull] string fileName, NbtCompression compression) {
-            if (fileName == null) throw new ArgumentNullException("fileName");
+            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
 
             using (
                 var saveFile = new FileStream(fileName,
@@ -403,7 +402,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="NbtFormatException"> If one of the NbtCompound tags contained unnamed tags;
         /// or if an NbtList tag had Unknown list type and no elements. </exception>
         public long SaveToBuffer([NotNull] byte[] buffer, int index, NbtCompression compression) {
-            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
 
             using (var ms = new MemoryStream(buffer, index, buffer.Length - index)) {
                 return SaveToStream(ms, compression);
@@ -442,7 +441,7 @@ namespace TrueCraft.Nbt {
         /// or if one of the NbtCompound tags contained unnamed tags;
         /// or if an NbtList tag had Unknown list type and no elements. </exception>
         public long SaveToStream([NotNull] Stream stream, NbtCompression compression) {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
 
             switch (compression) {
                 case NbtCompression.AutoDetect:
@@ -452,10 +451,10 @@ namespace TrueCraft.Nbt {
                 case NbtCompression.None:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException("compression");
+                    throw new ArgumentOutOfRangeException(nameof(compression));
             }
 
-            if (rootTag.Name == null) {
+            if (_rootTag.Name == null) {
                 // This may trigger if root tag has been renamed
                 throw new NbtFormatException(
                     "Cannot save NbtFile: Root tag is not named. Its name may be an empty string, but not null.");
@@ -502,14 +501,14 @@ namespace TrueCraft.Nbt {
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException("compression");
+                    throw new ArgumentOutOfRangeException(nameof(compression));
             }
 
             if (stream.CanSeek) {
                 return stream.Position - startOffset;
-            } else {
-                return ((ByteCountingStream)stream).BytesWritten;
             }
+
+            return ((ByteCountingStream)stream).BytesWritten;
         }
 
         #endregion
@@ -547,13 +546,13 @@ namespace TrueCraft.Nbt {
         public static string ReadRootTagName([NotNull] string fileName, NbtCompression compression, bool bigEndian,
                                              int bufferSize) {
             if (fileName == null) {
-                throw new ArgumentNullException("fileName");
+                throw new ArgumentNullException(nameof(fileName));
             }
             if (!File.Exists(fileName)) {
                 throw new FileNotFoundException("Could not find the given NBT file.", fileName);
             }
             if (bufferSize < 0) {
-                throw new ArgumentOutOfRangeException("bufferSize", bufferSize, "DefaultBufferSize cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize, "DefaultBufferSize cannot be negative.");
             }
             using (FileStream readFileStream = File.OpenRead(fileName)) {
                 return ReadRootTagName(readFileStream, compression, bigEndian, bufferSize);
@@ -576,9 +575,9 @@ namespace TrueCraft.Nbt {
         [NotNull]
         public static string ReadRootTagName([NotNull] Stream stream, NbtCompression compression, bool bigEndian,
                                              int bufferSize) {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
             if (bufferSize < 0) {
-                throw new ArgumentOutOfRangeException("bufferSize", bufferSize, "DefaultBufferSize cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize, "DefaultBufferSize cannot be negative.");
             }
             // detect compression, based on the first byte
             if (compression == NbtCompression.AutoDetect) {
@@ -587,12 +586,13 @@ namespace TrueCraft.Nbt {
 
             switch (compression) {
                 case NbtCompression.GZip:
-                    using (var decStream = new GZipStream(stream, CompressionMode.Decompress, true)) {
+                    using (var decStream = new GZipStream(stream, CompressionMode.Decompress, true))
+                    {
                         if (bufferSize > 0) {
                             return GetRootNameInternal(new BufferedStream(decStream, bufferSize), bigEndian);
-                        } else {
-                            return GetRootNameInternal(decStream, bigEndian);
                         }
+
+                        return GetRootNameInternal(decStream, bigEndian);
                     }
 
                 case NbtCompression.None:
@@ -603,16 +603,17 @@ namespace TrueCraft.Nbt {
                         throw new InvalidDataException(WrongZLibHeaderMessage);
                     }
                     stream.ReadByte();
-                    using (var decStream = new DeflateStream(stream, CompressionMode.Decompress, true)) {
+                    using (var decStream = new DeflateStream(stream, CompressionMode.Decompress, true))
+                    {
                         if (bufferSize > 0) {
                             return GetRootNameInternal(new BufferedStream(decStream, bufferSize), bigEndian);
-                        } else {
-                            return GetRootNameInternal(decStream, bigEndian);
                         }
+
+                        return GetRootNameInternal(decStream, bigEndian);
                     }
 
                 default:
-                    throw new ArgumentOutOfRangeException("compression");
+                    throw new ArgumentOutOfRangeException(nameof(compression));
             }
         }
 
@@ -623,7 +624,9 @@ namespace TrueCraft.Nbt {
             int firstByte = stream.ReadByte();
             if (firstByte < 0) {
                 throw new EndOfStreamException();
-            } else if (firstByte != (int)NbtTagType.Compound) {
+            }
+
+            if (firstByte != (int)NbtTagType.Compound) {
                 throw new NbtFormatException("Given NBT stream does not start with a TAG_Compound");
             }
             var reader = new NbtBinaryReader(stream, bigEndian);

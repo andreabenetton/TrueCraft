@@ -74,15 +74,13 @@ namespace TrueCraft.Client.Input
             foreach (var key in pressed)
             {
                 var args = new KeyboardKeyEventArgs(key, true);
-                if (KeyDown != null)
-                    KeyDown(this, args);
+                KeyDown?.Invoke(this, args);
             }
 
             foreach (var key in unpressed)
             {
                 var args = new KeyboardKeyEventArgs(key, false);
-                if (KeyUp != null)
-                    KeyUp(this, args);
+                KeyUp?.Invoke(this, args);
             }
         }
 

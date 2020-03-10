@@ -19,12 +19,10 @@ namespace TrueCraft.Client.Rendering
         }
 
         public static VertexPositionNormalColorTexture[] RenderBlock(IBlockProvider provider, BlockDescriptor descriptor,
-            VisibleFaces faces, Vector3 offset, int indiciesOffset, out int[] indicies)
+            VisibleFaces faces, Vector3 offset, int indexesOffset, out int[] indexes)
         {
-            var textureMap = provider.GetTextureMap(descriptor.Metadata);
-            if (textureMap == null)
-                textureMap = new Tuple<int, int>(0, 0); // TODO: handle this better
-            return Renderers[descriptor.ID].Render(descriptor, offset, faces, textureMap, indiciesOffset, out indicies);
+            var textureMap = provider.GetTextureMap(descriptor.Metadata) ?? new Tuple<int, int>(0, 0);
+            return Renderers[descriptor.ID].Render(descriptor, offset, faces, textureMap, indexesOffset, out indexes);
         }
 
         public virtual VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
@@ -53,7 +51,7 @@ namespace TrueCraft.Client.Rendering
         }
 
         public static VertexPositionNormalColorTexture[] CreateUniformCube(Vector3 offset, Vector2[] texture,
-            VisibleFaces faces, int indiciesOffset, out int[] indicies, Color color, int[] lighting = null)
+            VisibleFaces faces, int indexesOffset, out int[] indexes, Color color, int[] lighting = null)
         {
             faces = VisibleFaces.All; // Temporary
             if (lighting == null)
@@ -68,9 +66,8 @@ namespace TrueCraft.Client.Rendering
                 f >>= 1;
             }
 
-            indicies = new int[6 * totalFaces];
-            var verticies = new VertexPositionNormalColorTexture[4 * totalFaces];
-            int[] _indicies;
+            indexes = new int[6 * totalFaces];
+            var vertexes = new VertexPositionNormalColorTexture[4 * totalFaces];
             int textureIndex = 0;
             int sidesSoFar = 0;
             for (int _side = 0; _side < 6; _side++)
@@ -83,14 +80,14 @@ namespace TrueCraft.Client.Rendering
                 var lightColor = LightColor.ToVector3() * CubeBrightness[lighting[_side]];
 
                 var side = (CubeFace)_side;
-                var quad = CreateQuad(side, offset, texture, textureIndex % texture.Length, indiciesOffset,
-                    out _indicies, new Color(lightColor * color.ToVector3()));
-                Array.Copy(quad, 0, verticies, sidesSoFar * 4, 4);
-                Array.Copy(_indicies, 0, indicies, sidesSoFar * 6, 6);
+                var quad = CreateQuad(side, offset, texture, textureIndex % texture.Length, indexesOffset,
+                    out var _indexes, new Color(lightColor * color.ToVector3()));
+                Array.Copy(quad, 0, vertexes, sidesSoFar * 4, 4);
+                Array.Copy(_indexes, 0, indexes, sidesSoFar * 6, 6);
                 textureIndex += 4;
                 sidesSoFar++;
             }
-            return verticies;
+            return vertexes;
         }
 
         protected static VertexPositionNormalColorTexture[] CreateQuad(CubeFace face, Vector3 offset,

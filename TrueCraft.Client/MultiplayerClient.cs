@@ -32,8 +32,8 @@ namespace TrueCraft.Client
         public event EventHandler<BlockChangeEventArgs> BlockChanged;
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private long connected;
-        private int hotbarSelection;
+        private long _connected;
+        private int _hotbarSelection;
 
         public TrueCraftUser User { get; set; }
         public ReadOnlyWorld World { get; private set; }
@@ -45,20 +45,14 @@ namespace TrueCraft.Client
         public IWindow CurrentWindow { get; set; }
         public ICraftingRepository CraftingRepository { get; set; }
 
-        public bool Connected
-        {
-            get
-            {
-                return Interlocked.Read(ref connected) == 1;
-            }
-        }
+        public bool Connected => Interlocked.Read(ref _connected) == 1;
 
         public int HotbarSelection
         {
-            get { return hotbarSelection; }
+            get => _hotbarSelection;
             set
             {
-                hotbarSelection = value;
+                _hotbarSelection = value;
                 QueuePacket(new ChangeHeldItemPacket() { Slot = (short)value });
             }
         }
@@ -91,7 +85,7 @@ namespace TrueCraft.Client
             World.World.ChunkProvider = new EmptyGenerator();
             Physics = new PhysicsEngine(World.World, repo);
             SocketPool = new SocketAsyncEventArgsPool(100, 200, 65536);
-            connected = 0;
+            _connected = 0;
             cancel = new CancellationTokenSource();
             Health = 20;
             var crafting = new CraftingRepository();
@@ -118,7 +112,7 @@ namespace TrueCraft.Client
         {
             if (e.SocketError == SocketError.Success)
             {
-                Interlocked.CompareExchange(ref connected, 1, 0);
+                Interlocked.CompareExchange(ref _connected, 1, 0);
 
                 Physics.AddEntity(this);
 
@@ -138,7 +132,7 @@ namespace TrueCraft.Client
 
             QueuePacket(new DisconnectPacket("Disconnecting"));
             
-            Interlocked.CompareExchange(ref connected, 0, 1);
+            Interlocked.CompareExchange(ref _connected, 0, 1);
         }
 
         public void SendMessage(string message)
@@ -232,12 +226,11 @@ namespace TrueCraft.Client
 
                 foreach (IPacket packet in packets)
                 {
-                    if (PacketHandlers[packet.ID] != null)
+                    if (PacketHandlers.Length > packet.ID && PacketHandlers[packet.ID] != null)
                         PacketHandlers[packet.ID](packet, this);
                 }
-                
-                if (sem != null)
-                    sem.Release();
+
+                sem?.Release();
             }
             else
             {
@@ -247,34 +240,34 @@ namespace TrueCraft.Client
 
         protected internal void OnChatMessage(ChatMessageEventArgs e)
         {
-            if (ChatMessage != null) ChatMessage(this, e);
+            ChatMessage?.Invoke(this, e);
         }
 
         protected internal void OnChunkLoaded(ChunkEventArgs e)
         {
-            if (ChunkLoaded != null) ChunkLoaded(this, e);
+            ChunkLoaded?.Invoke(this, e);
         }
 
         protected internal void OnChunkUnloaded(ChunkEventArgs e)
         {
-            if (ChunkUnloaded != null) ChunkUnloaded(this, e);
+            ChunkUnloaded?.Invoke(this, e);
         }
 
         protected internal void OnChunkModified(ChunkEventArgs e)
         {
-            if (ChunkModified != null) ChunkModified(this, e);
+            ChunkModified?.Invoke(this, e);
         }
 
         protected internal void OnBlockChanged(BlockChangeEventArgs e)
         {
-            if (BlockChanged != null) BlockChanged(this, e);
+            BlockChanged?.Invoke(this, e);
         }
 
         #region IAABBEntity implementation
 
-        public const double Width = 0.6;
-        public const double Height = 1.62;
-        public const double Depth = 0.6;
+        private const double Width = 0.6;
+        private const double Height = 1.62;
+        private const double Depth = 0.6;
 
         public void TerrainCollision(Vector3 collisionPoint, Vector3 collisionDirection)
         {
@@ -290,10 +283,7 @@ namespace TrueCraft.Client
             }
         }
 
-        public Size Size
-        {
-            get { return new Size(Width, Height, Depth); }
-        }
+        public Size Size => new Size(Width, Height, Depth);
 
         #endregion
 
@@ -315,18 +305,14 @@ namespace TrueCraft.Client
         internal Vector3 _Position;
         public Vector3 Position
         {
-            get
-            {
-                return _Position;
-            }
+            get => _Position;
             set
             {
                 if (_Position != value)
                 {
                     QueuePacket(new PlayerPositionAndLookPacket(value.X, value.Y, value.Y + Height,
                         value.Z, Yaw, Pitch, false));
-                    if (PropertyChanged != null)
-                        PropertyChanged(this, new PropertyChangedEventArgs("Position"));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
                 }
                 _Position = value;
             }
@@ -334,29 +320,11 @@ namespace TrueCraft.Client
 
         public Vector3 Velocity { get; set; }
 
-        public float AccelerationDueToGravity
-        {
-            get
-            {
-                return 1.6f;
-            }
-        }
+        public float AccelerationDueToGravity => 1.6f;
 
-        public float Drag
-        {
-            get
-            {
-                return 0.40f;
-            }
-        }
+        public float Drag => 0.40f;
 
-        public float TerminalVelocity
-        {
-            get
-            {
-                return 78.4f;
-            }
-        }
+        public float TerminalVelocity => 78.4f;
 
         #endregion
 

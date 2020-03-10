@@ -83,17 +83,10 @@
       <Project>{FA4BE9A3-DBF0-4380-BA2B-FFAA71C4706D}</Project>
       <Name>TrueCraft.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\TrueCraft.Client\TrueCraft.Client.csproj">
-      <Project>{A6516869-A2FB-4E31-85C8-2285490CB32C}</Project>
-      <Name>TrueCraft.Client</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="truecraft">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="..\lib\Xwt.Gtk3.dll">
       <Link>Xwt.Gtk3.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

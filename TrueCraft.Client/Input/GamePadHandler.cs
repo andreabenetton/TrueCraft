@@ -52,14 +52,12 @@ namespace TrueCraft.Client.Input
 
                 foreach (var button in pressed)
                 {
-                    if (ButtonDown != null)
-                        ButtonDown(this, new GamePadButtonEventArgs { Button = button });
+                    ButtonDown?.Invoke(this, new GamePadButtonEventArgs { Button = button });
                 }
 
                 foreach (var button in unpressed)
                 {
-                    if (ButtonUp != null)
-                        ButtonUp(this, new GamePadButtonEventArgs { Button = button });
+                    ButtonUp?.Invoke(this, new GamePadButtonEventArgs { Button = button });
                 }
             }
         }

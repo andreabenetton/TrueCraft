@@ -35,18 +35,20 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentException"> If this tag resides in an <c>NbtCompound</c>, and a sibling tag with the name already exists. </exception>
         [CanBeNull]
         public string Name {
-            get { return name; }
+            get => name;
             set {
                 if (name == value) {
                     return;
                 }
 
-                var parentAsCompound = Parent as NbtCompound;
-                if (parentAsCompound != null) {
+                if (Parent is NbtCompound parentAsCompound)
+                {
                     if (value == null) {
-                        throw new ArgumentNullException("value",
+                        throw new ArgumentNullException(nameof(value),
                                                         "Name of tags inside an NbtCompound may not be null.");
-                    } else if (name != null) {
+                    }
+
+                    if (name != null) {
                         parentAsCompound.RenameTag(name, value);
                     }
                 }
@@ -63,14 +65,14 @@ namespace TrueCraft.Nbt.Tags {
         [NotNull]
         public string Path {
             get {
-                if (Parent == null) {
-                    return Name ?? "";
-                }
-                var parentAsList = Parent as NbtList;
-                if (parentAsList != null) {
-                    return parentAsList.Path + '[' + parentAsList.IndexOf(this) + ']';
-                } else {
-                    return Parent.Path + '.' + Name;
+                switch (Parent)
+                {
+                    case null:
+                        return Name ?? "";
+                    case NbtList parentAsList:
+                        return parentAsList.Path + '[' + parentAsList.IndexOf(this) + ']';
+                    default:
+                        return Parent.Path + '.' + Name;
                 }
             }
         }
@@ -94,8 +96,8 @@ namespace TrueCraft.Nbt.Tags {
         /// <remarks> ONLY APPLICABLE TO NbtCompound OBJECTS!
         /// Included in NbtTag base class for programmers' convenience, to avoid extra type casts. </remarks>
         public virtual NbtTag this[string tagName] {
-            get { throw new InvalidOperationException("String indexers only work on NbtCompound tags."); }
-            set { throw new InvalidOperationException("String indexers only work on NbtCompound tags."); }
+            get => throw new InvalidOperationException("String indexers only work on NbtCompound tags.");
+            set => throw new InvalidOperationException("String indexers only work on NbtCompound tags.");
         }
 
         /// <summary> Gets or sets the tag at the specified index. </summary>
@@ -108,20 +110,21 @@ namespace TrueCraft.Nbt.Tags {
         /// <remarks> ONLY APPLICABLE TO NbtList, NbtByteArray, and NbtIntArray OBJECTS!
         /// Included in NbtTag base class for programmers' convenience, to avoid extra type casts. </remarks>
         public virtual NbtTag this[int tagIndex] {
-            get { throw new InvalidOperationException("Integer indexers only work on NbtList tags."); }
-            set { throw new InvalidOperationException("Integer indexers only work on NbtList tags."); }
+            get => throw new InvalidOperationException("Integer indexers only work on NbtList tags.");
+            set => throw new InvalidOperationException("Integer indexers only work on NbtList tags.");
         }
 
         /// <summary> Returns the value of this tag, cast as a byte.
         /// Only supported by NbtByte tags. </summary>
         /// <exception cref="InvalidCastException"> When used on a tag other than NbtByte. </exception>
         public byte ByteValue {
-            get {
+            get
+            {
                 if (TagType == NbtTagType.Byte) {
                     return ((NbtByte)this).Value;
-                } else {
-                    throw new InvalidCastException("Cannot get ByteValue from " + GetCanonicalTagName(TagType));
                 }
+
+                throw new InvalidCastException("Cannot get ByteValue from " + GetCanonicalTagName(TagType));
             }
         }
 
@@ -231,12 +234,13 @@ namespace TrueCraft.Nbt.Tags {
         /// Only supported by NbtByteArray tags. </summary>
         /// <exception cref="InvalidCastException"> When used on a tag other than NbtByteArray. </exception>
         public byte[] ByteArrayValue {
-            get {
+            get
+            {
                 if (TagType == NbtTagType.ByteArray) {
                     return ((NbtByteArray)this).Value;
-                } else {
-                    throw new InvalidCastException("Cannot get ByteArrayValue from " + GetCanonicalTagName(TagType));
                 }
+
+                throw new InvalidCastException("Cannot get ByteArrayValue from " + GetCanonicalTagName(TagType));
             }
         }
 
@@ -244,12 +248,13 @@ namespace TrueCraft.Nbt.Tags {
         /// Only supported by NbtIntArray tags. </summary>
         /// <exception cref="InvalidCastException"> When used on a tag other than NbtIntArray. </exception>
         public int[] IntArrayValue {
-            get {
+            get
+            {
                 if (TagType == NbtTagType.IntArray) {
                     return ((NbtIntArray)this).Value;
-                } else {
-                    throw new InvalidCastException("Cannot get IntArrayValue from " + GetCanonicalTagName(TagType));
                 }
+
+                throw new InvalidCastException("Cannot get IntArrayValue from " + GetCanonicalTagName(TagType));
             }
         }
 
@@ -341,7 +346,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentNullException"> <paramref name="indentString"/> is <c>null</c>. </exception>
         [NotNull]
         public string ToString([NotNull] string indentString) {
-            if (indentString == null) throw new ArgumentNullException("indentString");
+            if (indentString == null) throw new ArgumentNullException(nameof(indentString));
             var sb = new StringBuilder();
             PrettyPrint(sb, indentString, 0);
             return sb.ToString();
@@ -354,13 +359,10 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
         [NotNull]
         public static string DefaultIndentString {
-            get { return defaultIndentString; }
-            set {
-                if (value == null) throw new ArgumentNullException("value");
-                defaultIndentString = value;
-            }
+            get => defaultIndentString;
+            set => defaultIndentString = value ?? throw new ArgumentNullException(nameof(value));
         }
 
-        static string defaultIndentString = "  ";
+        private static string defaultIndentString = "  ";
     }
 }

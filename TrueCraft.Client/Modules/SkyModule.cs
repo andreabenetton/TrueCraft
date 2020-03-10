@@ -73,16 +73,14 @@ namespace TrueCraft.Client.Modules
             v = (l <= 0.5f) ? (l * (1.0f + sl)) : (l + sl - l * sl);
             if (v > 0)
             {
-                int sextant;
-                float m, sv, fract, vsf, mid1, mid2;
-                m = l + l - v;
-                sv = (v - m) / v;
+                var m = l + l - v;
+                var sv = (v - m) / v;
                 h *= 6.0f;
-                sextant = (int)h;
-                fract = h - sextant;
-                vsf = v * sv * fract;
-                mid1 = m + vsf;
-                mid2 = v - vsf;
+                var sextant = (int)h;
+                var fract = h - sextant;
+                var vsf = v * sv * fract;
+                var mid1 = m + vsf;
+                var mid2 = v - vsf;
                 switch (sextant)
                 {
                     case 0:
@@ -130,13 +128,7 @@ namespace TrueCraft.Client.Modules
             }
         }
 
-        public Color WorldSkyColor
-        {
-            get
-            {
-                return BaseColor;
-            }
-        }
+        public Color WorldSkyColor => BaseColor;
 
         public Color WorldFogColor
         {

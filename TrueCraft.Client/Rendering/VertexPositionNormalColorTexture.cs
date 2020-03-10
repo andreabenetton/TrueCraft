@@ -21,10 +21,7 @@ namespace TrueCraft.Client.Rendering
             }
         );
 
-        VertexDeclaration IVertexType.VertexDeclaration
-        {
-            get { return VertexDeclaration; }
-        }
+        VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;
 
         public VertexPositionNormalColorTexture(Vector3 position, Vector3 normal, Color color, Vector2 texture)
         {

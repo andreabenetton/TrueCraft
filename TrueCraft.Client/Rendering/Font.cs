@@ -27,6 +27,7 @@ namespace TrueCraft.Client.Rendering
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="graphicsDevice"></param>
         /// <param name="contentManager"></param>
         /// <param name="name"></param>
         /// <param name="style"></param>
@@ -56,8 +57,7 @@ namespace TrueCraft.Client.Rendering
         /// <returns></returns>
         public FontChar GetGlyph(char ch)
         {
-            FontChar glyph = null;
-            _glyphs.TryGetValue(ch, out glyph);
+            _glyphs.TryGetValue(ch, out var glyph);
             return glyph;
         }
 
@@ -67,15 +67,15 @@ namespace TrueCraft.Client.Rendering
         /// <param name="contentManager"></param>
         private void LoadContent(GraphicsDevice graphicsDevice, ContentManager contentManager)
         {
-            var definitionPath = string.Format("{0}_{1}.fnt", Name, Style);
+            var definitionPath = $"{Name}_{Style}.fnt";
             using (var contents = File.OpenRead(Path.Combine(contentManager.RootDirectory, definitionPath)))
                 _definition = FontLoader.Load(contents);
 
             if (_textures != null)
             {
-                for (int i = 0; i < _textures.Length; i++)
+                foreach (var texture in _textures)
                 {
-                    _textures[i].Dispose();
+                    texture.Dispose();
                 }
             }
 
@@ -83,7 +83,7 @@ namespace TrueCraft.Client.Rendering
             _textures = new Texture2D[_definition.Pages.Count];
             for (int i = 0; i < _definition.Pages.Count; i++)
             {
-                var texturePath = string.Format("{0}_{1}_{2}.png", Name, Style, i);
+                var texturePath = $"{Name}_{Style}_{i}.png";
                 //_textures[i] = contentManager.Load<Texture2D>(texturePath);
 
                 FileStream fileStream = new FileStream(Path.Combine(contentManager.RootDirectory, texturePath), FileMode.Open);

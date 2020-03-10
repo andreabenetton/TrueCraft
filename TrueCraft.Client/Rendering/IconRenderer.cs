@@ -29,11 +29,13 @@ namespace TrueCraft.Client.Rendering
 
         public static void PrepareEffects(TrueCraftGame game)
         {
-            RenderEffect = new BasicEffect(game.GraphicsDevice);
-            RenderEffect.Texture = game.TextureMapper.GetTexture("terrain.png");
-            RenderEffect.TextureEnabled = true;
-            RenderEffect.VertexColorEnabled = true;
-            RenderEffect.LightingEnabled = true;
+            RenderEffect = new BasicEffect(game.GraphicsDevice)
+            {
+                Texture = game.TextureMapper.GetTexture("terrain.png"),
+                TextureEnabled = true,
+                VertexColorEnabled = true,
+                LightingEnabled = true
+            };
             RenderEffect.DirectionalLight0.Direction = new Vector3(10, -10, -0.8f);
             RenderEffect.DirectionalLight0.DiffuseColor = Color.White.ToVector3();
             RenderEffect.DirectionalLight0.Enabled = true;

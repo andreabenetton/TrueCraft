@@ -11,10 +11,10 @@ namespace TrueCraft.Client.Handlers
 {
     internal static class ChunkHandlers
     {
-        public static void HandleBlockChange(IPacket _packet, MultiplayerClient client)
+        public static void HandleBlockChange(IPacket packet, MultiplayerClient client)
         {
-            var packet = (BlockChangePacket)_packet;
-            var coordinates = new Coordinates3D(packet.X, packet.Y, packet.Z);
+            var blockChangePacket = (BlockChangePacket)packet;
+            var coordinates = new Coordinates3D(blockChangePacket.X, blockChangePacket.Y, blockChangePacket.Z);
             Coordinates3D adjusted;
             IChunk chunk;
             try
@@ -26,31 +26,30 @@ namespace TrueCraft.Client.Handlers
                 // Relevant chunk is not loaded - ignore packet
                 return;
             }
-            chunk.SetBlockID(adjusted, (byte)packet.BlockID);
-            chunk.SetMetadata(adjusted, (byte)packet.Metadata);
+            chunk.SetBlockID(adjusted, (byte)blockChangePacket.BlockID);
+            chunk.SetMetadata(adjusted, (byte)blockChangePacket.Metadata);
             client.OnBlockChanged(new BlockChangeEventArgs(coordinates, new TrueCraft.API.Logic.BlockDescriptor(),
                 new TrueCraft.API.Logic.BlockDescriptor()));
             client.OnChunkModified(new ChunkEventArgs(new ReadOnlyChunk(chunk)));
         }
 
-        public static void HandleChunkPreamble(IPacket _packet, MultiplayerClient client)
+        public static void HandleChunkPreamble(IPacket packet, MultiplayerClient client)
         {
-            var packet = (ChunkPreamblePacket)_packet;
-            var coords = new Coordinates2D(packet.X, packet.Z);
+            var chunkPreamblePacket = (ChunkPreamblePacket)packet;
+            var coords = new Coordinates2D(chunkPreamblePacket.X, chunkPreamblePacket.Z);
             client.World.SetChunk(coords, new Chunk(coords));
         }
 
-        public static void HandleChunkData(IPacket _packet, MultiplayerClient client)
+        public static void HandleChunkData(IPacket packet, MultiplayerClient client)
         {
-            var packet = (ChunkDataPacket)_packet;
-            var coords = new Coordinates3D(packet.X, packet.Y, packet.Z);
-            var data = ZlibStream.UncompressBuffer(packet.CompressedData);
-            IChunk chunk;
-            var adjustedCoords = client.World.World.FindBlockPosition(coords, out chunk);
+            var chunkDataPacket = (ChunkDataPacket)packet;
+            var coords = new Coordinates3D(chunkDataPacket.X, chunkDataPacket.Y, chunkDataPacket.Z);
+            var data = ZlibStream.UncompressBuffer(chunkDataPacket.CompressedData);
+            var adjustedCoords = client.World.World.FindBlockPosition(coords, out var chunk);
 
-            if (packet.Width == Chunk.Width
-                && packet.Height == Chunk.Height
-                && packet.Depth == Chunk.Depth) // Fast path
+            if (chunkDataPacket.Width == Chunk.Width
+                && chunkDataPacket.Height == Chunk.Height
+                && chunkDataPacket.Depth == Chunk.Depth) // Fast path
             {
                 // Chunk data offsets
                 int metadataOffset = chunk.Data.Length;
@@ -81,21 +80,21 @@ namespace TrueCraft.Client.Handlers
             else // Slow path
             {
                 int x = adjustedCoords.X, y = adjustedCoords.Y, z = adjustedCoords.Z;
-                int fullLength = packet.Width * packet.Height * packet.Depth; // Length of full sized byte section
+                int fullLength = chunkDataPacket.Width * chunkDataPacket.Height * chunkDataPacket.Depth; // Length of full sized byte section
                 int nibbleLength = fullLength / 2; // Length of nibble sections
                 for (int i = 0; i < fullLength; i++) // Iterate through block IDs
                 {
                     chunk.SetBlockID(new Coordinates3D(x, y, z), data[i]);
                     y++;
-                    if (y >= packet.Height)
+                    if (y >= chunkDataPacket.Height)
                     {
                         y = 0;
                         z++;
-                        if (z >= packet.Depth)
+                        if (z >= chunkDataPacket.Depth)
                         {
                             z = 0;
                             x++;
-                            if (x >= packet.Width)
+                            if (x >= chunkDataPacket.Width)
                             {
                                 x = 0;
                             }
@@ -109,15 +108,15 @@ namespace TrueCraft.Client.Handlers
                     chunk.SetMetadata(new Coordinates3D(x, y, z), (byte)(m & 0xF));
                     chunk.SetMetadata(new Coordinates3D(x, y + 1, z), (byte)(m & 0xF0 << 8));
                     y += 2;
-                    if (y >= packet.Height)
+                    if (y >= chunkDataPacket.Height)
                     {
                         y = 0;
                         z++;
-                        if (z >= packet.Depth)
+                        if (z >= chunkDataPacket.Depth)
                         {
                             z = 0;
                             x++;
-                            if (x >= packet.Width)
+                            if (x >= chunkDataPacket.Width)
                             {
                                 x = 0;
                             }

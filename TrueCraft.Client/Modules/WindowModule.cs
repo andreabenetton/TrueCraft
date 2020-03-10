@@ -79,13 +79,11 @@ namespace TrueCraft.Client.Modules
                         DrawCraftingWindow(RenderStage.Sprites);
                         break;
                 }
-                if (provider != null)
+
+                if (provider?.GetIconTexture((byte)HeldItem.Metadata) != null)
                 {
-                    if (provider.GetIconTexture((byte)HeldItem.Metadata) != null)
-                    {
-                        IconRenderer.RenderItemIcon(SpriteBatch, Items, provider,
-                            (byte)HeldItem.Metadata, rect, Color.White);
-                    }
+                    IconRenderer.RenderItemIcon(SpriteBatch, Items, provider,
+                        (byte)HeldItem.Metadata, rect, Color.White);
                 }
                 SpriteBatch.End();
                 switch (Game.Client.CurrentWindow.Type)

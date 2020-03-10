@@ -25,7 +25,6 @@ namespace TrueCraft.Client
         private static IPEndPoint ParseEndPoint(string arg)
         {
             IPAddress address;
-            int port;
             if (arg.Contains(':'))
             {
                 // Both IP and port are specified
@@ -36,7 +35,7 @@ namespace TrueCraft.Client
             }
             if (IPAddress.TryParse(arg, out address))
                 return new IPEndPoint(address, 25565);
-            if (int.TryParse(arg, out port))
+            if (int.TryParse(arg, out var port))
                 return new IPEndPoint(IPAddress.Loopback, port);
             return new IPEndPoint(Resolve(arg), 25565);
         }

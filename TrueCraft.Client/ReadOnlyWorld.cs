@@ -12,7 +12,7 @@ namespace TrueCraft.Client
 
         internal World World { get; set; }
 
-        public long Time { get { return World.Time; } }
+        public long Time => World.Time;
 
         internal ReadOnlyWorld()
         {
@@ -108,14 +108,14 @@ namespace TrueCraft.Client
             return Chunk.GetBlockLight(coordinates);
         }
 
-        public Coordinates2D Coordinates { get { return Chunk.Coordinates; } }
+        public Coordinates2D Coordinates => Chunk.Coordinates;
 
-        public int X { get { return Chunk.X; } }
-        public int Z { get { return Chunk.Z; } }
+        public int X => Chunk.X;
+        public int Z => Chunk.Z;
 
-        public ReadOnlyCollection<byte> Blocks { get { return Array.AsReadOnly(Chunk.Data); } }
-        public ReadOnlyNibbleArray Metadata { get { return new ReadOnlyNibbleArray(Chunk.Metadata); } }
-        public ReadOnlyNibbleArray BlockLight { get { return new ReadOnlyNibbleArray(Chunk.BlockLight); } }
-        public ReadOnlyNibbleArray SkyLight { get { return new ReadOnlyNibbleArray(Chunk.SkyLight); } }
+        public ReadOnlyCollection<byte> Blocks => Array.AsReadOnly(Chunk.Data);
+        public ReadOnlyNibbleArray Metadata => new ReadOnlyNibbleArray(Chunk.Metadata);
+        public ReadOnlyNibbleArray BlockLight => new ReadOnlyNibbleArray(Chunk.BlockLight);
+        public ReadOnlyNibbleArray SkyLight => new ReadOnlyNibbleArray(Chunk.SkyLight);
     }
 }

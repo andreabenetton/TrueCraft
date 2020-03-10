@@ -234,7 +234,7 @@ namespace TrueCraft.Client.Modules
             var look = new Vector2((-e.DeltaX), (-e.DeltaY))
                 * (float)(gameTime.ElapsedGameTime.TotalSeconds * 30);
 
-            if (TrueCraft.Core.UserSettings.Local.InvertedMouse)
+            if (Core.UserSettings.Local.InvertedMouse)
                 look.Y = -look.Y;
             Game.Client.Yaw -= look.X;
             Game.Client.Pitch -= look.Y;
@@ -267,10 +267,9 @@ namespace TrueCraft.Client.Modules
             var block = Game.Client.World.GetBlockID(target);
             Game.TargetBlock = target;
             Game.StartDigging = DateTime.UtcNow;
-            short damage;
             Game.EndDigging = Game.StartDigging.AddMilliseconds(
                 BlockProvider.GetHarvestTime(block,
-                    Game.Client.Inventory.Hotbar[Game.Client.HotbarSelection].ID, out damage));
+                    Game.Client.Inventory.Hotbar[Game.Client.HotbarSelection].ID, out var damage));
             Game.Client.QueuePacket(new PlayerDiggingPacket(
                 PlayerDiggingPacket.Action.StartDigging,
                 Game.TargetBlock.X, (sbyte)Game.TargetBlock.Y, Game.TargetBlock.Z,
@@ -285,6 +284,12 @@ namespace TrueCraft.Client.Modules
                 case MouseButton.Left:
                     Digging = false;
                     return true;
+                case MouseButton.Right:
+                    break;
+                case MouseButton.Middle:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
             return false;
         }
@@ -298,7 +303,7 @@ namespace TrueCraft.Client.Modules
             var provider = Game.BlockRepository.GetBlockProvider(target);
             if (provider.SoundEffect == SoundEffectClass.None)
                 return;
-            var effect = string.Format("footstep.{0}", Enum.GetName(typeof(SoundEffectClass), provider.SoundEffect).ToLower());
+            var effect = $"footstep.{Enum.GetName(typeof(SoundEffectClass), provider.SoundEffect)?.ToLower()}";
             Game.Audio.PlayPack(effect, 0.5f);
         }
 

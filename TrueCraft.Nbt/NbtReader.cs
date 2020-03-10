@@ -32,7 +32,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="ArgumentNullException"> <paramref name="stream"/> is <c>null</c>. </exception>
         /// <exception cref="ArgumentException"> <paramref name="stream"/> is not readable. </exception>
         public NbtReader([NotNull] Stream stream, bool bigEndian) {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
             SkipEndTags = true;
             CacheTagValues = false;
             ParentTagType = NbtTagType.Unknown;
@@ -66,9 +66,7 @@ namespace TrueCraft.Nbt {
         public NbtTagType TagType { get; private set; }
 
         /// <summary> Whether tag that we are currently on is a list element. </summary>
-        public bool IsListElement {
-            get { return (ParentTagType == NbtTagType.List); }
-        }
+        public bool IsListElement => (ParentTagType == NbtTagType.List);
 
         /// <summary> Whether current tag has a value to read. </summary>
         public bool HasValue {
@@ -86,24 +84,16 @@ namespace TrueCraft.Nbt {
         }
 
         /// <summary> Whether current tag has a name. </summary>
-        public bool HasName {
-            get { return (TagName != null); }
-        }
+        public bool HasName => (TagName != null);
 
         /// <summary> Whether this reader has reached the end of stream. </summary>
-        public bool IsAtStreamEnd {
-            get { return state == NbtParseState.AtStreamEnd; }
-        }
+        public bool IsAtStreamEnd => state == NbtParseState.AtStreamEnd;
 
         /// <summary> Whether the current tag is a Compound. </summary>
-        public bool IsCompound {
-            get { return (TagType == NbtTagType.Compound); }
-        }
+        public bool IsCompound => (TagType == NbtTagType.Compound);
 
         /// <summary> Whether the current tag is a List. </summary>
-        public bool IsList {
-            get { return (TagType == NbtTagType.List); }
-        }
+        public bool IsList => (TagType == NbtTagType.List);
 
         /// <summary> Whether the current tag has length (Lists, ByteArrays, and IntArrays have length).
         /// Compound tags also have length, technically, but it is not known until all child tags are read. </summary>
@@ -122,9 +112,7 @@ namespace TrueCraft.Nbt {
 
         /// <summary> Gets the Stream from which data is being read. </summary>
         [NotNull]
-        public Stream BaseStream {
-            get { return reader.BaseStream; }
-        }
+        public Stream BaseStream => reader.BaseStream;
 
         /// <summary> Gets the number of bytes from the beginning of the stream to the beginning of this tag.
         /// If the stream is not seekable, this value will always be 0. </summary>
@@ -153,9 +141,7 @@ namespace TrueCraft.Nbt {
 
         /// <summary> Gets whether this NbtReader instance is in state of error.
         /// No further reading can be done from this instance if a parse error occurred. </summary>
-        public bool IsInErrorState {
-            get { return (state == NbtParseState.Error); }
-        }
+        public bool IsInErrorState => (state == NbtParseState.Error);
 
 
         /// <summary> Reads the next tag from the stream. </summary>
@@ -206,9 +192,9 @@ namespace TrueCraft.Nbt {
                         if (SkipEndTags) {
                             TagsRead--;
                             goto case NbtParseState.AtCompoundEnd;
-                        } else {
-                            return true;
                         }
+
+                        return true;
                     } else {
                         ReadTagHeader(true);
                         return true;
@@ -232,14 +218,15 @@ namespace TrueCraft.Nbt {
                             state = NbtParseState.InList;
                             TagType = NbtTagType.List;
                             goto case NbtParseState.InList;
-                        } else if (ParentTagType == NbtTagType.Compound) {
+                        }
+
+                        if (ParentTagType == NbtTagType.Compound) {
                             state = NbtParseState.InCompound;
                             goto case NbtParseState.InCompound;
-                        } else {
-                            // This should not happen unless NbtReader is bugged
-                            state = NbtParseState.Error;
-                            throw new NbtFormatException(InvalidParentTagError);
                         }
+                        // This should not happen unless NbtReader is bugged
+                        state = NbtParseState.Error;
+                        throw new NbtFormatException(InvalidParentTagError);
                     } else {
                         if (canSeekStream) {
                             TagStartOffset = (int)(reader.BaseStream.Position - streamStartOffset);
@@ -428,14 +415,19 @@ namespace TrueCraft.Nbt {
         public bool ReadToDescendant([CanBeNull] string tagName) {
             if (state == NbtParseState.Error) {
                 throw new InvalidReaderStateException(ErroneousStateError);
-            } else if (state == NbtParseState.AtStreamEnd) {
+            }
+
+            if (state == NbtParseState.AtStreamEnd) {
                 return false;
             }
             int currentDepth = Depth;
-            while (ReadToFollowing()) {
+            while (ReadToFollowing())
+            {
                 if (Depth <= currentDepth) {
                     return false;
-                } else if (TagName == tagName) {
+                }
+
+                if (TagName == tagName) {
                     return true;
                 }
             }
@@ -451,14 +443,19 @@ namespace TrueCraft.Nbt {
         public bool ReadToNextSibling() {
             if (state == NbtParseState.Error) {
                 throw new InvalidReaderStateException(ErroneousStateError);
-            } else if (state == NbtParseState.AtStreamEnd) {
+            }
+
+            if (state == NbtParseState.AtStreamEnd) {
                 return false;
             }
             int currentDepth = Depth;
-            while (ReadToFollowing()) {
+            while (ReadToFollowing())
+            {
                 if (Depth == currentDepth) {
                     return true;
-                } else if (Depth < currentDepth) {
+                }
+
+                if (Depth < currentDepth) {
                     return false;
                 }
             }
@@ -490,7 +487,9 @@ namespace TrueCraft.Nbt {
         public int Skip() {
             if (state == NbtParseState.Error) {
                 throw new InvalidReaderStateException(ErroneousStateError);
-            } else if (state == NbtParseState.AtStreamEnd) {
+            }
+
+            if (state == NbtParseState.AtStreamEnd) {
                 return 0;
             }
             int startDepth = Depth;
@@ -666,16 +665,18 @@ namespace TrueCraft.Nbt {
             if (state == NbtParseState.AtStreamEnd) {
                 throw new EndOfStreamException();
             }
-            if (!atValue) {
-                if (cacheTagValues) {
+            if (!atValue)
+            {
+                if (cacheTagValues)
+                {
                     if (valueCache == null) {
                         throw new InvalidOperationException("No value to read.");
-                    } else {
-                        return valueCache;
                     }
-                } else {
-                    throw new InvalidOperationException(NoValueToReadError);
+
+                    return valueCache;
                 }
+
+                throw new InvalidOperationException(NoValueToReadError);
             }
             valueCache = null;
             atValue = false;
@@ -837,7 +838,7 @@ namespace TrueCraft.Nbt {
         /// <summary> Parsing option: Whether NbtReader should save a copy of the most recently read tag's value.
         /// Unless CacheTagValues is <c>true</c>, tag values can only be read once. Default is <c>false</c>. </summary>
         public bool CacheTagValues {
-            get { return cacheTagValues; }
+            get => cacheTagValues;
             set {
                 cacheTagValues = value;
                 if (!cacheTagValues) {
@@ -874,7 +875,7 @@ namespace TrueCraft.Nbt {
         /// <param name="includeValue"> If set to <c>true</c>, also reads and prints the current tag's value. </param>
         [NotNull]
         public string ToString(bool includeValue, [NotNull] string indentString) {
-            if (indentString == null) throw new ArgumentNullException("indentString");
+            if (indentString == null) throw new ArgumentNullException(nameof(indentString));
             var sb = new StringBuilder();
             for (int i = 0; i < Depth; i++) {
                 sb.Append(indentString);

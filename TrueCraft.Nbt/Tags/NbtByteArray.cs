@@ -8,25 +8,17 @@ namespace TrueCraft.Nbt.Tags {
         static readonly byte[] ZeroArray = new byte[0];
 
         /// <summary> Type of this tag (ByteArray). </summary>
-        public override NbtTagType TagType {
-            get { return NbtTagType.ByteArray; }
-        }
+        public override NbtTagType TagType => NbtTagType.ByteArray;
 
         /// <summary> Value/payload of this tag (an array of bytes). Value is stored as-is and is NOT cloned. May not be <c>null</c>. </summary>
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
         [NotNull]
         public byte[] Value {
-            get { return bytes; }
-            set {
-                if (value == null) {
-                    throw new ArgumentNullException("value");
-                }
-                bytes = value;
-            }
+            get => _bytes;
+            set => _bytes = value ?? throw new ArgumentNullException(nameof(value));
         }
 
-        [NotNull]
-        byte[] bytes;
+        [NotNull] private byte[] _bytes;
 
 
         /// <summary> Creates an unnamed NbtByte tag, containing an empty array of bytes. </summary>
@@ -47,7 +39,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
         public NbtByteArray([CanBeNull] string tagName) {
             name = tagName;
-            bytes = ZeroArray;
+            _bytes = ZeroArray;
         }
 
 
@@ -58,9 +50,9 @@ namespace TrueCraft.Nbt.Tags {
         /// <remarks> Given byte array will be cloned. To avoid unnecessary copying, call one of the other constructor
         /// overloads (that do not take a byte[]) and then set the Value property yourself. </remarks>
         public NbtByteArray([CanBeNull] string tagName, [NotNull] byte[] value) {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
             name = tagName;
-            bytes = (byte[])value.Clone();
+            _bytes = (byte[])value.Clone();
         }
 
 
@@ -69,9 +61,9 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
         /// <remarks> Byte array of given tag will be cloned. </remarks>
         public NbtByteArray([NotNull] NbtByteArray other) {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
-            bytes = (byte[])other.Value.Clone();
+            _bytes = (byte[])other.Value.Clone();
         }
 
 
@@ -80,8 +72,8 @@ namespace TrueCraft.Nbt.Tags {
         /// <returns> The byte at the specified index. </returns>
         /// <exception cref="IndexOutOfRangeException"> <paramref name="tagIndex"/> is outside the array bounds. </exception>
         public new byte this[int tagIndex] {
-            get { return Value[tagIndex]; }
-            set { Value[tagIndex] = value; }
+            get => Value[tagIndex];
+            set => Value[tagIndex] = value;
         }
 
 
@@ -140,7 +132,7 @@ namespace TrueCraft.Nbt.Tags {
             if (!String.IsNullOrEmpty(Name)) {
                 sb.AppendFormat("(\"{0}\")", Name);
             }
-            sb.AppendFormat(": [{0} bytes]", bytes.Length);
+            sb.AppendFormat(": [{0} bytes]", _bytes.Length);
         }
     }
 }

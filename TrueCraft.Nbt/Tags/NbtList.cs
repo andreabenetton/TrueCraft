@@ -7,52 +7,43 @@ namespace TrueCraft.Nbt.Tags {
     /// <summary> A tag containing a list of unnamed tags, all of the same kind. </summary>
     public sealed class NbtList : NbtTag, IList<NbtTag>, IList {
         /// <summary> Type of this tag (List). </summary>
-        public override NbtTagType TagType {
-            get { return NbtTagType.List; }
-        }
+        public override NbtTagType TagType => NbtTagType.List;
 
         [NotNull]
-        readonly List<NbtTag> tags = new List<NbtTag>();
+        readonly List<NbtTag> _tags = new List<NbtTag>();
 
         /// <summary> Gets or sets the tag type of this list. All tags in this NbtTag must be of the same type. </summary>
         /// <exception cref="ArgumentException"> If the given NbtTagType does not match the type of existing list items (for non-empty lists). </exception>
         /// <exception cref="ArgumentOutOfRangeException"> If the given NbtTagType is a recognized tag type. </exception>
         public NbtTagType ListType {
-            get { return listType; }
+            get => _listType;
             set {
                 if (value == NbtTagType.End) {
                     // Empty lists may have type "End", see: https://github.com/fragmer/fNbt/issues/12
-                    if (tags.Count > 0) {
+                    if (_tags.Count > 0) {
                         throw new ArgumentException("Only empty list tags may have TagType of End.");
                     }
                 }else if (value < NbtTagType.Byte || (value > NbtTagType.IntArray && value != NbtTagType.Unknown)) {
-                    throw new ArgumentOutOfRangeException("value");
+                    throw new ArgumentOutOfRangeException(nameof(value));
                 }
-                if (tags.Count > 0) {
-                    NbtTagType actualType = tags[0].TagType;
+                if (_tags.Count > 0) {
+                    NbtTagType actualType = _tags[0].TagType;
                     // We can safely assume that ALL tags have the same TagType as the first tag.
                     if (actualType != value) {
-                        string msg = String.Format("Given NbtTagType ({0}) does not match actual element type ({1})",
-                                                   value, actualType);
+                        string msg = $"Given NbtTagType ({value}) does not match actual element type ({actualType})";
                         throw new ArgumentException(msg);
                     }
                 }
-                listType = value;
+                _listType = value;
             }
         }
 
-        NbtTagType listType;
+        private NbtTagType _listType;
         
 
         /// <summary> Creates an unnamed NbtList with empty contents and undefined ListType. </summary>
         public NbtList()
             : this(null, null, NbtTagType.Unknown) {}
-
-
-        /// <summary> Creates an NbtList with given name, empty contents, and undefined ListType. </summary>
-        /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
-        public NbtList([CanBeNull] string tagName)
-            : this(tagName, null, NbtTagType.Unknown) {}
 
 
         /// <summary> Creates an unnamed NbtList with the given contents, and inferred ListType. 
@@ -64,7 +55,7 @@ namespace TrueCraft.Nbt.Tags {
         public NbtList([NotNull] IEnumerable<NbtTag> tags)
             : this(null, tags, NbtTagType.Unknown) {
             // the base constructor will allow null "tags," but we don't want that in this constructor
-            if (tags == null) throw new ArgumentNullException("tags");
+            if (tags == null) throw new ArgumentNullException(nameof(tags));
         }
 
 
@@ -87,7 +78,7 @@ namespace TrueCraft.Nbt.Tags {
         public NbtList([CanBeNull] string tagName, [NotNull] IEnumerable<NbtTag> tags)
             : this(tagName, tags, NbtTagType.Unknown) {
             // the base constructor will allow null "tags," but we don't want that in this constructor
-            if (tags == null) throw new ArgumentNullException("tags");
+            if (tags == null) throw new ArgumentNullException(nameof(tags));
         }
 
 
@@ -102,7 +93,7 @@ namespace TrueCraft.Nbt.Tags {
         public NbtList([NotNull] IEnumerable<NbtTag> tags, NbtTagType givenListType)
             : this(null, tags, givenListType) {
             // the base constructor will allow null "tags," but we don't want that in this constructor
-            if (tags == null) throw new ArgumentNullException("tags");
+            if (tags == null) throw new ArgumentNullException(nameof(tags));
         }
 
 
@@ -122,7 +113,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="givenListType"> Name to assign to this tag. May be Unknown (to infer type from the first element of tags). </param>
         /// <exception cref="ArgumentOutOfRangeException"> <paramref name="givenListType"/> is not a valid tag type. </exception>
         /// <exception cref="ArgumentException"> If given tags do not match <paramref name="givenListType"/>, or are of mixed types. </exception>
-        public NbtList([CanBeNull] string tagName, [CanBeNull] IEnumerable<NbtTag> tags, NbtTagType givenListType) {
+        public NbtList([CanBeNull] string tagName, [CanBeNull] IEnumerable<NbtTag> tags = null, NbtTagType givenListType = NbtTagType.Unknown) {
             name = tagName;
             ListType = givenListType;
 
@@ -137,11 +128,11 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="other"> An existing NbtList to copy. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
         public NbtList([NotNull] NbtList other) {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
-            listType = other.listType;
-            foreach (NbtTag tag in other.tags) {
-                tags.Add((NbtTag)tag.Clone());
+            _listType = other._listType;
+            foreach (NbtTag tag in other._tags) {
+                _tags.Add((NbtTag)tag.Clone());
             }
         }
 
@@ -154,21 +145,26 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentException"> Given tag's type does not match ListType. </exception>
         [NotNull]
         public override NbtTag this[int tagIndex] {
-            get { return tags[tagIndex]; }
+            get => _tags[tagIndex];
             set {
                 if (value == null) {
-                    throw new ArgumentNullException("value");
-                } else if (value.Parent != null) {
+                    throw new ArgumentNullException(nameof(value));
+                }
+
+                if (value.Parent != null) {
                     throw new ArgumentException("A tag may only be added to one compound/list at a time.");
-                } else if (value == this || value == Parent) {
+                }
+                if (value == this || value == Parent) {
                     throw new ArgumentException("A list tag may not be added to itself or to its child tag.");
-                } else if (value.Name != null) {
+                }
+                if (value.Name != null) {
                     throw new ArgumentException("Named tag given. A list may only contain unnamed tags.");
                 }
-                if (listType != NbtTagType.Unknown && value.TagType != listType) {
-                    throw new ArgumentException("Items must be of type " + listType);
+
+                if (_listType != NbtTagType.Unknown && value.TagType != _listType) {
+                    throw new ArgumentException("Items must be of type " + _listType);
                 }
-                tags[tagIndex] = value;
+                _tags[tagIndex] = value;
                 value.Parent = this;
             }
         }
@@ -183,7 +179,7 @@ namespace TrueCraft.Nbt.Tags {
         [NotNull]
         [Pure]
         public T Get<T>(int tagIndex) where T : NbtTag {
-            return (T)tags[tagIndex];
+            return (T)_tags[tagIndex];
         }
 
 
@@ -192,7 +188,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentNullException"> <paramref name="newTags"/> is <c>null</c>. </exception>
         /// <exception cref="ArgumentException"> If given tags do not match ListType, or are of mixed types. </exception>
         public void AddRange([NotNull] IEnumerable<NbtTag> newTags) {
-            if (newTags == null) throw new ArgumentNullException("newTags");
+            if (newTags == null) throw new ArgumentNullException(nameof(newTags));
             foreach (NbtTag tag in newTags) {
                 Add(tag);
             }
@@ -206,7 +202,7 @@ namespace TrueCraft.Nbt.Tags {
         // ReSharper disable ReturnTypeCanBeEnumerable.Global
         public NbtTag[] ToArray() {
             // ReSharper restore ReturnTypeCanBeEnumerable.Global
-            return tags.ToArray();
+            return _tags.ToArray();
         }
 
 
@@ -217,9 +213,9 @@ namespace TrueCraft.Nbt.Tags {
         [NotNull]
         [Pure]
         public T[] ToArray<T>() where T : NbtTag {
-            var result = new T[tags.Count];
+            var result = new T[_tags.Count];
             for (int i = 0; i < result.Length; i++) {
-                result[i] = (T)tags[i];
+                result[i] = (T)_tags[i];
             }
             return result;
         }
@@ -282,7 +278,7 @@ namespace TrueCraft.Nbt.Tags {
                 }
                 newTag.Parent = this;
                 if (newTag.ReadTag(readStream)) {
-                    tags.Add(newTag);
+                    _tags.Add(newTag);
                 }
             }
             return true;
@@ -319,7 +315,7 @@ namespace TrueCraft.Nbt.Tags {
                     break;
                 default:
                     for (int i = 0; i < length; i++) {
-                        switch (listType) {
+                        switch (_listType) {
                             case NbtTagType.ByteArray:
                                 new NbtByteArray().SkipTag(readStream);
                                 break;
@@ -355,8 +351,8 @@ namespace TrueCraft.Nbt.Tags {
                 throw new NbtFormatException("NbtList had no elements and an Unknown ListType");
             }
             writeStream.Write(ListType);
-            writeStream.Write(tags.Count);
-            foreach (NbtTag tag in tags) {
+            writeStream.Write(_tags.Count);
+            foreach (NbtTag tag in _tags) {
                 tag.WriteData(writeStream);
             }
         }
@@ -369,12 +365,12 @@ namespace TrueCraft.Nbt.Tags {
         /// <summary> Returns an enumerator that iterates through all tags in this NbtList. </summary>
         /// <returns> An IEnumerator&gt;NbtTag&lt; that can be used to iterate through the list. </returns>
         public IEnumerator<NbtTag> GetEnumerator() {
-            return tags.GetEnumerator();
+            return _tags.GetEnumerator();
         }
 
 
         IEnumerator IEnumerable.GetEnumerator() {
-            return tags.GetEnumerator();
+            return _tags.GetEnumerator();
         }
 
         #endregion
@@ -387,7 +383,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="tag"> The tag to locate in this NbtList. </param>
         public int IndexOf([CanBeNull] NbtTag tag) {
             if (tag == null) return -1;
-            return tags.IndexOf(tag);
+            return _tags.IndexOf(tag);
         }
 
 
@@ -398,16 +394,18 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentNullException"> <paramref name="newTag"/> is <c>null</c>. </exception>
         public void Insert(int tagIndex, [NotNull] NbtTag newTag) {
             if (newTag == null) {
-                throw new ArgumentNullException("newTag");
+                throw new ArgumentNullException(nameof(newTag));
             }
-            if (listType != NbtTagType.Unknown && newTag.TagType != listType) {
-                throw new ArgumentException("Items must be of type " + listType);
-            } else if (newTag.Parent != null) {
+            if (_listType != NbtTagType.Unknown && newTag.TagType != _listType) {
+                throw new ArgumentException("Items must be of type " + _listType);
+            }
+
+            if (newTag.Parent != null) {
                 throw new ArgumentException("A tag may only be added to one compound/list at a time.");
             }
-            tags.Insert(tagIndex, newTag);
-            if (listType == NbtTagType.Unknown) {
-                listType = newTag.TagType;
+            _tags.Insert(tagIndex, newTag);
+            if (_listType == NbtTagType.Unknown) {
+                _listType = newTag.TagType;
             }
             newTag.Parent = this;
         }
@@ -418,7 +416,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentOutOfRangeException"> <paramref name="index"/> is not a valid index in the NbtList. </exception>
         public void RemoveAt(int index) {
             NbtTag tag = this[index];
-            tags.RemoveAt(index);
+            _tags.RemoveAt(index);
             tag.Parent = null;
         }
 
@@ -429,32 +427,40 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentException"> If <paramref name="newTag"/> does not match ListType. </exception>
         public void Add([NotNull] NbtTag newTag) {
             if (newTag == null) {
-                throw new ArgumentNullException("newTag");
-            } else if (newTag.Parent != null) {
+                throw new ArgumentNullException(nameof(newTag));
+            }
+
+            if (newTag.Parent != null) {
                 throw new ArgumentException("A tag may only be added to one compound/list at a time.");
-            } else if (newTag == this || newTag == Parent) {
+            }
+            if (newTag == this || newTag == Parent) {
                 throw new ArgumentException("A list tag may not be added to itself or to its child tag.");
-            } else if (newTag.Name != null) {
+            }
+            if (newTag.Name != null) {
                 throw new ArgumentException("Named tag given. A list may only contain unnamed tags.");
             }
-            if (listType != NbtTagType.Unknown && newTag.TagType != listType) {
-                throw new ArgumentException("Items in this list must be of type " + listType + ". Given type: " +
+
+            if (_listType != NbtTagType.Unknown && newTag.TagType != _listType) {
+                throw new ArgumentException("Items in this list must be of type " + _listType + ". Given type: " +
                                             newTag.TagType);
             }
-            tags.Add(newTag);
+            _tags.Add(newTag);
             newTag.Parent = this;
-            if (listType == NbtTagType.Unknown) {
-                listType = newTag.TagType;
+            if (_listType == NbtTagType.Unknown) {
+                _listType = newTag.TagType;
             }
         }
 
 
         /// <summary> Removes all tags from this NbtList. </summary>
-        public void Clear() {
-            for (int i = 0; i < tags.Count; i++) {
-                tags[i].Parent = null;
+        public void Clear()
+        {
+            foreach (var t in _tags)
+            {
+                t.Parent = null;
             }
-            tags.Clear();
+
+            _tags.Clear();
         }
 
 
@@ -462,7 +468,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <returns> true if given tag is found in this NbtList; otherwise, false. </returns>
         /// <param name="item"> The tag to locate in this NbtList. </param>
         public bool Contains([CanBeNull] NbtTag item) {
-            return tags.Contains(item);
+            return _tags.Contains(item);
         }
 
 
@@ -476,7 +482,7 @@ namespace TrueCraft.Nbt.Tags {
         /// the number of tags in this NbtList is greater than the available space from arrayIndex to the end of the destination array;
         /// or type NbtTag cannot be cast automatically to the type of the destination array. </exception>
         public void CopyTo(NbtTag[] array, int arrayIndex) {
-            tags.CopyTo(array, arrayIndex);
+            _tags.CopyTo(array, arrayIndex);
         }
 
 
@@ -487,8 +493,8 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="tag"> The tag to remove from this NbtList. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="tag"/> is <c>null</c>. </exception>
         public bool Remove([NotNull] NbtTag tag) {
-            if (tag == null) throw new ArgumentNullException("tag");
-            if (!tags.Remove(tag)) {
+            if (tag == null) throw new ArgumentNullException(nameof(tag));
+            if (!_tags.Remove(tag)) {
                 return false;
             }
             tag.Parent = null;
@@ -498,13 +504,9 @@ namespace TrueCraft.Nbt.Tags {
 
         /// <summary> Gets the number of tags contained in the NbtList. </summary>
         /// <returns> The number of tags contained in the NbtList. </returns>
-        public int Count {
-            get { return tags.Count; }
-        }
+        public int Count => _tags.Count;
 
-        bool ICollection<NbtTag>.IsReadOnly {
-            get { return false; }
-        }
+        bool ICollection<NbtTag>.IsReadOnly => false;
 
         #endregion
 
@@ -518,24 +520,24 @@ namespace TrueCraft.Nbt.Tags {
 
         [NotNull]
         object IList.this[int tagIndex] {
-            get { return tags[tagIndex]; }
-            set { this[tagIndex] = (NbtTag)value; }
+            get => _tags[tagIndex];
+            set => this[tagIndex] = (NbtTag)value;
         }
 
 
         int IList.Add([NotNull] object value) {
             Add((NbtTag)value);
-            return (tags.Count - 1);
+            return (_tags.Count - 1);
         }
 
 
         bool IList.Contains([NotNull] object value) {
-            return tags.Contains((NbtTag)value);
+            return _tags.Contains((NbtTag)value);
         }
 
 
         int IList.IndexOf([NotNull] object value) {
-            return tags.IndexOf((NbtTag)value);
+            return _tags.IndexOf((NbtTag)value);
         }
 
 
@@ -544,9 +546,7 @@ namespace TrueCraft.Nbt.Tags {
         }
 
 
-        bool IList.IsFixedSize {
-            get { return false; }
-        }
+        bool IList.IsFixedSize => false;
 
 
         void ICollection.CopyTo(Array array, int index) {
@@ -554,17 +554,11 @@ namespace TrueCraft.Nbt.Tags {
         }
 
 
-        object ICollection.SyncRoot {
-            get { return (tags as ICollection).SyncRoot; }
-        }
+        object ICollection.SyncRoot => (_tags as ICollection).SyncRoot;
 
-        bool ICollection.IsSynchronized {
-            get { return false; }
-        }
+        bool ICollection.IsSynchronized => false;
 
-        bool IList.IsReadOnly {
-            get { return false; }
-        }
+        bool IList.IsReadOnly => false;
 
         #endregion
 
@@ -583,11 +577,11 @@ namespace TrueCraft.Nbt.Tags {
             if (!String.IsNullOrEmpty(Name)) {
                 sb.AppendFormat("(\"{0}\")", Name);
             }
-            sb.AppendFormat(": {0} entries {{", tags.Count);
+            sb.AppendFormat(": {0} entries {{", _tags.Count);
 
             if (Count > 0) {
                 sb.Append('\n');
-                foreach (NbtTag tag in tags) {
+                foreach (NbtTag tag in _tags) {
                     tag.PrettyPrint(sb, indentString, indentLevel + 1);
                     sb.Append('\n');
                 }

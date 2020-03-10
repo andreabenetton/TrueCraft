@@ -227,7 +227,7 @@ namespace TrueCraft.Launcher.Views
 
         public static void CopyBetweenZips(string name, ZipFile source, ZipFile destination)
         {
-            using (var stream = source.Entries.SingleOrDefault(f => f.FileName == name).OpenReader())
+            using (var stream = source.Entries.SingleOrDefault(f => f.FileName == name)?.OpenReader())
             {
                 var ms = new MemoryStream();
                 CopyStream(stream, ms);

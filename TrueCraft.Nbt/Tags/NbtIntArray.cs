@@ -7,25 +7,17 @@ namespace TrueCraft.Nbt.Tags {
         static readonly int[] ZeroArray = new int[0];
 
         /// <summary> Type of this tag (ByteArray). </summary>
-        public override NbtTagType TagType {
-            get { return NbtTagType.IntArray; }
-        }
+        public override NbtTagType TagType => NbtTagType.IntArray;
 
         /// <summary> Value/payload of this tag (an array of signed 32-bit integers). Value is stored as-is and is NOT cloned. May not be <c>null</c>. </summary>
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
         [NotNull]
         public int[] Value {
-            get { return ints; }
-            set {
-                if (value == null) {
-                    throw new ArgumentNullException("value");
-                }
-                ints = value;
-            }
+            get => _ints;
+            set => _ints = value ?? throw new ArgumentNullException(nameof(value));
         }
 
-        [NotNull]
-        int[] ints;
+        [NotNull] private int[] _ints;
 
 
         /// <summary> Creates an unnamed NbtIntArray tag, containing an empty array of ints. </summary>
@@ -46,7 +38,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
         public NbtIntArray([CanBeNull] string tagName) {
             name = tagName;
-            ints = ZeroArray;
+            _ints = ZeroArray;
         }
 
 
@@ -57,9 +49,9 @@ namespace TrueCraft.Nbt.Tags {
         /// <remarks> Given int array will be cloned. To avoid unnecessary copying, call one of the other constructor
         /// overloads (that do not take a int[]) and then set the Value property yourself. </remarks>
         public NbtIntArray([CanBeNull] string tagName, [NotNull] int[] value) {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
             name = tagName;
-            ints = (int[])value.Clone();
+            _ints = (int[])value.Clone();
         }
 
 
@@ -68,9 +60,9 @@ namespace TrueCraft.Nbt.Tags {
         /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
         /// <remarks> Int array of given tag will be cloned. </remarks>
         public NbtIntArray([NotNull] NbtIntArray other) {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
-            ints = (int[])other.Value.Clone();
+            _ints = (int[])other.Value.Clone();
         }
 
 
@@ -79,8 +71,8 @@ namespace TrueCraft.Nbt.Tags {
         /// <returns> The integer at the specified index. </returns>
         /// <exception cref="IndexOutOfRangeException"> <paramref name="tagIndex"/> is outside the array bounds. </exception>
         public new int this[int tagIndex] {
-            get { return Value[tagIndex]; }
-            set { Value[tagIndex] = value; }
+            get => Value[tagIndex];
+            set => Value[tagIndex] = value;
         }
 
 
@@ -120,10 +112,12 @@ namespace TrueCraft.Nbt.Tags {
         }
 
 
-        internal override void WriteData(NbtBinaryWriter writeStream) {
+        internal override void WriteData(NbtBinaryWriter writeStream)
+        {
             writeStream.Write(Value.Length);
-            for (int i = 0; i < Value.Length; i++) {
-                writeStream.Write(Value[i]);
+            foreach (var t in Value)
+            {
+                writeStream.Write(t);
             }
         }
 
@@ -142,7 +136,7 @@ namespace TrueCraft.Nbt.Tags {
             if (!String.IsNullOrEmpty(Name)) {
                 sb.AppendFormat("(\"{0}\")", Name);
             }
-            sb.AppendFormat(": [{0} ints]", ints.Length);
+            sb.AppendFormat(": [{0} ints]", _ints.Length);
         }
     }
 }

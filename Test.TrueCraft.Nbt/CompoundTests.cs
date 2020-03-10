@@ -86,9 +86,9 @@ namespace Test.TrueCraft.Nbt {
             Assert.AreEqual(nestedInt, parent.Get<NbtCompound>("Child").Get<NbtList>("NestedChildList")[0]);
             Assert.Throws<ArgumentNullException>(() => parent.Get(null));
             Assert.IsNull(parent.Get("NonExistingChild"));
-            Assert.AreEqual(nestedChild, (parent.Get("Child") as NbtCompound).Get("NestedChild"));
-            Assert.AreEqual(nestedChildList, (parent.Get("Child") as NbtCompound).Get("NestedChildList"));
-            Assert.AreEqual(nestedInt, (parent.Get("Child") as NbtCompound).Get("NestedChildList")[0]);
+            Assert.AreEqual(nestedChild, (parent.Get("Child") as NbtCompound)?.Get("NestedChild"));
+            Assert.AreEqual(nestedChildList, (parent.Get("Child") as NbtCompound)?.Get("NestedChildList"));
+            Assert.AreEqual(nestedInt, (parent.Get("Child") as NbtCompound)?.Get("NestedChildList")[0]);
 
             // Accessing with Get<T> and an invalid given type
             Assert.Throws<InvalidCastException>(() => parent.Get<NbtInt>("Child"));

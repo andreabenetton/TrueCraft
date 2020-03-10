@@ -5,9 +5,7 @@ namespace TrueCraft.Nbt.Tags {
     /// <summary> A tag containing a single signed 64-bit integer. </summary>
     public sealed class NbtLong : NbtTag {
         /// <summary> Type of this tag (Long). </summary>
-        public override NbtTagType TagType {
-            get { return NbtTagType.Long; }
-        }
+        public override NbtTagType TagType => NbtTagType.Long;
 
         /// <summary> Value/payload of this tag (a single signed 64-bit integer). </summary>
         public long Value { get; set; }
@@ -42,7 +40,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
         public NbtLong([NotNull] NbtLong other) {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             Value = other.Value;
         }

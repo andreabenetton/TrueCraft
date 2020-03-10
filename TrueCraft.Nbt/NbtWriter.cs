@@ -10,24 +10,14 @@ namespace TrueCraft.Nbt {
     /// NbtWriter enforces all constraints of the NBT file format
     /// EXCEPT checking for duplicate tag names within a compound. </summary>
     public sealed class NbtWriter {
-        const int MaxStreamCopyBufferSize = 8*1024;
+        private const int MaxStreamCopyBufferSize = 8*1024;
 
-        readonly NbtBinaryWriter writer;
-        NbtTagType listType;
-        NbtTagType parentType;
-        int listIndex;
-        int listSize;
-        Stack<NbtWriterNode> nodes;
-
-
-        /// <summary> Initializes a new instance of the NbtWriter class. </summary>
-        /// <param name="stream"> Stream to write to. </param>
-        /// <param name="rootTagName"> Name to give to the root tag (written immediately). </param>
-        /// <remarks> Assumes that data in the stream should be Big-Endian encoded. </remarks>
-        /// <exception cref="ArgumentNullException"> <paramref name="stream"/> or <paramref name="rootTagName"/> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentException"> <paramref name="stream"/> is not writable. </exception>
-        public NbtWriter([NotNull] Stream stream, [NotNull] String rootTagName)
-            : this(stream, rootTagName, true) {}
+        private readonly NbtBinaryWriter _writer;
+        private NbtTagType _listType;
+        private NbtTagType _parentType;
+        private int _listIndex;
+        private int _listSize;
+        private Stack<NbtWriterNode> _nodes;
 
 
         /// <summary> Initializes a new instance of the NbtWriter class. </summary>
@@ -36,12 +26,12 @@ namespace TrueCraft.Nbt {
         /// <param name="bigEndian"> Whether NBT data should be in Big-Endian encoding. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="stream"/> or <paramref name="rootTagName"/> is <c>null</c>. </exception>
         /// <exception cref="ArgumentException"> <paramref name="stream"/> is not writable. </exception>
-        public NbtWriter([NotNull] Stream stream, [NotNull] String rootTagName, bool bigEndian) {
-            if (rootTagName == null) throw new ArgumentNullException("rootTagName");
-            writer = new NbtBinaryWriter(stream, bigEndian);
-            writer.Write((byte)NbtTagType.Compound);
-            writer.Write(rootTagName);
-            parentType = NbtTagType.Compound;
+        public NbtWriter([NotNull] Stream stream, [NotNull] String rootTagName, bool bigEndian = true) {
+            if (rootTagName == null) throw new ArgumentNullException(nameof(rootTagName));
+            _writer = new NbtBinaryWriter(stream, bigEndian);
+            _writer.Write((byte)NbtTagType.Compound);
+            _writer.Write(rootTagName);
+            _parentType = NbtTagType.Compound;
         }
 
 
@@ -51,9 +41,7 @@ namespace TrueCraft.Nbt {
 
         /// <summary> Gets the underlying stream of the NbtWriter. </summary>
         [NotNull]
-        public Stream BaseStream {
-            get { return writer.BaseStream; }
-        }
+        public Stream BaseStream => _writer.BaseStream;
 
 
         #region Compounds and Lists
@@ -76,19 +64,19 @@ namespace TrueCraft.Nbt {
             EnforceConstraints(tagName, NbtTagType.Compound);
             GoDown(NbtTagType.Compound);
 
-            writer.Write((byte)NbtTagType.Compound);
-            writer.Write(tagName);
+            _writer.Write((byte)NbtTagType.Compound);
+            _writer.Write(tagName);
         }
 
 
         /// <summary> Ends a compound tag. </summary>
         /// <exception cref="NbtFormatException"> Not currently in a compound. </exception>
         public void EndCompound() {
-            if (IsDone || parentType != NbtTagType.Compound) {
+            if (IsDone || _parentType != NbtTagType.Compound) {
                 throw new NbtFormatException("Not currently in a compound.");
             }
             GoUp();
-            writer.Write(NbtTagType.End);
+            _writer.Write(NbtTagType.End);
         }
 
 
@@ -102,18 +90,18 @@ namespace TrueCraft.Nbt {
         /// <paramref name="elementType"/> is not a valid NbtTagType. </exception>
         public void BeginList(NbtTagType elementType, int size) {
             if (size < 0) {
-                throw new ArgumentOutOfRangeException("size", "List size may not be negative.");
+                throw new ArgumentOutOfRangeException(nameof(size), "List size may not be negative.");
             }
             if (elementType < NbtTagType.Byte || elementType > NbtTagType.IntArray) {
-                throw new ArgumentOutOfRangeException("elementType");
+                throw new ArgumentOutOfRangeException(nameof(elementType));
             }
             EnforceConstraints(null, NbtTagType.List);
             GoDown(NbtTagType.List);
-            listType = elementType;
-            listSize = size;
+            _listType = elementType;
+            _listSize = size;
 
-            writer.Write((byte)elementType);
-            writer.Write(size);
+            _writer.Write((byte)elementType);
+            _writer.Write(size);
         }
 
 
@@ -127,20 +115,20 @@ namespace TrueCraft.Nbt {
         /// <paramref name="elementType"/> is not a valid NbtTagType. </exception>
         public void BeginList([NotNull] String tagName, NbtTagType elementType, int size) {
             if (size < 0) {
-                throw new ArgumentOutOfRangeException("size", "List size may not be negative.");
+                throw new ArgumentOutOfRangeException(nameof(size), "List size may not be negative.");
             }
             if (elementType < NbtTagType.Byte || elementType > NbtTagType.IntArray) {
-                throw new ArgumentOutOfRangeException("elementType");
+                throw new ArgumentOutOfRangeException(nameof(elementType));
             }
             EnforceConstraints(tagName, NbtTagType.List);
             GoDown(NbtTagType.List);
-            listType = elementType;
-            listSize = size;
+            _listType = elementType;
+            _listSize = size;
 
-            writer.Write((byte)NbtTagType.List);
-            writer.Write(tagName);
-            writer.Write((byte)elementType);
-            writer.Write(size);
+            _writer.Write((byte)NbtTagType.List);
+            _writer.Write(tagName);
+            _writer.Write((byte)elementType);
+            _writer.Write(size);
         }
 
 
@@ -148,11 +136,13 @@ namespace TrueCraft.Nbt {
         /// <exception cref="NbtFormatException"> Not currently in a list -OR-
         /// not all list elements have been written yet. </exception>
         public void EndList() {
-            if (parentType != NbtTagType.List || IsDone) {
+            if (_parentType != NbtTagType.List || IsDone) {
                 throw new NbtFormatException("Not currently in a list.");
-            } else if (listIndex < listSize) {
+            }
+
+            if (_listIndex < _listSize) {
                 throw new NbtFormatException("Cannot end list: not all list elements have been written yet. " +
-                                             "Expected: " + listSize + ", written: " + listIndex);
+                                             "Expected: " + _listSize + ", written: " + _listIndex);
             }
             GoUp();
         }
@@ -169,7 +159,7 @@ namespace TrueCraft.Nbt {
         /// the size of a parent list has been exceeded. </exception>
         public void WriteByte(byte value) {
             EnforceConstraints(null, NbtTagType.Byte);
-            writer.Write(value);
+            _writer.Write(value);
         }
 
 
@@ -180,9 +170,9 @@ namespace TrueCraft.Nbt {
         /// an unnamed byte tag was expected -OR- a tag of a different type was expected. </exception>
         public void WriteByte([NotNull] String tagName, byte value) {
             EnforceConstraints(tagName, NbtTagType.Byte);
-            writer.Write((byte)NbtTagType.Byte);
-            writer.Write(tagName);
-            writer.Write(value);
+            _writer.Write((byte)NbtTagType.Byte);
+            _writer.Write(tagName);
+            _writer.Write(value);
         }
 
 
@@ -193,7 +183,7 @@ namespace TrueCraft.Nbt {
         /// the size of a parent list has been exceeded. </exception>
         public void WriteDouble(double value) {
             EnforceConstraints(null, NbtTagType.Double);
-            writer.Write(value);
+            _writer.Write(value);
         }
 
 
@@ -204,9 +194,9 @@ namespace TrueCraft.Nbt {
         /// an unnamed byte tag was expected -OR- a tag of a different type was expected. </exception>
         public void WriteDouble([NotNull] String tagName, double value) {
             EnforceConstraints(tagName, NbtTagType.Double);
-            writer.Write((byte)NbtTagType.Double);
-            writer.Write(tagName);
-            writer.Write(value);
+            _writer.Write((byte)NbtTagType.Double);
+            _writer.Write(tagName);
+            _writer.Write(value);
         }
 
 
@@ -217,7 +207,7 @@ namespace TrueCraft.Nbt {
         /// the size of a parent list has been exceeded. </exception>
         public void WriteFloat(float value) {
             EnforceConstraints(null, NbtTagType.Float);
-            writer.Write(value);
+            _writer.Write(value);
         }
 
 
@@ -228,9 +218,9 @@ namespace TrueCraft.Nbt {
         /// an unnamed float tag was expected -OR- a tag of a different type was expected. </exception>
         public void WriteFloat([NotNull] String tagName, float value) {
             EnforceConstraints(tagName, NbtTagType.Float);
-            writer.Write((byte)NbtTagType.Float);
-            writer.Write(tagName);
-            writer.Write(value);
+            _writer.Write((byte)NbtTagType.Float);
+            _writer.Write(tagName);
+            _writer.Write(value);
         }
 
 
@@ -241,7 +231,7 @@ namespace TrueCraft.Nbt {
         /// the size of a parent list has been exceeded. </exception>
         public void WriteInt(int value) {
             EnforceConstraints(null, NbtTagType.Int);
-            writer.Write(value);
+            _writer.Write(value);
         }
 
 
@@ -252,9 +242,9 @@ namespace TrueCraft.Nbt {
         /// an unnamed int tag was expected -OR- a tag of a different type was expected. </exception>
         public void WriteInt([NotNull] String tagName, int value) {
             EnforceConstraints(tagName, NbtTagType.Int);
-            writer.Write((byte)NbtTagType.Int);
-            writer.Write(tagName);
-            writer.Write(value);
+            _writer.Write((byte)NbtTagType.Int);
+            _writer.Write(tagName);
+            _writer.Write(value);
         }
 
 
@@ -265,7 +255,7 @@ namespace TrueCraft.Nbt {
         /// the size of a parent list has been exceeded. </exception>
         public void WriteLong(long value) {
             EnforceConstraints(null, NbtTagType.Long);
-            writer.Write(value);
+            _writer.Write(value);
         }
 
 
@@ -276,9 +266,9 @@ namespace TrueCraft.Nbt {
         /// an unnamed long tag was expected -OR- a tag of a different type was expected. </exception>
         public void WriteLong([NotNull] String tagName, long value) {
             EnforceConstraints(tagName, NbtTagType.Long);
-            writer.Write((byte)NbtTagType.Long);
-            writer.Write(tagName);
-            writer.Write(value);
+            _writer.Write((byte)NbtTagType.Long);
+            _writer.Write(tagName);
+            _writer.Write(value);
         }
 
 
@@ -289,7 +279,7 @@ namespace TrueCraft.Nbt {
         /// the size of a parent list has been exceeded. </exception>
         public void WriteShort(short value) {
             EnforceConstraints(null, NbtTagType.Short);
-            writer.Write(value);
+            _writer.Write(value);
         }
 
 
@@ -300,9 +290,9 @@ namespace TrueCraft.Nbt {
         /// an unnamed short tag was expected -OR- a tag of a different type was expected. </exception>
         public void WriteShort([NotNull] String tagName, short value) {
             EnforceConstraints(tagName, NbtTagType.Short);
-            writer.Write((byte)NbtTagType.Short);
-            writer.Write(tagName);
-            writer.Write(value);
+            _writer.Write((byte)NbtTagType.Short);
+            _writer.Write(tagName);
+            _writer.Write(value);
         }
 
 
@@ -312,9 +302,9 @@ namespace TrueCraft.Nbt {
         /// a named string tag was expected -OR- a tag of a different type was expected -OR-
         /// the size of a parent list has been exceeded. </exception>
         public void WriteString([NotNull] String value) {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
             EnforceConstraints(null, NbtTagType.String);
-            writer.Write(value);
+            _writer.Write(value);
         }
 
 
@@ -324,11 +314,11 @@ namespace TrueCraft.Nbt {
         /// <exception cref="NbtFormatException"> No more tags can be written -OR-
         /// an unnamed string tag was expected -OR- a tag of a different type was expected. </exception>
         public void WriteString([NotNull] String tagName, [NotNull] String value) {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
             EnforceConstraints(tagName, NbtTagType.String);
-            writer.Write((byte)NbtTagType.String);
-            writer.Write(tagName);
-            writer.Write(value);
+            _writer.Write((byte)NbtTagType.String);
+            _writer.Write(tagName);
+            _writer.Write(value);
         }
 
         #endregion
@@ -343,7 +333,7 @@ namespace TrueCraft.Nbt {
         /// the size of a parent list has been exceeded. </exception>
         /// <exception cref="ArgumentNullException"> <paramref name="data"/> is null </exception>
         public void WriteByteArray([NotNull] byte[] data) {
-            if (data == null) throw new ArgumentNullException("data");
+            if (data == null) throw new ArgumentNullException(nameof(data));
             WriteByteArray(data, 0, data.Length);
         }
 
@@ -363,8 +353,8 @@ namespace TrueCraft.Nbt {
         public void WriteByteArray([NotNull] byte[] data, int offset, int count) {
             CheckArray(data, offset, count);
             EnforceConstraints(null, NbtTagType.ByteArray);
-            writer.Write(count);
-            writer.Write(data, offset, count);
+            _writer.Write(count);
+            _writer.Write(data, offset, count);
         }
 
 
@@ -376,7 +366,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="ArgumentNullException"> <paramref name="tagName"/> or
         /// <paramref name="data"/> is null </exception>
         public void WriteByteArray([NotNull] String tagName, [NotNull] byte[] data) {
-            if (data == null) throw new ArgumentNullException("data");
+            if (data == null) throw new ArgumentNullException(nameof(data));
             WriteByteArray(tagName, data, 0, data.Length);
         }
 
@@ -397,10 +387,10 @@ namespace TrueCraft.Nbt {
         public void WriteByteArray([NotNull] String tagName, [NotNull] byte[] data, int offset, int count) {
             CheckArray(data, offset, count);
             EnforceConstraints(tagName, NbtTagType.ByteArray);
-            writer.Write((byte)NbtTagType.ByteArray);
-            writer.Write(tagName);
-            writer.Write(count);
-            writer.Write(data, offset, count);
+            _writer.Write((byte)NbtTagType.ByteArray);
+            _writer.Write(tagName);
+            _writer.Write(count);
+            _writer.Write(data, offset, count);
         }
 
 
@@ -416,11 +406,13 @@ namespace TrueCraft.Nbt {
         /// <exception cref="ArgumentNullException"> <paramref name="dataSource"/> is null. </exception>
         /// <exception cref="ArgumentException"> Given stream does not support reading. </exception>
         public void WriteByteArray([NotNull] Stream dataSource, int count) {
-            if (dataSource == null) throw new ArgumentNullException("dataSource");
+            if (dataSource == null) throw new ArgumentNullException(nameof(dataSource));
             if (!dataSource.CanRead) {
-                throw new ArgumentException("Given stream does not support reading.", "dataSource");
-            } else if (count < 0) {
-                throw new ArgumentOutOfRangeException("count", "count may not be negative");
+                throw new ArgumentException("Given stream does not support reading.", nameof(dataSource));
+            }
+
+            if (count < 0) {
+                throw new ArgumentOutOfRangeException(nameof(count), "count may not be negative");
             }
             int bufferSize = Math.Min(count, MaxStreamCopyBufferSize);
             var streamCopyBuffer = new byte[bufferSize];
@@ -440,15 +432,19 @@ namespace TrueCraft.Nbt {
         /// <exception cref="ArgumentException"> Given stream does not support reading -OR-
         /// <paramref name="buffer"/> size is 0. </exception>
         public void WriteByteArray([NotNull] Stream dataSource, int count, [NotNull] byte[] buffer) {
-            if (dataSource == null) throw new ArgumentNullException("dataSource");
-            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (dataSource == null) throw new ArgumentNullException(nameof(dataSource));
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
             if (!dataSource.CanRead) {
-                throw new ArgumentException("Given stream does not support reading.", "dataSource");
-            } else if (count < 0) {
-                throw new ArgumentOutOfRangeException("count", "count may not be negative");
-            } else if (buffer.Length == 0 && count > 0) {
-                throw new ArgumentException("buffer size must be greater than 0 when count is greater than 0", "buffer");
+                throw new ArgumentException("Given stream does not support reading.", nameof(dataSource));
             }
+
+            if (count < 0) {
+                throw new ArgumentOutOfRangeException(nameof(count), "count may not be negative");
+            }
+            if (buffer.Length == 0 && count > 0) {
+                throw new ArgumentException("buffer size must be greater than 0 when count is greater than 0", nameof(buffer));
+            }
+
             EnforceConstraints(null, NbtTagType.ByteArray);
             WriteByteArrayFromStreamImpl(dataSource, count, buffer);
         }
@@ -466,9 +462,9 @@ namespace TrueCraft.Nbt {
         /// <exception cref="ArgumentNullException"> <paramref name="dataSource"/> is null. </exception>
         /// <exception cref="ArgumentException"> Given stream does not support reading. </exception>
         public void WriteByteArray([NotNull] String tagName, [NotNull] Stream dataSource, int count) {
-            if (dataSource == null) throw new ArgumentNullException("dataSource");
+            if (dataSource == null) throw new ArgumentNullException(nameof(dataSource));
             if (count < 0) {
-                throw new ArgumentOutOfRangeException("count", "count may not be negative");
+                throw new ArgumentOutOfRangeException(nameof(count), "count may not be negative");
             }
             int bufferSize = Math.Min(count, MaxStreamCopyBufferSize);
             var streamCopyBuffer = new byte[bufferSize];
@@ -489,18 +485,22 @@ namespace TrueCraft.Nbt {
         /// <paramref name="buffer"/> size is 0. </exception>
         public void WriteByteArray([NotNull] String tagName, [NotNull] Stream dataSource, int count,
                                    [NotNull] byte[] buffer) {
-            if (dataSource == null) throw new ArgumentNullException("dataSource");
-            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (dataSource == null) throw new ArgumentNullException(nameof(dataSource));
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
             if (!dataSource.CanRead) {
-                throw new ArgumentException("Given stream does not support reading.", "dataSource");
-            } else if (count < 0) {
-                throw new ArgumentOutOfRangeException("count", "count may not be negative");
-            } else if (buffer.Length == 0 && count > 0) {
-                throw new ArgumentException("buffer size must be greater than 0 when count is greater than 0", "buffer");
+                throw new ArgumentException("Given stream does not support reading.", nameof(dataSource));
             }
+
+            if (count < 0) {
+                throw new ArgumentOutOfRangeException(nameof(count), "count may not be negative");
+            }
+            if (buffer.Length == 0 && count > 0) {
+                throw new ArgumentException("buffer size must be greater than 0 when count is greater than 0", nameof(buffer));
+            }
+
             EnforceConstraints(tagName, NbtTagType.ByteArray);
-            writer.Write((byte)NbtTagType.ByteArray);
-            writer.Write(tagName);
+            _writer.Write((byte)NbtTagType.ByteArray);
+            _writer.Write(tagName);
             WriteByteArrayFromStreamImpl(dataSource, count, buffer);
         }
 
@@ -512,7 +512,7 @@ namespace TrueCraft.Nbt {
         /// the size of a parent list has been exceeded. </exception>
         /// <exception cref="ArgumentNullException"> <paramref name="data"/> is null </exception>
         public void WriteIntArray([NotNull] int[] data) {
-            if (data == null) throw new ArgumentNullException("data");
+            if (data == null) throw new ArgumentNullException(nameof(data));
             WriteIntArray(data, 0, data.Length);
         }
 
@@ -532,9 +532,9 @@ namespace TrueCraft.Nbt {
         public void WriteIntArray([NotNull] int[] data, int offset, int count) {
             CheckArray(data, offset, count);
             EnforceConstraints(null, NbtTagType.IntArray);
-            writer.Write(count);
+            _writer.Write(count);
             for (int i = offset; i < count; i++) {
-                writer.Write(data[i]);
+                _writer.Write(data[i]);
             }
         }
 
@@ -547,7 +547,7 @@ namespace TrueCraft.Nbt {
         /// <exception cref="ArgumentNullException"> <paramref name="tagName"/> or
         /// <paramref name="data"/> is null </exception>
         public void WriteIntArray([NotNull] String tagName, [NotNull] int[] data) {
-            if (data == null) throw new ArgumentNullException("data");
+            if (data == null) throw new ArgumentNullException(nameof(data));
             WriteIntArray(tagName, data, 0, data.Length);
         }
 
@@ -568,11 +568,11 @@ namespace TrueCraft.Nbt {
         public void WriteIntArray([NotNull] String tagName, [NotNull] int[] data, int offset, int count) {
             CheckArray(data, offset, count);
             EnforceConstraints(tagName, NbtTagType.IntArray);
-            writer.Write((byte)NbtTagType.IntArray);
-            writer.Write(tagName);
-            writer.Write(count);
+            _writer.Write((byte)NbtTagType.IntArray);
+            _writer.Write(tagName);
+            _writer.Write(count);
             for (int i = offset; i < count; i++) {
-                writer.Write(data[i]);
+                _writer.Write(data[i]);
             }
         }
 
@@ -586,12 +586,12 @@ namespace TrueCraft.Nbt {
         /// <exception cref="NbtFormatException"> No more tags can be written -OR- given tag is unacceptable at this time. </exception>
         /// <exception cref="ArgumentNullException"> <paramref name="tag"/> is null </exception>
         public void WriteTag([NotNull] NbtTag tag) {
-            if (tag == null) throw new ArgumentNullException("tag");
+            if (tag == null) throw new ArgumentNullException(nameof(tag));
             EnforceConstraints(tag.Name, tag.TagType);
             if (tag.Name != null) {
-                tag.WriteTag(writer);
+                tag.WriteTag(_writer);
             } else {
-                tag.WriteData(writer);
+                tag.WriteData(_writer);
             }
         }
 
@@ -607,81 +607,86 @@ namespace TrueCraft.Nbt {
         }
 
 
-        void GoDown(NbtTagType thisType) {
-            if (nodes == null) {
-                nodes = new Stack<NbtWriterNode>();
+        private void GoDown(NbtTagType thisType) {
+            if (_nodes == null) {
+                _nodes = new Stack<NbtWriterNode>();
             }
             var newNode = new NbtWriterNode {
-                ParentType = parentType,
-                ListType = listType,
-                ListSize = listSize,
-                ListIndex = listIndex
+                ParentType = _parentType,
+                ListType = _listType,
+                ListSize = _listSize,
+                ListIndex = _listIndex
             };
-            nodes.Push(newNode);
+            _nodes.Push(newNode);
 
-            parentType = thisType;
-            listType = NbtTagType.Unknown;
-            listSize = 0;
-            listIndex = 0;
+            _parentType = thisType;
+            _listType = NbtTagType.Unknown;
+            _listSize = 0;
+            _listIndex = 0;
         }
 
 
-        void GoUp() {
-            if (nodes == null || nodes.Count == 0) {
+        private void GoUp() {
+            if (_nodes == null || _nodes.Count == 0) {
                 IsDone = true;
             } else {
-                NbtWriterNode oldNode = nodes.Pop();
-                parentType = oldNode.ParentType;
-                listType = oldNode.ListType;
-                listSize = oldNode.ListSize;
-                listIndex = oldNode.ListIndex;
+                NbtWriterNode oldNode = _nodes.Pop();
+                _parentType = oldNode.ParentType;
+                _listType = oldNode.ListType;
+                _listSize = oldNode.ListSize;
+                _listIndex = oldNode.ListIndex;
             }
         }
 
 
-        void EnforceConstraints([CanBeNull] String name, NbtTagType desiredType) {
+        private void EnforceConstraints([CanBeNull] String name, NbtTagType desiredType) {
             if (IsDone) {
                 throw new NbtFormatException("Cannot write any more tags: root tag has been closed.");
             }
-            if (parentType == NbtTagType.List) {
+            if (_parentType == NbtTagType.List) {
                 if (name != null) {
                     throw new NbtFormatException("Expecting an unnamed tag.");
-                } else if (listType != desiredType) {
-                    throw new NbtFormatException("Unexpected tag type (expected: " + listType + ", given: " +
-                                                 desiredType);
-                } else if (listIndex >= listSize) {
+                }
+                if (_listType != desiredType) {
+                    throw new NbtFormatException("Unexpected tag type (expected: " + _listType + ", given: " + desiredType);
+                }
+                if (_listIndex >= _listSize) {
                     throw new NbtFormatException("Given list size exceeded.");
                 }
-                listIndex++;
+                _listIndex++;
             } else if (name == null) {
                 throw new NbtFormatException("Expecting a named tag.");
             }
         }
 
 
-        static void CheckArray([NotNull] Array data, int offset, int count) {
+        private static void CheckArray([NotNull] Array data, int offset, int count) {
             if (data == null) {
-                throw new ArgumentNullException("data");
-            } else if (offset < 0) {
-                throw new ArgumentOutOfRangeException("offset", "offset may not be negative.");
-            } else if (count < 0) {
-                throw new ArgumentOutOfRangeException("count", "count may not be negative.");
-            } else if ((data.Length - offset) < count) {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            if (offset < 0) {
+                throw new ArgumentOutOfRangeException(nameof(offset), "offset may not be negative.");
+            }
+            if (count < 0) {
+                throw new ArgumentOutOfRangeException(nameof(count), "count may not be negative.");
+            }
+            if ((data.Length - offset) < count) {
                 throw new ArgumentException("count may not be greater than offset subtracted from the array length.");
             }
         }
 
 
-        void WriteByteArrayFromStreamImpl([NotNull] Stream dataSource, int count, [NotNull] byte[] buffer) {
+        private void WriteByteArrayFromStreamImpl([NotNull] Stream dataSource, int count, [NotNull] byte[] buffer) {
             Debug.Assert(dataSource != null);
             Debug.Assert(buffer != null);
-            writer.Write(count);
-            int maxBytesToWrite = Math.Min(buffer.Length, NbtBinaryWriter.MaxWriteChunk);
+            _writer.Write(count);
+            int maxBytesToWrite = Math.Min(buffer.Length, NbtBinaryWriter.MAX_WRITE_CHUNK);
             int bytesWritten = 0;
             while (bytesWritten < count) {
                 int bytesToRead = Math.Min(count - bytesWritten, maxBytesToWrite);
                 int bytesRead = dataSource.Read(buffer, 0, bytesToRead);
-                writer.Write(buffer, 0, bytesRead);
+                _writer.Write(buffer, 0, bytesRead);
                 bytesWritten += bytesRead;
             }
         }

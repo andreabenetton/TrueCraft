@@ -71,7 +71,6 @@ namespace TrueCraft.Client.Modules
 
         private void GenerateProgressMesh()
         {
-            int[] indicies;
             var texCoords = new Vector2(Progress, 15);
             var texture = new[]
             {
@@ -82,9 +81,9 @@ namespace TrueCraft.Client.Modules
             };
             for (int i = 0; i < texture.Length; i++)
                 texture[i] *= new Vector2(16f / 256f);
-            var verticies = BlockRenderer.CreateUniformCube(XVector3.Zero,
-                texture, VisibleFaces.All, 0, out indicies, Color.White);
-            ProgressMesh = new Mesh(Game, verticies, indicies);
+            var vertexes = BlockRenderer.CreateUniformCube(XVector3.Zero,
+                texture, VisibleFaces.All, 0, out var indexes, Color.White);
+            ProgressMesh = new Mesh(Game, vertexes, indexes);
         }
 
         public void Update(GameTime gameTime)
@@ -128,7 +127,7 @@ namespace TrueCraft.Client.Modules
                 foreach (var pass in HighlightEffect.CurrentTechnique.Passes)
                 {
                     pass.Apply();
-                    HighlightEffect.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
+                    HighlightEffect.GraphicsDevice.DrawUserIndexedPrimitives(
                         PrimitiveType.LineList, CubeVerticies, 0,
                         CubeVerticies.Length, CubeIndicies, 0, CubeIndicies.Length / 2);
                 }

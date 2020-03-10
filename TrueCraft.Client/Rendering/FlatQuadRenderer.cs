@@ -6,7 +6,7 @@ namespace TrueCraft.Client.Rendering
 {
     public abstract class FlatQuadRenderer : BlockRenderer
     {
-        protected virtual Vector2 TextureMap { get { return Vector2.Zero; } }
+        protected virtual Vector2 TextureMap => Vector2.Zero;
         protected Vector2[] Texture;
 
         protected FlatQuadRenderer()

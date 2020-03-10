@@ -25,13 +25,11 @@ namespace TrueCraft.Client.Rendering
         public const int SubmeshLimit = 16;
 
         // Used for synchronous access to the graphics device.
-        private static readonly object _syncLock =
+        private static readonly object SyncLock =
             new object();
 
         private TrueCraftGame _game;
         private GraphicsDevice _graphicsDevice;
-        private int _submeshes = 0;
-        private bool _isReady = false;
         protected VertexBuffer _vertices; // ChunkMesh uses these but external classes shouldn't, so I've made them protected.
         protected IndexBuffer[] _indices;
 
@@ -44,15 +42,14 @@ namespace TrueCraft.Client.Rendering
         {
             set
             {
-                if (_vertices != null)
-                    _vertices.Dispose();
+                _vertices?.Dispose();
 
                 _game.Invoke(() =>
                 {
                     _vertices = new VertexBuffer(_graphicsDevice, VertexPositionNormalColorTexture.VertexDeclaration,
                         (value.Length + 1), BufferUsage.WriteOnly);
                     _vertices.SetData(value);
-                    _isReady = true;
+                    IsReady = true;
                 });
 
                 if (_recalculateBounds)
@@ -60,21 +57,9 @@ namespace TrueCraft.Client.Rendering
             }
         }
 
-        public bool IsReady
-        {
-            get
-            {
-                return _isReady;
-            }
-        }
+        public bool IsReady { get; private set; }
 
-        public int Submeshes
-        {
-            get
-            {
-                return _submeshes;
-            }
-        }
+        public int Submeshes { get; private set; }
 
         /// <summary>
         /// Gets the bounding box for this mesh.
@@ -84,7 +69,7 @@ namespace TrueCraft.Client.Rendering
         /// <summary>
         /// Gets whether this mesh is disposed of.
         /// </summary>
-        public bool IsDisposed { get; private set; }
+        public bool IsDisposed => false;
 
         /// <summary>
         /// Creates a new mesh.
@@ -127,7 +112,7 @@ namespace TrueCraft.Client.Rendering
             if ((index < 0) || (index > _indices.Length))
                 throw new ArgumentOutOfRangeException();
 
-            lock (_syncLock)
+            lock (SyncLock)
             {
                 if (_indices[index] != null)
                     _indices[index].Dispose();
@@ -137,8 +122,8 @@ namespace TrueCraft.Client.Rendering
                     _indices[index] = new IndexBuffer(_graphicsDevice, typeof(int),
                         (indices.Length + 1), BufferUsage.WriteOnly);
                     _indices[index].SetData(indices);
-                    if (index + 1 > _submeshes)
-                        _submeshes = index + 1;
+                    if (index + 1 > Submeshes)
+                        Submeshes = index + 1;
                 });
             }
         }
@@ -177,8 +162,11 @@ namespace TrueCraft.Client.Rendering
             foreach (var pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                effect.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList,
-                    0, 0, _indices[index].IndexCount, 0, _indices[index].IndexCount / 3);
+                
+                // deprecated
+                // effect.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _indices[index].IndexCount, 0, _indices[index].IndexCount / 3);
+
+                effect.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _indices[index].IndexCount / 3);
             }
             VerticiesRendered += _vertices.VertexCount;
             IndiciesRendered += _indices[index].IndexCount;
@@ -192,7 +180,7 @@ namespace TrueCraft.Client.Rendering
             if (_vertices == null)
                 return 0;
 
-            lock (_syncLock)
+            lock (SyncLock)
                 return _vertices.VertexCount;
         }
 
@@ -201,11 +189,11 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public int GetTotalIndices()
         {
-            lock (_syncLock)
+            lock (SyncLock)
             {
                 int sum = 0;
                 foreach (var element in _indices)
-                    sum += (element != null) ? element.IndexCount : 0;
+                    sum += element?.IndexCount ?? 0;
                 return sum;
             }
         }
@@ -244,12 +232,10 @@ namespace TrueCraft.Client.Rendering
             {
                 _graphicsDevice = null; // Lose the reference to our graphics device.
 
-                if (_vertices != null)
-                    _vertices.Dispose();
+                _vertices?.Dispose();
                 foreach (var element in _indices)
                 {
-                    if (element != null)
-                        element.Dispose();
+                    element?.Dispose();
                 }
             }
         }

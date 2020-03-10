@@ -5,9 +5,7 @@ namespace TrueCraft.Nbt.Tags {
     /// <summary> A tag containing a single-precision floating point number. </summary>
     public sealed class NbtFloat : NbtTag {
         /// <summary> Type of this tag (Float). </summary>
-        public override NbtTagType TagType {
-            get { return NbtTagType.Float; }
-        }
+        public override NbtTagType TagType => NbtTagType.Float;
 
         /// <summary> Value/payload of this tag (a single-precision floating point number). </summary>
         public float Value { get; set; }
@@ -42,7 +40,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
         public NbtFloat([NotNull] NbtFloat other) {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             Value = other.Value;
         }

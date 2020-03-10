@@ -71,9 +71,8 @@ namespace TrueCraft.Client.Modules
             else
             {
                 var shift = (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift));
-                var value = default(char);
 
-                if (TryParseKey(e.Key, shift, out value))
+                if (TryParseKey(e.Key, shift, out var value))
                     Text += value;
             }
             return true;
@@ -207,7 +206,7 @@ namespace TrueCraft.Client.Modules
 
                 case Keys.Space: value = ' '; break;
 
-                default: value = default(char); return false;
+                default: value = default; return false;
             }
 
             return true;

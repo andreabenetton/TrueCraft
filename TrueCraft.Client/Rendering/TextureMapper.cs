@@ -59,10 +59,7 @@ namespace TrueCraft.Client.Rendering
         /// <param name="graphicsDevice"></param>
         public TextureMapper(GraphicsDevice graphicsDevice)
         {
-            if (graphicsDevice == null)
-                throw new ArgumentException();
-
-            Device = graphicsDevice;
+            Device = graphicsDevice ?? throw new ArgumentException();
             Customs = new Dictionary<string, Texture2D>();
             IsDisposed = false;
         }
@@ -118,7 +115,10 @@ namespace TrueCraft.Client.Rendering
                     }
                 }
             }
-            catch { return; }
+            catch
+            {
+                // ignored
+            }
         }
 
         public static void CopyStream(Stream input, Stream output)
@@ -138,8 +138,7 @@ namespace TrueCraft.Client.Rendering
         /// <returns></returns>
         public Texture2D GetTexture(string key)
         {
-            Texture2D result = null;
-            TryGetTexture(key, out result);
+            TryGetTexture(key, out var result);
             if (result == null)
                 throw new InvalidOperationException();
 
@@ -157,20 +156,15 @@ namespace TrueCraft.Client.Rendering
             if (string.IsNullOrEmpty(key))
                 throw new ArgumentException();
 
-            bool hasTexture = false;
-            texture = null;
-
             // -> Try to load from custom textures
-            Texture2D customTexture = null;
-            var inCustom = Customs.TryGetValue(key, out customTexture);
+            var inCustom = Customs.TryGetValue(key, out var customTexture);
             texture = (inCustom) ? customTexture : null;
-            hasTexture = inCustom;
+            var hasTexture = inCustom;
 
             // -> Try to load from default textures
             if (!hasTexture)
             {
-                Texture2D defaultTexture = null;
-                var inDefault = TextureMapper.Defaults.TryGetValue(key, out defaultTexture);
+                var inDefault = Defaults.TryGetValue(key, out var defaultTexture);
                 texture = (inDefault) ? defaultTexture : null;
                 hasTexture = inDefault;
             }

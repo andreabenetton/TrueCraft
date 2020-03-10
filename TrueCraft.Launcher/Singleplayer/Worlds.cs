@@ -42,8 +42,7 @@ namespace TrueCraft.Launcher.Singleplayer
 
         public World CreateNewWorld(string name, string seed)
         {
-            int s;
-            if (!int.TryParse(seed, out s))
+            if (!int.TryParse(seed, out var s))
             {
                 // TODO: Hash seed string
                 s = MathHelper.Random.Next();

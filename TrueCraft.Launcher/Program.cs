@@ -25,9 +25,7 @@ namespace TrueCraft.Launcher
                 Application.Initialize(ToolkitType.Gtk);
             UserSettings.Local = new UserSettings();
             UserSettings.Local.Load();
-            var thread = new Thread(KeepSessionAlive);
-            thread.IsBackground = true;
-            thread.Priority = ThreadPriority.Lowest;
+            var thread = new Thread(KeepSessionAlive) {IsBackground = true, Priority = ThreadPriority.Lowest};
             Window = new LauncherWindow();
             thread.Start();
             Window.Show();

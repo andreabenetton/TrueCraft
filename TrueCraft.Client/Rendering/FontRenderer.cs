@@ -22,9 +22,9 @@ namespace TrueCraft.Client.Rendering
         public FontRenderer(Font font)
         {
             if (font == null)
-                throw new ArgumentNullException("font");
+                throw new ArgumentNullException(nameof(font));
 
-            Fonts = new Font[]
+            Fonts = new[]
             {
                 font
             };
@@ -41,9 +41,9 @@ namespace TrueCraft.Client.Rendering
         public FontRenderer(Font regular, Font bold, Font strikethrough, Font underline, Font italic)
         {
             if (regular == null)
-                throw new ArgumentNullException("regular");
+                throw new ArgumentNullException(nameof(regular));
 
-            Fonts = new Font[]
+            Fonts = new[]
             {
                 regular,
                 bold ?? regular,
@@ -63,7 +63,7 @@ namespace TrueCraft.Client.Rendering
                 if (text[i] == '§')
                 {
                     i++;
-                    var code = string.Format("§{0}", text[i]);
+                    var code = $"§{text[i]}";
                     if (ChatFormat.IsValid(code))
                         font = GetFont(code);
                 }
@@ -93,7 +93,7 @@ namespace TrueCraft.Client.Rendering
                 if (text[i] == '§')
                 {
                     i++;
-                    var code = string.Format("§{0}", text[i]);
+                    var code = $"§{text[i]}";
                     if (ChatFormat.IsValid(code))
                         font = GetFont(code);
                     else
@@ -212,9 +212,6 @@ namespace TrueCraft.Client.Rendering
 
                 case ChatColor.White:
                     return new Color(255, 255, 255);
-
-                default:
-                    break;
             }
 
             // Technically this means we have an invalid color code,

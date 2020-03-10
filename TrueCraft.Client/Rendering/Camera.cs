@@ -26,7 +26,7 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public float AspectRatio
         {
-            get { return _aspectRatio; }
+            get => _aspectRatio;
             set { _aspectRatio = value; _isDirty = true; }
         }
 
@@ -35,7 +35,7 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public float Fov
         {
-            get { return _fov; }
+            get => _fov;
             set { _fov = value; _isDirty = true; }
         }
 
@@ -44,7 +44,7 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public float NearZ
         {
-            get { return _nearZ; }
+            get => _nearZ;
             set { _nearZ = value; _isDirty = true; }
         }
 
@@ -53,7 +53,7 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public float FarZ
         {
-            get { return _farZ; }
+            get => _farZ;
             set { _farZ = value; _isDirty = true; }
         }
 
@@ -62,7 +62,7 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public TrueCraft.API.Vector3 Position
         {
-            get { return _position; }
+            get => _position;
             set { _position = value; _isDirty = true; }
         }
 
@@ -71,7 +71,7 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public float Pitch
         {
-            get { return _pitch; }
+            get => _pitch;
             set { _pitch = value; _isDirty = true; }
         }
 
@@ -80,7 +80,7 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public float Yaw
         {
-            get { return _yaw; }
+            get => _yaw;
             set { _yaw = value; _isDirty = true; }
         }
 

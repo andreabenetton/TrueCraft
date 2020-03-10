@@ -16,7 +16,7 @@ namespace TrueCraft.Client.Rendering
         /// 
         /// </summary>
         /// <param name="chunk"></param>
-        /// <param name="device"></param>
+        /// <param name="game"></param>
         /// <param name="vertices"></param>
         /// <param name="indices"></param>
         public ChunkMesh(ReadOnlyChunk chunk, TrueCraftGame game, VertexPositionNormalColorTexture[] vertices, int[] indices)
@@ -31,7 +31,7 @@ namespace TrueCraft.Client.Rendering
         /// 
         /// </summary>
         /// <param name="chunk"></param>
-        /// <param name="device"></param>
+        /// <param name="game"></param>
         /// <param name="vertices"></param>
         /// <param name="opaqueIndices"></param>
         /// <param name="transparentIndices"></param>
@@ -52,10 +52,10 @@ namespace TrueCraft.Client.Rendering
         protected override BoundingBox RecalculateBounds(VertexPositionNormalColorTexture[] vertices)
         {
             return new BoundingBox(
-                new Vector3(Chunk.X * TrueCraft.Core.World.Chunk.Width, 0, Chunk.Z * TrueCraft.Core.World.Chunk.Depth),
-                new Vector3(Chunk.X * TrueCraft.Core.World.Chunk.Width
-                    + TrueCraft.Core.World.Chunk.Width, TrueCraft.Core.World.Chunk.Height,
-                    Chunk.Z * TrueCraft.Core.World.Chunk.Depth + TrueCraft.Core.World.Chunk.Depth));
+                new Vector3(Chunk.X * Core.World.Chunk.Width, 0, Chunk.Z * Core.World.Chunk.Depth),
+                new Vector3(Chunk.X * Core.World.Chunk.Width
+                    + Core.World.Chunk.Width, Core.World.Chunk.Height,
+                    Chunk.Z * Core.World.Chunk.Depth + Core.World.Chunk.Depth));
         }
     }
 }

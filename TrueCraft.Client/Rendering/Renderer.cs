@@ -22,7 +22,7 @@ namespace TrueCraft.Client.Rendering
         private volatile bool _isRunning;
         private Thread[] _rendererThreads;
         private volatile bool _isDisposed;
-        protected ConcurrentQueue<T> _items, _priorityItems;
+        protected ConcurrentQueue<T> Items, PriorityItems;
         private HashSet<T> _pending;
 
         /// <summary>
@@ -41,10 +41,7 @@ namespace TrueCraft.Client.Rendering
         /// <summary>
         /// Gets whether this renderer is disposed of.
         /// </summary>
-        public bool IsDisposed
-        {
-            get { return _isDisposed; }
-        }
+        public bool IsDisposed => _isDisposed;
 
         /// <summary>
         /// 
@@ -62,7 +59,7 @@ namespace TrueCraft.Client.Rendering
                 {
                     _rendererThreads[i] = new Thread(DoRendering) { IsBackground = true };
                 }
-                _items = new ConcurrentQueue<T>(); _priorityItems = new ConcurrentQueue<T>();
+                Items = new ConcurrentQueue<T>(); PriorityItems = new ConcurrentQueue<T>();
                 _pending = new HashSet<T>();
                 _isDisposed = false;
             }
@@ -80,8 +77,8 @@ namespace TrueCraft.Client.Rendering
             lock (_syncLock)
             {
                 _isRunning = true;
-                for (int i = 0; i < _rendererThreads.Length; i++)
-                    _rendererThreads[i].Start(null);
+                foreach (var t in _rendererThreads)
+                    t.Start(null);
             }
         }
 
@@ -93,22 +90,19 @@ namespace TrueCraft.Client.Rendering
         {
             while (_isRunning)
             {
-                var item = default(T);
-                var result = default(Mesh);
+                T item;
 
                 lock (_syncLock)
                 {
-                    if (_priorityItems.TryDequeue(out item) && _pending.Remove(item) && TryRender(item, out result))
+                    if (PriorityItems.TryDequeue(out item) && _pending.Remove(item) && TryRender(item, out var result))
                     {
                         var args = new RendererEventArgs<T>(item, result, true);
-                        if (MeshCompleted != null)
-                            MeshCompleted(this, args);
+                        MeshCompleted?.Invoke(this, args);
                     }
-                    else if (_items.TryDequeue(out item) && _pending.Remove(item) && TryRender(item, out result))
+                    else if (Items.TryDequeue(out item) && _pending.Remove(item) && TryRender(item, out result))
                     {
                         var args = new RendererEventArgs<T>(item, result, false);
-                        if (MeshCompleted != null)
-                            MeshCompleted(this, args);
+                        MeshCompleted?.Invoke(this, args);
                     }
                 }
 
@@ -137,8 +131,8 @@ namespace TrueCraft.Client.Rendering
             lock (_syncLock)
             {
                 _isRunning = false;
-                for (int i = 0; i < _rendererThreads.Length; i++)
-                    _rendererThreads[i].Join();
+                foreach (var t in _rendererThreads)
+                    t.Join();
             }
         }
 
@@ -158,9 +152,9 @@ namespace TrueCraft.Client.Rendering
 
             if (!_isRunning) return false;
             if (hasPriority)
-                _priorityItems.Enqueue(item);
+                PriorityItems.Enqueue(item);
             else
-                _items.Enqueue(item);
+                Items.Enqueue(item);
             return true;
         }
 
@@ -186,7 +180,7 @@ namespace TrueCraft.Client.Rendering
             lock (_syncLock)
             {
                 _rendererThreads = null;
-                _items = null; _priorityItems = null;
+                Items = null; PriorityItems = null;
                 _isDisposed = true;
             }
         }

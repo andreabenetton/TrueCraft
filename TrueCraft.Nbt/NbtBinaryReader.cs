@@ -7,17 +7,17 @@ namespace TrueCraft.Nbt {
     /// <summary> BinaryReader wrapper that takes care of reading primitives from an NBT stream,
     /// while taking care of endianness, string encoding, and skipping. </summary>
     internal sealed class NbtBinaryReader : BinaryReader {
-        readonly byte[] buffer = new byte[sizeof(double)];
+        private readonly byte[] _buffer = new byte[sizeof(double)];
 
-        byte[] seekBuffer;
-        const int SeekBufferSize = 8*1024;
-        readonly bool swapNeeded;
-        readonly byte[] stringConversionBuffer = new byte[64];
+        private byte[] _seekBuffer;
+        private const int SeekBufferSize = 8*1024;
+        private readonly bool _swapNeeded;
+        private readonly byte[] _stringConversionBuffer = new byte[64];
 
 
         public NbtBinaryReader([NotNull] Stream input, bool bigEndian)
             : base(input) {
-            swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
+            _swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
         }
 
 
@@ -25,56 +25,62 @@ namespace TrueCraft.Nbt {
             int type = ReadByte();
             if (type < 0) {
                 throw new EndOfStreamException();
-            } else if (type > (int)NbtTagType.IntArray) {
+            }
+
+            if (type > (int)NbtTagType.IntArray) {
                 throw new NbtFormatException("NBT tag type out of range: " + type);
             }
             return (NbtTagType)type;
         }
 
 
-        public override short ReadInt16() {
-            if (swapNeeded) {
+        public override short ReadInt16()
+        {
+            if (_swapNeeded) {
                 return Swap(base.ReadInt16());
-            } else {
-                return base.ReadInt16();
             }
+
+            return base.ReadInt16();
         }
 
 
-        public override int ReadInt32() {
-            if (swapNeeded) {
+        public override int ReadInt32()
+        {
+            if (_swapNeeded) {
                 return Swap(base.ReadInt32());
-            } else {
-                return base.ReadInt32();
             }
+
+            return base.ReadInt32();
         }
 
 
-        public override long ReadInt64() {
-            if (swapNeeded) {
+        public override long ReadInt64()
+        {
+            if (_swapNeeded) {
                 return Swap(base.ReadInt64());
-            } else {
-                return base.ReadInt64();
             }
+
+            return base.ReadInt64();
         }
 
 
-        public override float ReadSingle() {
-            if (swapNeeded) {
+        public override float ReadSingle()
+        {
+            if (_swapNeeded) {
                 FillBuffer(sizeof(float));
-                Array.Reverse(buffer, 0, sizeof(float));
-                return BitConverter.ToSingle(buffer, 0);
-            } else {
-                return base.ReadSingle();
+                Array.Reverse(_buffer, 0, sizeof(float));
+                return BitConverter.ToSingle(_buffer, 0);
             }
+
+            return base.ReadSingle();
         }
 
 
         public override double ReadDouble() {
-            if (swapNeeded) {
+            if (_swapNeeded) {
                 FillBuffer(sizeof(double));
-                Array.Reverse(buffer);
-                return BitConverter.ToDouble(buffer, 0);
+                Array.Reverse(_buffer);
+                return BitConverter.ToDouble(_buffer, 0);
             }
             return base.ReadDouble();
         }
@@ -85,38 +91,41 @@ namespace TrueCraft.Nbt {
             if (length < 0) {
                 throw new NbtFormatException("Negative string length given!");
             }
-            if (length < stringConversionBuffer.Length) {
+            if (length < _stringConversionBuffer.Length) {
                 int stringBytesRead = 0;
                 while (stringBytesRead < length) {
                     int bytesToRead = length - stringBytesRead;
-                    int bytesReadThisTime = BaseStream.Read(stringConversionBuffer, stringBytesRead, bytesToRead);
+                    int bytesReadThisTime = BaseStream.Read(_stringConversionBuffer, stringBytesRead, bytesToRead);
                     if (bytesReadThisTime == 0) {
                         throw new EndOfStreamException();
                     }
                     stringBytesRead += bytesReadThisTime;
                 }
-                return Encoding.UTF8.GetString(stringConversionBuffer, 0, length);
-            } else {
-                byte[] stringData = ReadBytes(length);
-                if (stringData.Length < length) {
-                    throw new EndOfStreamException();
-                }
-                return Encoding.UTF8.GetString(stringData);
+                return Encoding.UTF8.GetString(_stringConversionBuffer, 0, length);
             }
+
+            byte[] stringData = ReadBytes(length);
+            if (stringData.Length < length) {
+                throw new EndOfStreamException();
+            }
+            return Encoding.UTF8.GetString(stringData);
         }
 
 
-        public void Skip(int bytesToSkip) {
+        public void Skip(int bytesToSkip)
+        {
             if (bytesToSkip < 0) {
-                throw new ArgumentOutOfRangeException("bytesToSkip");
-            } else if (BaseStream.CanSeek) {
+                throw new ArgumentOutOfRangeException(nameof(bytesToSkip));
+            }
+
+            if (BaseStream.CanSeek) {
                 BaseStream.Position += bytesToSkip;
             } else if (bytesToSkip != 0) {
-                if (seekBuffer == null) seekBuffer = new byte[SeekBufferSize];
+                if (_seekBuffer == null) _seekBuffer = new byte[SeekBufferSize];
                 int bytesSkipped = 0;
                 while (bytesSkipped < bytesToSkip) {
                     int bytesToRead = Math.Min(SeekBufferSize, bytesToSkip - bytesSkipped);
-                    int bytesReadThisTime = BaseStream.Read(seekBuffer, 0, bytesToRead);
+                    int bytesReadThisTime = BaseStream.Read(_seekBuffer, 0, bytesToRead);
                     if (bytesReadThisTime == 0) {
                         throw new EndOfStreamException();
                     }
@@ -126,10 +135,10 @@ namespace TrueCraft.Nbt {
         }
 
 
-        new void FillBuffer(int numBytes) {
+        private new void FillBuffer(int numBytes) {
             int offset = 0;
             do {
-                int num = BaseStream.Read(buffer, offset, numBytes - offset);
+                int num = BaseStream.Read(_buffer, offset, numBytes - offset);
                 if (num == 0) throw new EndOfStreamException();
                 offset += num;
             } while (offset < numBytes);
@@ -146,7 +155,7 @@ namespace TrueCraft.Nbt {
 
 
         [DebuggerStepThrough]
-        static short Swap(short v) {
+        private static short Swap(short v) {
             unchecked {
                 return (short)((v >> 8) & 0x00FF |
                                (v << 8) & 0xFF00);
@@ -155,7 +164,7 @@ namespace TrueCraft.Nbt {
 
 
         [DebuggerStepThrough]
-        static int Swap(int v) {
+        private static int Swap(int v) {
             unchecked {
                 var v2 = (uint)v;
                 return (int)((v2 >> 24) & 0x000000FF |
@@ -167,7 +176,7 @@ namespace TrueCraft.Nbt {
 
 
         [DebuggerStepThrough]
-        static long Swap(long v) {
+        private static long Swap(long v) {
             unchecked {
                 return (Swap((int)v) & uint.MaxValue) << 32 |
                        Swap((int)(v >> 32)) & uint.MaxValue;

@@ -5,24 +5,17 @@ namespace TrueCraft.Nbt.Tags {
     /// <summary> A tag containing a single string. String is stored in UTF-8 encoding. </summary>
     public sealed class NbtString : NbtTag {
         /// <summary> Type of this tag (String). </summary>
-        public override NbtTagType TagType {
-            get { return NbtTagType.String; }
-        }
+        public override NbtTagType TagType => NbtTagType.String;
 
         /// <summary> Value/payload of this tag (a single string). May not be <c>null</c>. </summary>
         [NotNull]
         public string Value {
-            get { return stringVal; }
-            set {
-                if (value == null) {
-                    throw new ArgumentNullException("value");
-                }
-                stringVal = value;
-            }
+            get => _stringVal;
+            set => _stringVal = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         [NotNull]
-        string stringVal = "";
+        private string _stringVal = "";
 
 
         /// <summary> Creates an unnamed NbtString tag with the default value (empty string). </summary>
@@ -41,9 +34,8 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="value"> String value to assign to this tag. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
         public NbtString([CanBeNull] string tagName, [NotNull] string value) {
-            if (value == null) throw new ArgumentNullException("value");
             name = tagName;
-            Value = value;
+            Value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
 
@@ -51,7 +43,7 @@ namespace TrueCraft.Nbt.Tags {
         /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
         public NbtString([NotNull] NbtString other) {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             Value = other.Value;
         }

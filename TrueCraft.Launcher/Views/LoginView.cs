@@ -136,7 +136,7 @@ namespace TrueCraft.Launcher.Views
                 var request = state.Request;
                 var requestStream = request.EndGetRequestStream(asyncResult);
                 using (var writer = new StreamWriter(requestStream))
-                    writer.Write(string.Format("user={0}&password={1}&version=12", state.Username, state.Password));
+                    writer.Write($"user={state.Username}&password={state.Password}&version=12");
                 request.BeginGetResponse(HandleLoginResponse, request);
             }
             catch
@@ -172,10 +172,7 @@ namespace TrueCraft.Launcher.Views
                         Window.InteractionBox.PackEnd(Window.MainMenuView = new MainMenuView(Window));
                         UserSettings.Local.AutoLogin = RememberCheckBox.Active;
                         UserSettings.Local.Username = Window.User.Username;
-                        if (UserSettings.Local.AutoLogin)
-                            UserSettings.Local.Password = PasswordText.Password;
-                        else
-                            UserSettings.Local.Password = string.Empty;
+                        UserSettings.Local.Password = UserSettings.Local.AutoLogin ? PasswordText.Password : string.Empty;
                         UserSettings.Local.Save();
                     });
                 }

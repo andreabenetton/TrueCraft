@@ -22,22 +22,16 @@ namespace TrueCraft.Client.Rendering
                 Camera = camera;
             }
 
-            public override int Compare(Mesh _x, Mesh _y)
+            public override int Compare(Mesh x, Mesh y)
             {
-                var x = ((ChunkMesh)_x).Chunk;
-                var y = ((ChunkMesh)_y).Chunk;
-                return (int)(new Coordinates3D(y.X * Chunk.Width, 0, y.Z * Chunk.Depth).DistanceTo(Camera) -
-                    new Coordinates3D(x.X * Chunk.Width, 0, x.Z * Chunk.Depth).DistanceTo(Camera));
+                var xChunk = ((ChunkMesh)x).Chunk;
+                var yChunk = ((ChunkMesh)y).Chunk;
+                return (int)(new Coordinates3D(yChunk.X * Chunk.Width, 0, yChunk.Z * Chunk.Depth).DistanceTo(Camera) -
+                    new Coordinates3D(xChunk.X * Chunk.Width, 0, xChunk.Z * Chunk.Depth).DistanceTo(Camera));
             }
         }
 
-        public int PendingChunks
-        {
-            get
-            {
-                return _items.Count + _priorityItems.Count;
-            }
-        }
+        public int PendingChunks => Items.Count + PriorityItems.Count;
 
         private ReadOnlyWorld World { get; set; }
         private TrueCraftGame Game { get; set; }

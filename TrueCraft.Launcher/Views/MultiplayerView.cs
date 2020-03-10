@@ -166,12 +166,12 @@ namespace TrueCraft.Launcher.Views
             var ip = ServerIPEntry.Text;
             if (ServerListView.SelectedRow != -1)
                 ip = UserSettings.Local.FavoriteServers[ServerListView.SelectedRow].Address;
-            string TrueCraftLaunchParams = string.Format("{0} {1} {2}", ip, Window.User.Username, Window.User.SessionId);
+            string trueCraftLaunchParams = $"{ip} {Window.User.Username} {Window.User.SessionId}";
             var process = new Process();
             if (RuntimeInfo.IsMono)
-                process.StartInfo = new ProcessStartInfo("mono", "TrueCraft.Client.exe " + TrueCraftLaunchParams);
+                process.StartInfo = new ProcessStartInfo("mono", "TrueCraft.Client.exe " + trueCraftLaunchParams);
             else
-                process.StartInfo = new ProcessStartInfo("TrueCraft.Client.exe", TrueCraftLaunchParams);
+                process.StartInfo = new ProcessStartInfo("TrueCraft.Client.exe", trueCraftLaunchParams);
             process.EnableRaisingEvents = true;
             process.Exited += (s, a) => Application.Invoke(ClientExited);
             process.Start();

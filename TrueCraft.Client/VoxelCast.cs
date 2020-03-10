@@ -36,8 +36,7 @@ namespace TrueCraft.Client
                             var box = provider.InteractiveBoundingBox;
                             if (box != null)
                             {
-                                BlockFace _face;
-                                var distance = ray.Intersects(box.Value.OffsetBy(coords), out _face);
+                                var distance = ray.Intersects(box.Value.OffsetBy(coords), out var _face);
                                 if (distance != null && distance.Value < min)
                                 {
                                     min = distance.Value;

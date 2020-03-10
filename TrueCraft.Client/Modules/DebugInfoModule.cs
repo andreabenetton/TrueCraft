@@ -64,15 +64,15 @@ namespace TrueCraft.Client.Modules
                 ChatFormat.Bold + "Running at {0}{1} FPS", GetFPSColor(fps), fps));
 
             Font.DrawText(SpriteBatch, xOrigin, yOrigin + (yOffset * 1),
-                string.Format("Standing at <{0:N2}, {1:N2}, {2:N2}>",
-                    Game.Client.Position.X, Game.Client.Position.Y, Game.Client.Position.Z));
+                $"Standing at <{Game.Client.Position.X:N2}, {Game.Client.Position.Y:N2}, {Game.Client.Position.Z:N2}>");
 
             Font.DrawText(SpriteBatch, xOrigin, yOrigin + (yOffset * 2),
-                string.Format(ChatColor.Gray + "Looking at {0} ({1})", Game.HighlightedBlock,
-                    Enum.GetName(typeof(BlockFace), Game.HighlightedBlockFace)));
+                ChatColor.Gray +
+                $"Looking at {Game.HighlightedBlock} ({Enum.GetName(typeof(BlockFace), Game.HighlightedBlockFace)})");
 
             Font.DrawText(SpriteBatch, xOrigin, yOrigin + (yOffset * 3),
-                string.Format(ChatColor.Gray + "{0} pending chunks", Game.ChunkModule.ChunkRenderer.PendingChunks));
+                ChatColor.Gray + 
+                $"{Game.ChunkModule.ChunkRenderer.PendingChunks} pending chunks");
 
             SpriteBatch.End();
         }

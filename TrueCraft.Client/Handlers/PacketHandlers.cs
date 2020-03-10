@@ -29,16 +29,16 @@ namespace TrueCraft.Client.Handlers
             client.RegisterPacketHandler(new OpenWindowPacket().ID, InventoryHandlers.HandleOpenWindowPacket);
         }
 
-        public static void HandleChatMessage(IPacket _packet, MultiplayerClient client)
+        public static void HandleChatMessage(IPacket packet, MultiplayerClient client)
         {
-            var packet = (ChatMessagePacket)_packet;
-            client.OnChatMessage(new ChatMessageEventArgs(packet.Message));
+            var chatMessagePacket = (ChatMessagePacket)packet;
+            client.OnChatMessage(new ChatMessageEventArgs(chatMessagePacket.Message));
         }
 
-        public static void HandleHandshake(IPacket _packet, MultiplayerClient client)
+        public static void HandleHandshake(IPacket packet, MultiplayerClient client)
         {
-            var packet = (HandshakeResponsePacket)_packet;
-            if (packet.ConnectionHash != "-")
+            var handshakeResponsePacket = (HandshakeResponsePacket)packet;
+            if (handshakeResponsePacket.ConnectionHash != "-")
             {
                 Console.WriteLine("Online mode is not supported");
                 Process.GetCurrentProcess().Kill();
@@ -47,32 +47,32 @@ namespace TrueCraft.Client.Handlers
             client.QueuePacket(new LoginRequestPacket(PacketReader.Version, client.User.Username));
         }
 
-        public static void HandleLoginResponse(IPacket _packet, MultiplayerClient client)
+        public static void HandleLoginResponse(IPacket packet, MultiplayerClient client)
         {
-            var packet = (LoginResponsePacket)_packet;
-            client.EntityID = packet.EntityID;
+            var loginResponsePacket = (LoginResponsePacket)packet;
+            client.EntityID = loginResponsePacket.EntityID;
             client.QueuePacket(new PlayerGroundedPacket());
         }
 
-        public static void HandlePositionAndLook(IPacket _packet, MultiplayerClient client)
+        public static void HandlePositionAndLook(IPacket packet, MultiplayerClient client)
         {
-            var packet = (SetPlayerPositionPacket)_packet;
-            client._Position = new Vector3(packet.X, packet.Y, packet.Z);
-            client.QueuePacket(packet);
+            var setPlayerPositionPacket = (SetPlayerPositionPacket)packet;
+            client._Position = new Vector3(setPlayerPositionPacket.X, setPlayerPositionPacket.Y, setPlayerPositionPacket.Z);
+            client.QueuePacket(setPlayerPositionPacket);
             client.LoggedIn = true;
             // TODO: Pitch and yaw
         }
 
-        public static void HandleUpdateHealth(IPacket _packet, MultiplayerClient client)
+        public static void HandleUpdateHealth(IPacket packet, MultiplayerClient client)
         {
-            var packet = (UpdateHealthPacket)_packet;
-            client.Health = packet.Health;
+            var updateHealthPacket = (UpdateHealthPacket)packet;
+            client.Health = updateHealthPacket.Health;
         }
 
-        public static void HandleTimeUpdate(IPacket _packet, MultiplayerClient client)
+        public static void HandleTimeUpdate(IPacket packet, MultiplayerClient client)
         {
-            var packet = (TimeUpdatePacket)_packet;
-            var time = packet.Time / 20.0;
+            var timeUpdatePacket = (TimeUpdatePacket)packet;
+            var time = timeUpdatePacket.Time / 20.0;
             client.World.World.BaseTime = DateTime.UtcNow - TimeSpan.FromSeconds(time);
         }
     }

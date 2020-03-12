@@ -4,7 +4,7 @@ namespace TrueCraft.Core.Networking.Packets
 {
     public struct UselessEntityPacket : IPacket
     {
-        public byte ID { get { return 0x1E; } }
+        public byte ID => 0x1E;
 
         public int EntityID;
 

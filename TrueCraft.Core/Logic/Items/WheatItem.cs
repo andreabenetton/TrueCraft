@@ -6,13 +6,13 @@ namespace TrueCraft.Core.Logic.Items
     {
         public static readonly short ItemID = 0x128;
 
-        public override short ID { get { return 0x128; } }
+        public override short ID => 0x128;
+
+        public override string DisplayName => "Wheat";
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
             return new Tuple<int, int>(9, 1);
         }
-
-        public override string DisplayName { get { return "Wheat"; } }
     }
 }

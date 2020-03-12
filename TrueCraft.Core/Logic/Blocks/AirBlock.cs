@@ -7,28 +7,22 @@ namespace TrueCraft.Core.Logic.Blocks
     public class AirBlock : BlockProvider
     {
         public static readonly byte BlockID = 0x00;
-        
-        public override byte ID { get { return 0x00; } }
 
-        public override double BlastResistance { get { return 0; } }
+        public override byte ID => 0x00;
 
-        public override double Hardness { get { return 0; } }
+        public override double BlastResistance => 0;
 
-        public override bool Opaque { get { return false; } }
+        public override double Hardness => 0;
 
-        public override byte Luminance { get { return 0; } }
+        public override bool Opaque => false;
 
-        public override string DisplayName { get { return "Air"; } }
+        public override byte Luminance => 0;
 
-        public override BoundingBox? BoundingBox { get { return null; } }
+        public override string DisplayName => "Air";
 
-        public override SoundEffectClass SoundEffect
-        {
-            get
-            {
-                return SoundEffectClass.None;
-            }
-        }
+        public override BoundingBox? BoundingBox => null;
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.None;
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {

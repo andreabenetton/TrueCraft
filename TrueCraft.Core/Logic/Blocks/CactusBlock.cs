@@ -1,10 +1,10 @@
 using System;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
-using TrueCraft.API.World;
 using TrueCraft.API.Networking;
-using TrueCraft.Core.Entities;
 using TrueCraft.API.Server;
+using TrueCraft.API.World;
+using TrueCraft.Core.Entities;
 
 namespace TrueCraft.Core.Logic.Blocks
 {
@@ -15,42 +15,37 @@ namespace TrueCraft.Core.Logic.Blocks
         public static readonly int MaxGrowHeight = 3;
 
         public static readonly byte BlockID = 0x51;
-        
-        public override byte ID { get { return 0x51; } }
-        
-        public override double BlastResistance { get { return 2; } }
 
-        public override double Hardness { get { return 0.4; } }
+        public override byte ID => 0x51;
 
-        public override byte Luminance { get { return 0; } }
+        public override double BlastResistance => 2;
 
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Cactus"; } }
+        public override double Hardness => 0.4;
 
-        public override SoundEffectClass SoundEffect
-        {
-            get
-            {
-                return SoundEffectClass.Cloth;
-            }
-        }
+        public override byte Luminance => 0;
+
+        public override bool Opaque => false;
+
+        public override string DisplayName => "Cactus";
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Cloth;
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
             return new Tuple<int, int>(6, 4);
         }
 
-        public bool ValidCactusPosition(BlockDescriptor descriptor, IBlockRepository repository, IWorld world, bool checkNeighbor = true, bool checkSupport = true)
+        public bool ValidCactusPosition(BlockDescriptor descriptor, IBlockRepository repository, IWorld world,
+            bool checkNeighbor = true, bool checkSupport = true)
         {
             if (checkNeighbor)
             {
-                var adjacent = new Coordinates3D[]
+                var adjacent = new[]
                 {
                     descriptor.Coordinates + Coordinates3D.North,
                     descriptor.Coordinates + Coordinates3D.East,
                     descriptor.Coordinates + Coordinates3D.South,
-                    descriptor.Coordinates + Coordinates3D.West,
+                    descriptor.Coordinates + Coordinates3D.West
                 };
 
                 foreach (var coords in adjacent)
@@ -60,8 +55,9 @@ namespace TrueCraft.Core.Logic.Blocks
 
             if (checkSupport)
             {
-                var supportingBlock = repository.GetBlockProvider(world.GetBlockID(descriptor.Coordinates + Coordinates3D.Down));
-                if ((supportingBlock.ID != CactusBlock.BlockID) && (supportingBlock.ID != SandBlock.BlockID))
+                var supportingBlock =
+                    repository.GetBlockProvider(world.GetBlockID(descriptor.Coordinates + Coordinates3D.Down));
+                if (supportingBlock.ID != BlockID && supportingBlock.ID != SandBlock.BlockID)
                     return false;
             }
 
@@ -73,12 +69,10 @@ namespace TrueCraft.Core.Logic.Blocks
             if (world.GetBlockID(coords) != BlockID)
                 return;
             // Find current height of stalk
-            int height = 0;
-            for (int y = -MaxGrowHeight; y <= MaxGrowHeight; y++)
-            {
-                if (world.GetBlockID(coords + (Coordinates3D.Down * y)) == BlockID)
+            var height = 0;
+            for (var y = -MaxGrowHeight; y <= MaxGrowHeight; y++)
+                if (world.GetBlockID(coords + Coordinates3D.Down * y) == BlockID)
                     height++;
-            }
             if (height < MaxGrowHeight)
             {
                 var meta = world.GetMetadata(coords);
@@ -92,14 +86,14 @@ namespace TrueCraft.Core.Logic.Blocks
                         world.SetBlockID(coords + Coordinates3D.Up, BlockID);
                         server.Scheduler.ScheduleEvent("cactus", chunk,
                             TimeSpan.FromSeconds(MathHelper.Random.Next(MinGrowthSeconds, MaxGrowthSeconds)),
-                            (_server) => TryGrowth(_server, coords + Coordinates3D.Up, world));
+                            _server => TryGrowth(_server, coords + Coordinates3D.Up, world));
                     }
                 }
                 else
                 {
                     server.Scheduler.ScheduleEvent("cactus", chunk,
                         TimeSpan.FromSeconds(MathHelper.Random.Next(MinGrowthSeconds, MaxGrowthSeconds)),
-                        (_server) => TryGrowth(_server, coords, world));
+                        _server => TryGrowth(_server, coords, world));
                 }
             }
         }
@@ -109,10 +103,10 @@ namespace TrueCraft.Core.Logic.Blocks
             var toDrop = 0;
 
             // Search upwards
-            for (int y = descriptor.Coordinates.Y; y < 127; y++)
+            for (var y = descriptor.Coordinates.Y; y < 127; y++)
             {
                 var coordinates = new Coordinates3D(descriptor.Coordinates.X, y, descriptor.Coordinates.Z);
-                if (world.GetBlockID(coordinates) == CactusBlock.BlockID)
+                if (world.GetBlockID(coordinates) == BlockID)
                 {
                     world.SetBlockID(coordinates, AirBlock.BlockID);
                     toDrop++;
@@ -120,10 +114,10 @@ namespace TrueCraft.Core.Logic.Blocks
             }
 
             // Search downwards.
-            for (int y = descriptor.Coordinates.Y - 1; y > 0; y--)
+            for (var y = descriptor.Coordinates.Y - 1; y > 0; y--)
             {
                 var coordinates = new Coordinates3D(descriptor.Coordinates.X, y, descriptor.Coordinates.Z);
-                if (world.GetBlockID(coordinates) == CactusBlock.BlockID)
+                if (world.GetBlockID(coordinates) == BlockID)
                 {
                     world.SetBlockID(coordinates, AirBlock.BlockID);
                     toDrop++;
@@ -133,13 +127,15 @@ namespace TrueCraft.Core.Logic.Blocks
             var manager = server.GetEntityManagerForWorld(world);
             manager.SpawnEntity(
                 new ItemEntity(descriptor.Coordinates + Coordinates3D.Up,
-                    new ItemStack(CactusBlock.BlockID, (sbyte)toDrop)));
+                    new ItemStack(BlockID, (sbyte) toDrop)));
         }
 
         public override void BlockPlaced(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
         {
             if (ValidCactusPosition(descriptor, user.Server.BlockRepository, world))
+            {
                 base.BlockPlaced(descriptor, face, world, user);
+            }
             else
             {
                 world.SetBlockID(descriptor.Coordinates, AirBlock.BlockID);
@@ -147,17 +143,18 @@ namespace TrueCraft.Core.Logic.Blocks
                 var manager = user.Server.GetEntityManagerForWorld(world);
                 manager.SpawnEntity(
                     new ItemEntity(descriptor.Coordinates + Coordinates3D.Up,
-                        new ItemStack(CactusBlock.BlockID, (sbyte)1)));
+                        new ItemStack(BlockID, 1)));
                 // user.Inventory.PickUpStack() wasn't working?
             }
 
             var chunk = world.FindChunk(descriptor.Coordinates);
             user.Server.Scheduler.ScheduleEvent("cactus", chunk,
                 TimeSpan.FromSeconds(MathHelper.Random.Next(MinGrowthSeconds, MaxGrowthSeconds)),
-                (server) => TryGrowth(server, descriptor.Coordinates, world));
+                server => TryGrowth(server, descriptor.Coordinates, world));
         }
 
-        public override void BlockUpdate(BlockDescriptor descriptor, BlockDescriptor source, IMultiplayerServer server, IWorld world)
+        public override void BlockUpdate(BlockDescriptor descriptor, BlockDescriptor source, IMultiplayerServer server,
+            IWorld world)
         {
             if (!ValidCactusPosition(descriptor, server.BlockRepository, world))
                 DestroyCactus(descriptor, server, world);

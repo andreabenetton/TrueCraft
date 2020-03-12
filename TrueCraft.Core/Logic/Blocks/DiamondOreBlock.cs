@@ -1,6 +1,6 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Items;
 
 namespace TrueCraft.Core.Logic.Blocks
@@ -8,34 +8,22 @@ namespace TrueCraft.Core.Logic.Blocks
     public class DiamondOreBlock : BlockProvider, ISmeltableItem
     {
         public static readonly byte BlockID = 0x38;
-        
-        public override byte ID { get { return 0x38; } }
-        
-        public override double BlastResistance { get { return 15; } }
 
-        public override double Hardness { get { return 3; } }
+        public override byte ID => 0x38;
 
-        public override byte Luminance { get { return 0; } }
-        
-        public override string DisplayName { get { return "Diamond Ore"; } }
+        public override double BlastResistance => 15;
 
-        public ItemStack SmeltingOutput { get { return new ItemStack(DiamondItem.ItemID); } }
+        public override double Hardness => 3;
 
-        public override ToolMaterial EffectiveToolMaterials
-        {
-            get
-            {
-                return ToolMaterial.Iron | ToolMaterial.Diamond;
-            }
-        }
+        public override byte Luminance => 0;
 
-        public override ToolType EffectiveTools
-        {
-            get
-            {
-                return ToolType.Pickaxe;
-            }
-        }
+        public override string DisplayName => "Diamond Ore";
+
+        public override ToolMaterial EffectiveToolMaterials => ToolMaterial.Iron | ToolMaterial.Diamond;
+
+        public override ToolType EffectiveTools => ToolType.Pickaxe;
+
+        public ItemStack SmeltingOutput => new ItemStack(DiamondItem.ItemID);
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
@@ -44,7 +32,7 @@ namespace TrueCraft.Core.Logic.Blocks
 
         protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
         {
-            return new[] { new ItemStack(DiamondItem.ItemID, 1, descriptor.Metadata) };
+            return new[] {new ItemStack(DiamondItem.ItemID, 1, descriptor.Metadata)};
         }
     }
 }

@@ -5,19 +5,20 @@ namespace TrueCraft.Core.Logging
 {
     public class ConsoleLogProvider : ILogProvider
     {
-        public LogCategory EnabledCategories { get; set; }
-
-        public ConsoleLogProvider(LogCategory enabledCategories = LogCategory.Notice | LogCategory.Warning | LogCategory.Error)
+        public ConsoleLogProvider(
+            LogCategory enabledCategories = LogCategory.Notice | LogCategory.Warning | LogCategory.Error)
         {
             EnabledCategories = enabledCategories;
         }
+
+        public LogCategory EnabledCategories { get; set; }
 
         public void Log(LogCategory category, string text, params object[] parameters)
         {
             if ((EnabledCategories & category) != 0)
             {
                 Console.Write(LogHelpers.GetTimestamp());
-                ConsoleColor currentColor = Console.ForegroundColor;
+                var currentColor = Console.ForegroundColor;
                 Console.ForegroundColor = LogHelpers.GetCategoryColor(category);
                 Console.Write(category.ToString());
                 // Better to restore original than ResetColor

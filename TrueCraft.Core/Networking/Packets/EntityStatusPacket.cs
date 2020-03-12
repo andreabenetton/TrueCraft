@@ -3,7 +3,7 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Gives updates to what entities are doing.
+    ///     Gives updates to what entities are doing.
     /// </summary>
     public struct EntityStatusPacket : IPacket
     {
@@ -17,7 +17,7 @@ namespace TrueCraft.Core.Networking.Packets
             EatingAccepted = 9 // what
         }
 
-        public byte ID { get { return 0x26; } }
+        public byte ID => 0x26;
 
         public int EntityID;
         public EntityStatus Status;
@@ -25,13 +25,13 @@ namespace TrueCraft.Core.Networking.Packets
         public void ReadPacket(IMinecraftStream stream)
         {
             EntityID = stream.ReadInt32();
-            Status = (EntityStatus)stream.ReadInt8();
+            Status = (EntityStatus) stream.ReadInt8();
         }
 
         public void WritePacket(IMinecraftStream stream)
         {
             stream.WriteInt32(EntityID);
-            stream.WriteInt8((sbyte)Status);
+            stream.WriteInt8((sbyte) Status);
         }
     }
 }

@@ -9,6 +9,6 @@ namespace TrueCraft.Core.Entities
         Crouched = 0x02,
         Riding = 0x04,
         Sprinting = 0x08,
-        Eating = 0x10,
+        Eating = 0x10
     }
 }

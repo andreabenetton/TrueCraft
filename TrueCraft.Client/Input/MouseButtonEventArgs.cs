@@ -1,22 +1,12 @@
 ﻿namespace TrueCraft.Client.Input
 {
     /// <summary>
-    /// Provides the event data for mouse button events.
+    ///     Provides the event data for mouse button events.
     /// </summary>
     public class MouseButtonEventArgs : MouseEventArgs
     {
         /// <summary>
-        /// Gets the mouse button for the event.
-        /// </summary>
-        public MouseButton Button { get; private set; }
-
-        /// <summary>
-        /// Gets whether the button was pressed or released.
-        /// </summary>
-        public bool IsPressed { get; private set; }
-
-        /// <summary>
-        /// Creates new mouse button event data.
+        ///     Creates new mouse button event data.
         /// </summary>
         /// <param name="x">The X coordinate for the event.</param>
         /// <param name="y">The Y coordinate for the event.</param>
@@ -28,5 +18,15 @@
             Button = button;
             IsPressed = isPressed;
         }
+
+        /// <summary>
+        ///     Gets the mouse button for the event.
+        /// </summary>
+        public MouseButton Button { get; }
+
+        /// <summary>
+        ///     Gets whether the button was pressed or released.
+        /// </summary>
+        public bool IsPressed { get; }
     }
 }

@@ -1,32 +1,27 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
-using TrueCraft.Core.Logic.Items;
-using TrueCraft.API.World;
+using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
+using TrueCraft.API.World;
+using TrueCraft.Core.Logic.Items;
 
 namespace TrueCraft.Core.Logic.Blocks
 {
     public class PistonBlock : BlockProvider, ICraftingRecipe
     {
         public static readonly byte BlockID = 0x21;
-        
-        public override byte ID { get { return 0x21; } }
-        
-        public override double BlastResistance { get { return 2.5; } }
 
-        public override double Hardness { get { return 0.5; } }
+        public override byte ID => 0x21;
 
-        public override byte Luminance { get { return 0; } }
+        public override double BlastResistance => 2.5;
 
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Piston"; } }
+        public override double Hardness => 0.5;
 
-        public override Tuple<int, int> GetTextureMap(byte metadata)
-        {
-            return new Tuple<int, int>(11, 6);
-        }
+        public override byte Luminance => 0;
+
+        public override bool Opaque => false;
+
+        public override string DisplayName => "Piston";
 
         public ItemStack[,] Pattern
         {
@@ -53,21 +48,20 @@ namespace TrueCraft.Core.Logic.Blocks
             }
         }
 
-        public ItemStack Output
-        {
-            get { return new ItemStack(BlockID); }
-        }
+        public ItemStack Output => new ItemStack(BlockID);
 
-        public bool SignificantMetadata
+        public bool SignificantMetadata => false;
+
+        public override Tuple<int, int> GetTextureMap(byte metadata)
         {
-            get { return false; }
+            return new Tuple<int, int>(11, 6);
         }
 
         public override void BlockPlaced(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
         {
             world.SetMetadata(descriptor.Coordinates,
-                (byte)MathHelper.DirectionByRotation(user.Entity.Position, user.Entity.Yaw,
-                descriptor.Coordinates, true));
+                (byte) MathHelper.DirectionByRotation(user.Entity.Position, user.Entity.Yaw,
+                    descriptor.Coordinates, true));
         }
     }
 
@@ -75,22 +69,17 @@ namespace TrueCraft.Core.Logic.Blocks
     {
         public static readonly byte BlockID = 0x1D;
 
-        public override byte ID { get { return 0x1D; } }
+        public override byte ID => 0x1D;
 
-        public override double BlastResistance { get { return 2.5; } }
+        public override double BlastResistance => 2.5;
 
-        public override double Hardness { get { return 0.5; } }
+        public override double Hardness => 0.5;
 
-        public override byte Luminance { get { return 0; } }
+        public override byte Luminance => 0;
 
-        public override bool Opaque { get { return false; } }
+        public override bool Opaque => false;
 
-        public override string DisplayName { get { return "Sticky Piston"; } }
-
-        public override Tuple<int, int> GetTextureMap(byte metadata)
-        {
-            return new Tuple<int, int>(10, 6);
-        }
+        public override string DisplayName => "Sticky Piston";
 
         public ItemStack[,] Pattern
         {
@@ -104,21 +93,20 @@ namespace TrueCraft.Core.Logic.Blocks
             }
         }
 
-        public ItemStack Output
-        {
-            get { return new ItemStack(BlockID); }
-        }
+        public ItemStack Output => new ItemStack(BlockID);
 
-        public bool SignificantMetadata
+        public bool SignificantMetadata => false;
+
+        public override Tuple<int, int> GetTextureMap(byte metadata)
         {
-            get { return false; }
+            return new Tuple<int, int>(10, 6);
         }
 
         public override void BlockPlaced(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
         {
             world.SetMetadata(descriptor.Coordinates,
-                (byte)MathHelper.DirectionByRotation(user.Entity.Position, user.Entity.Yaw,
-                descriptor.Coordinates, true));
+                (byte) MathHelper.DirectionByRotation(user.Entity.Position, user.Entity.Yaw,
+                    descriptor.Coordinates, true));
         }
     }
 
@@ -126,15 +114,15 @@ namespace TrueCraft.Core.Logic.Blocks
     {
         public static readonly byte BlockID = 0x22;
 
-        public override byte ID { get { return 0x22; } }
+        public override byte ID => 0x22;
 
-        public override double BlastResistance { get { return 2.5; } }
+        public override double BlastResistance => 2.5;
 
-        public override double Hardness { get { return 0.5; } }
+        public override double Hardness => 0.5;
 
-        public override byte Luminance { get { return 0; } }
+        public override byte Luminance => 0;
 
-        public override string DisplayName { get { return "Piston Plunger"; } }
+        public override string DisplayName => "Piston Plunger";
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
@@ -146,14 +134,14 @@ namespace TrueCraft.Core.Logic.Blocks
     {
         public static readonly byte BlockID = 0x24;
 
-        public override byte ID { get { return 0x24; } }
+        public override byte ID => 0x24;
 
-        public override double BlastResistance { get { return 0; } }
+        public override double BlastResistance => 0;
 
-        public override double Hardness { get { return 0; } }
+        public override double Hardness => 0;
 
-        public override byte Luminance { get { return 0; } }
+        public override byte Luminance => 0;
 
-        public override string DisplayName { get { return "Piston Placeholder"; } }
+        public override string DisplayName => "Piston Placeholder";
     }
 }

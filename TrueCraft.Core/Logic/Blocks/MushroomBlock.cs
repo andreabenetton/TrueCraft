@@ -3,33 +3,26 @@ using TrueCraft.API.Logic;
 
 namespace TrueCraft.Core.Logic.Blocks
 {
-
     public abstract class MushroomBlock : BlockProvider
     {
-        public override double BlastResistance { get { return 0; } }
+        public override double BlastResistance => 0;
 
-        public override double Hardness { get { return 0; } }
+        public override double Hardness => 0;
 
-        public override SoundEffectClass SoundEffect
-        {
-            get
-            {
-                return SoundEffectClass.Grass;
-            }
-        }
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Grass;
     }
 
     public class BrownMushroomBlock : MushroomBlock
     {
         public static readonly byte BlockID = 0x27;
-        
-        public override byte ID { get { return 0x27; } }
 
-        public override byte Luminance { get { return 1; } }
+        public override byte ID => 0x27;
 
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Brown Mushroom"; } }
+        public override byte Luminance => 1;
+
+        public override bool Opaque => false;
+
+        public override string DisplayName => "Brown Mushroom";
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
@@ -41,11 +34,11 @@ namespace TrueCraft.Core.Logic.Blocks
     {
         public static readonly byte BlockID = 0x28;
 
-        public override byte ID { get { return 0x28; } }
+        public override byte ID => 0x28;
 
-        public override byte Luminance { get { return 0; } }
+        public override byte Luminance => 0;
 
-        public override string DisplayName { get { return "Red Mushroom"; } }
+        public override string DisplayName => "Red Mushroom";
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {

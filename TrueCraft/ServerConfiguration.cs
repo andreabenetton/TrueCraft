@@ -1,12 +1,15 @@
-﻿using TrueCraft.API;
-using YamlDotNet.Serialization;
+﻿using Newtonsoft.Json;
+using TrueCraft.API;
 
 namespace TrueCraft
 {
+    [JsonObject(MemberSerialization.OptIn)]
     public class ServerConfiguration : Configuration
     {
+        [JsonObject(MemberSerialization.OptIn)]
         public class DebugConfiguration
         {
+            [JsonObject(MemberSerialization.OptIn)]
             public class ProfilerConfiguration
             {
                 public ProfilerConfiguration()
@@ -14,10 +17,10 @@ namespace TrueCraft
                     Buckets = "";
                 }
 
-                [YamlMember(Alias = "buckets")]
+                [JsonProperty(PropertyName = "buckets")]
                 public string Buckets { get; set; }
 
-                [YamlMember(Alias = "lag")]
+                [JsonProperty(PropertyName = "lag")]
                 public bool Lag { get; set; }
             }
 
@@ -27,13 +30,13 @@ namespace TrueCraft
                 DeletePlayersOnStartup = false;
             }
 
-            [YamlMember(Alias = "deleteWorldOnStartup")]
+            [JsonProperty(PropertyName = "deleteWorldOnStartup")]
             public bool DeleteWorldOnStartup { get; set; }
 
-            [YamlMember(Alias = "deletePlayersOnStartup")]
+            [JsonProperty(PropertyName = "deletePlayersOnStartup")]
             public bool DeletePlayersOnStartup { get; set; }
 
-            [YamlMember(Alias = "profiler")]
+            [JsonProperty(PropertyName = "profiler")]
             public ProfilerConfiguration Profiler { get; set; }
         }
 
@@ -52,37 +55,36 @@ namespace TrueCraft
             DisabledEvents = new string[0];
         }
 
-        [YamlMember(Alias = "motd")]
+        [JsonProperty(PropertyName = "motd")]
         public string MOTD { get; set; }
 
-        [YamlMember(Alias = "bind-port")]
+        [JsonProperty(PropertyName = "bind-port")]
         public int ServerPort {get; set; }
 
-        [YamlMember(Alias = "bind-endpoint")]
+        [JsonProperty(PropertyName = "bind-endpoint")]
         public string ServerAddress { get; set; }
 
-        [YamlMember(Alias = "debug")]
+        [JsonProperty(PropertyName = "debug")]
         public DebugConfiguration Debug { get; set; }
 
-        [YamlMember(Alias = "save-interval")]
+        [JsonProperty(PropertyName = "save-interval")]
         public int WorldSaveInterval { get; set; }
 
-        [YamlIgnore]
         public bool Singleplayer { get; set; }
 
-        [YamlMember(Alias = "query-enabled")]
+        [JsonProperty(PropertyName = "query-enabled")]
         public bool Query { get; set; }
 
-        [YamlMember(Alias = "query-port")]
+        [JsonProperty(PropertyName = "query-port")]
         public int QueryPort { get; set; }
 
-        [YamlMember(Alias = "enable-lighting")]
+        [JsonProperty(PropertyName = "enable-lighting")]
         public bool EnableLighting { get; set; }
-        
-        [YamlMember(Alias = "enable-event-loading")]
+
+        [JsonProperty(PropertyName = "enable-event-loading")]
         public bool EnableEventLoading { get; set; }
-        
-        [YamlMember(Alias = "disable-events")]
+
+        [JsonProperty(PropertyName = "disable-events")]
         public string[] DisabledEvents { get; set; }
     }
 }

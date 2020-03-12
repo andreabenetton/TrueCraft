@@ -1,10 +1,10 @@
 using System;
-using TrueCraft.API.Logic;
-using TrueCraft.API;
-using TrueCraft.Core.Logic.Items;
-using TrueCraft.API.World;
-using TrueCraft.API.Networking;
 using System.Linq;
+using TrueCraft.API;
+using TrueCraft.API.Logic;
+using TrueCraft.API.Networking;
+using TrueCraft.API.World;
+using TrueCraft.Core.Logic.Items;
 
 namespace TrueCraft.Core.Logic.Blocks
 {
@@ -20,38 +20,43 @@ namespace TrueCraft.Core.Logic.Blocks
         }
 
         public static readonly byte BlockID = 0x32;
-        
-        public override byte ID { get { return 0x32; } }
-        
-        public override double BlastResistance { get { return 0; } }
 
-        public override double Hardness { get { return 0; } }
+        public override byte ID => 0x32;
 
-        public override byte Luminance { get { return 13; } }
+        public override double BlastResistance => 0;
 
-        public override bool Opaque { get { return false; } }
+        public override double Hardness => 0;
 
-        public override bool RenderOpaque { get { return true; } }
-        
-        public override string DisplayName { get { return "Torch"; } }
+        public override byte Luminance => 13;
 
-        public override SoundEffectClass SoundEffect
+        public override bool Opaque => false;
+
+        public override bool RenderOpaque => true;
+
+        public override string DisplayName => "Torch";
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Wood;
+
+        public override BoundingBox? BoundingBox => null;
+
+        public override BoundingBox? InteractiveBoundingBox => new BoundingBox(new Vector3(4 / 16.0, 0, 4 / 16.0),
+            new Vector3(12 / 16.0, 7.0 / 16.0, 12 / 16.0));
+
+        public virtual ItemStack[,] Pattern
         {
             get
             {
-                return SoundEffectClass.Wood;
+                return new[,]
+                {
+                    {new ItemStack(CoalItem.ItemID)},
+                    {new ItemStack(StickItem.ItemID)}
+                };
             }
         }
 
-        public override BoundingBox? BoundingBox { get { return null; } }
+        public virtual ItemStack Output => new ItemStack(BlockID, 4);
 
-        public override BoundingBox? InteractiveBoundingBox
-        {
-            get
-            {
-                return new BoundingBox(new Vector3(4 / 16.0, 0, 4 / 16.0), new Vector3(12 / 16.0, 7.0 / 16.0, 12 / 16.0));
-            }
-        }
+        public virtual bool SignificantMetadata => false;
 
         public override void BlockPlaced(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
         {
@@ -80,17 +85,20 @@ namespace TrueCraft.Core.Logic.Blocks
                     direction = TorchDirection.Ground;
                     break;
             }
-            int i = 0;
-            descriptor.Metadata = (byte)direction;
+
+            var i = 0;
+            descriptor.Metadata = (byte) direction;
             while (!IsSupported(descriptor, user.Server, world) && i < preferredDirections.Length)
             {
                 direction = preferredDirections[i++];
-                descriptor.Metadata = (byte)direction;
+                descriptor.Metadata = (byte) direction;
             }
+
             world.SetBlockData(descriptor.Coordinates, descriptor);
         }
 
-        public override void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world, IRemoteClient user)
+        public override void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             coordinates += MathHelper.BlockFaceToCoordinates(face);
             var old = world.GetBlockData(coordinates);
@@ -106,12 +114,14 @@ namespace TrueCraft.Core.Logic.Blocks
             {
                 var data = world.GetBlockData(coordinates);
                 data.ID = ID;
-                data.Metadata = (byte)item.Metadata;
+                data.Metadata = (byte) item.Metadata;
 
                 BlockPlaced(data, face, world, user);
 
                 if (!IsSupported(world.GetBlockData(coordinates), user.Server, world))
+                {
                     world.SetBlockData(coordinates, old);
+                }
                 else
                 {
                     item.Count--;
@@ -122,7 +132,7 @@ namespace TrueCraft.Core.Logic.Blocks
 
         public override Coordinates3D GetSupportDirection(BlockDescriptor descriptor)
         {
-            switch ((TorchDirection)descriptor.Metadata)
+            switch ((TorchDirection) descriptor.Metadata)
             {
                 case TorchDirection.Ground:
                     return Coordinates3D.Down;
@@ -135,40 +145,13 @@ namespace TrueCraft.Core.Logic.Blocks
                 case TorchDirection.South:
                     return Coordinates3D.North;
             }
+
             return Coordinates3D.Zero;
         }
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
             return new Tuple<int, int>(0, 5);
-        }
-            
-        public virtual ItemStack[,] Pattern
-        {
-            get
-            {
-                return new[,]
-                {
-                    { new ItemStack(CoalItem.ItemID) },
-                    { new ItemStack(StickItem.ItemID) }
-                };
-            }
-        }
-
-        public virtual ItemStack Output
-        {
-            get
-            {
-                return new ItemStack(TorchBlock.BlockID, 4);
-            }
-        }
-
-        public virtual bool SignificantMetadata
-        {
-            get
-            {
-                return false;
-            }
         }
     }
 }

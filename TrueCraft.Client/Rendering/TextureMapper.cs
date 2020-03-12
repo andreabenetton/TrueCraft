@@ -1,60 +1,24 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework.Graphics;
-using TrueCraft.Core;
+using System.IO;
 using Ionic.Zip;
+using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Utilities.Png;
+using TrueCraft.Core;
 
 namespace TrueCraft.Client.Rendering
 {
     /// <summary>
-    /// Provides mappings from keys to textures.
+    ///     Provides mappings from keys to textures.
     /// </summary>
     public sealed class TextureMapper : IDisposable
     {
         /// <summary>
-        /// 
         /// </summary>
         public static readonly IDictionary<string, Texture2D> Defaults =
             new Dictionary<string, Texture2D>();
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="graphicsDevice"></param>
-        public static void LoadDefaults(GraphicsDevice graphicsDevice)
-        {
-            Defaults.Clear();
-
-            Defaults.Add("terrain.png", new PngReader().Read(File.OpenRead("Content/terrain.png"), graphicsDevice));
-            Defaults.Add("gui/items.png", new PngReader().Read(File.OpenRead("Content/items.png"), graphicsDevice));
-            Defaults.Add("gui/gui.png", new PngReader().Read(File.OpenRead("Content/gui.png"), graphicsDevice));
-            Defaults.Add("gui/icons.png", new PngReader().Read(File.OpenRead("Content/icons.png"), graphicsDevice));
-            Defaults.Add("gui/crafting.png", new PngReader().Read(File.OpenRead("Content/crafting.png"), graphicsDevice));
-            Defaults.Add("gui/furnace.png", new PngReader().Read(File.OpenRead("Content/furnace.png"), graphicsDevice));
-            Defaults.Add("gui/inventory.png", new PngReader().Read(File.OpenRead("Content/inventory.png"), graphicsDevice));
-            Defaults.Add("terrain/moon.png", new PngReader().Read(File.OpenRead("Content/moon.png"), graphicsDevice));
-            Defaults.Add("terrain/sun.png", new PngReader().Read(File.OpenRead("Content/sun.png"), graphicsDevice));
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private GraphicsDevice Device { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private IDictionary<string, Texture2D> Customs { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public bool IsDisposed { get; private set; }
-
-        /// <summary>
-        /// 
         /// </summary>
         /// <param name="graphicsDevice"></param>
         public TextureMapper(GraphicsDevice graphicsDevice)
@@ -65,13 +29,59 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// 
+        /// </summary>
+        private GraphicsDevice Device { get; set; }
+
+        /// <summary>
+        /// </summary>
+        private IDictionary<string, Texture2D> Customs { get; set; }
+
+        /// <summary>
+        /// </summary>
+        public bool IsDisposed { get; private set; }
+
+        /// <summary>
+        /// </summary>
+        public void Dispose()
+        {
+            if (IsDisposed)
+                return;
+
+            foreach (var pair in Customs)
+                pair.Value.Dispose();
+
+            Customs = null;
+            Device = null;
+            IsDisposed = true;
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="graphicsDevice"></param>
+        public static void LoadDefaults(GraphicsDevice graphicsDevice)
+        {
+            Defaults.Clear();
+
+            Defaults.Add("terrain.png", new PngReader().Read(File.OpenRead("Content/terrain.png"), graphicsDevice));
+            Defaults.Add("gui/items.png", new PngReader().Read(File.OpenRead("Content/items.png"), graphicsDevice));
+            Defaults.Add("gui/gui.png", new PngReader().Read(File.OpenRead("Content/gui.png"), graphicsDevice));
+            Defaults.Add("gui/icons.png", new PngReader().Read(File.OpenRead("Content/icons.png"), graphicsDevice));
+            Defaults.Add("gui/crafting.png",
+                new PngReader().Read(File.OpenRead("Content/crafting.png"), graphicsDevice));
+            Defaults.Add("gui/furnace.png", new PngReader().Read(File.OpenRead("Content/furnace.png"), graphicsDevice));
+            Defaults.Add("gui/inventory.png",
+                new PngReader().Read(File.OpenRead("Content/inventory.png"), graphicsDevice));
+            Defaults.Add("terrain/moon.png", new PngReader().Read(File.OpenRead("Content/moon.png"), graphicsDevice));
+            Defaults.Add("terrain/sun.png", new PngReader().Read(File.OpenRead("Content/sun.png"), graphicsDevice));
+        }
+
+        /// <summary>
         /// </summary>
         /// <param name="key"></param>
         /// <param name="texture"></param>
         public void AddTexture(string key, Texture2D texture)
         {
-            if (string.IsNullOrEmpty(key) || (texture == null))
+            if (string.IsNullOrEmpty(key) || texture == null)
                 throw new ArgumentException();
 
             if (Customs.ContainsKey(key))
@@ -81,7 +91,6 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="texturePack"></param>
         public void AddTexturePack(TexturePack texturePack)
@@ -98,7 +107,6 @@ namespace TrueCraft.Client.Rendering
                 {
                     var key = entry.FileName;
                     if (Path.GetExtension(key) == ".png")
-                    {
                         using (var stream = entry.OpenReader())
                         {
                             try
@@ -110,9 +118,12 @@ namespace TrueCraft.Client.Rendering
                                     AddTexture(key, new PngReader().Read(ms, Device));
                                 }
                             }
-                            catch (Exception ex) { Console.WriteLine("Exception occured while loading {0} from texture pack:\n\n{1}", key, ex); }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Exception occured while loading {0} from texture pack:\n\n{1}", key,
+                                    ex);
+                            }
                         }
-                    }
                 }
             }
             catch
@@ -123,16 +134,12 @@ namespace TrueCraft.Client.Rendering
 
         public static void CopyStream(Stream input, Stream output)
         {
-            byte[] buffer = new byte[16*1024];
+            var buffer = new byte[16 * 1024];
             int read;
-            while((read = input.Read (buffer, 0, buffer.Length)) > 0)
-            {
-                output.Write(buffer, 0, read);
-            }
+            while ((read = input.Read(buffer, 0, buffer.Length)) > 0) output.Write(buffer, 0, read);
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
@@ -146,7 +153,6 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="key"></param>
         /// <param name="texture"></param>
@@ -158,35 +164,19 @@ namespace TrueCraft.Client.Rendering
 
             // -> Try to load from custom textures
             var inCustom = Customs.TryGetValue(key, out var customTexture);
-            texture = (inCustom) ? customTexture : null;
+            texture = inCustom ? customTexture : null;
             var hasTexture = inCustom;
 
             // -> Try to load from default textures
             if (!hasTexture)
             {
                 var inDefault = Defaults.TryGetValue(key, out var defaultTexture);
-                texture = (inDefault) ? defaultTexture : null;
+                texture = inDefault ? defaultTexture : null;
                 hasTexture = inDefault;
             }
 
             // -> Fail gracefully
             return hasTexture;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public void Dispose()
-        {
-            if (IsDisposed)
-                return;
-
-            foreach (var pair in Customs)
-                pair.Value.Dispose();
-
-            Customs = null;
-            Device = null;
-            IsDisposed = true;
         }
     }
 }

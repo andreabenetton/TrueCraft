@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using TrueCraft.API;
 using TrueCraft.API.World;
+using TrueCraft.Core.Logic.Blocks;
 using TrueCraft.Core.TerrainGen.Noise;
 using TrueCraft.Core.World;
-using TrueCraft.API;
-using TrueCraft.Core.Logic.Blocks;
 
 namespace TrueCraft.Core.TerrainGen.Decorators
 {
@@ -60,50 +60,50 @@ namespace TrueCraft.Core.TerrainGen.Decorators
             var chanceNoise = new ClampNoise(perlin);
             var noise = new ScaledNoise(perlin);
             var random = new Random(world.Seed);
-            var lowWeightOffset = new int[2] { 2, 3 };
-            var highWeightOffset = new int[2] { 2, 2 };
+            var lowWeightOffset = new int[2] {2, 3};
+            var highWeightOffset = new int[2] {2, 2};
             foreach (var data in Ores)
             {
                 var midpoint = (data.MaxY + data.MinY) / 2;
-                var weightOffsets = (data.MaxY > 30) ? highWeightOffset : lowWeightOffset;
+                var weightOffsets = data.MaxY > 30 ? highWeightOffset : lowWeightOffset;
                 const int weightPasses = 4;
-                for (int i = 0; i < data.Veins; i++)
+                for (var i = 0; i < data.Veins; i++)
                 {
                     double weight = 0;
-                    for (int j = 0; j < weightPasses; j++)
-                    {
-                        weight += random.NextDouble();
-                    }
+                    for (var j = 0; j < weightPasses; j++) weight += random.NextDouble();
                     weight /= data.Rarity;
                     weight = weightOffsets[0] - Math.Abs(weight - weightOffsets[1]);
                     double x = random.Next(0, Chunk.Width);
                     double z = random.Next(0, Chunk.Depth);
-                    double y = weight * midpoint;
+                    var y = weight * midpoint;
 
-                    double randomOffsetX = (float)random.NextDouble() - 1;
-                    double randomOffsetY = (float)random.NextDouble() - 1;
-                    double randomOffsetZ = (float)random.NextDouble() - 1;
+                    double randomOffsetX = (float) random.NextDouble() - 1;
+                    double randomOffsetY = (float) random.NextDouble() - 1;
+                    double randomOffsetZ = (float) random.NextDouble() - 1;
 
-                    int abundance = random.Next(0, data.Abundance);
-                    for (int k = 0; k < abundance; k++)
+                    var abundance = random.Next(0, data.Abundance);
+                    for (var k = 0; k < abundance; k++)
                     {
                         x += randomOffsetX;
                         y += randomOffsetY;
                         z += randomOffsetZ;
                         if (x >= 0 && z >= 0 && y >= data.MinY && x < Chunk.Width && y < data.MaxY && z < Chunk.Depth)
                         {
-                            var biome = biomes.GetBiome(chunk.Biomes[(int)(x * Chunk.Width + z)]);
-                            if (biome.Ores.Contains(data.Type) && chunk.GetBlockID(new Coordinates3D((int)x, (int)y, (int)z)).Equals(StoneBlock.BlockID))
-                                chunk.SetBlockID(new Coordinates3D((int)x, (int)y, (int)z), data.ID);
+                            var biome = biomes.GetBiome(chunk.Biomes[(int) (x * Chunk.Width + z)]);
+                            if (biome.Ores.Contains(data.Type) && chunk
+                                .GetBlockID(new Coordinates3D((int) x, (int) y, (int) z))
+                                .Equals(StoneBlock.BlockID))
+                                chunk.SetBlockID(new Coordinates3D((int) x, (int) y, (int) z), data.ID);
                         }
-                        var blockX = MathHelper.ChunkToBlockX((int)(x), chunk.Coordinates.X);
-                        var blockZ = MathHelper.ChunkToBlockZ((int)(z), chunk.Coordinates.Z);
+
+                        var blockX = MathHelper.ChunkToBlockX((int) x, chunk.Coordinates.X);
+                        var blockZ = MathHelper.ChunkToBlockZ((int) z, chunk.Coordinates.Z);
 
                         double offsetX = 0;
                         double offsetY = 0;
                         double offsetZ = 0;
-                        int offset = random.Next(0, 3);
-                        double offset2 = random.NextDouble();
+                        var offset = random.Next(0, 3);
+                        var offset2 = random.NextDouble();
 
                         if (offset.Equals(0) && offset2 < 0.4)
                             offsetX += 1;
@@ -112,17 +112,17 @@ namespace TrueCraft.Core.TerrainGen.Decorators
                         else
                             offsetZ += 1;
 
-                        var newX = (int)(x + offsetX);
-                        var newY = (int)(y + offsetY);
-                        var newZ = (int)(z + offsetZ);
-                        if (newX >= 0 && newZ >= 0 && newY >= data.MinY && newX < Chunk.Width && newY < data.MaxY && newZ < Chunk.Depth)
+                        var newX = (int) (x + offsetX);
+                        var newY = (int) (y + offsetY);
+                        var newZ = (int) (z + offsetZ);
+                        if (newX >= 0 && newZ >= 0 && newY >= data.MinY && newX < Chunk.Width && newY < data.MaxY &&
+                            newZ < Chunk.Depth)
                         {
-                            IBiomeProvider Biome = biomes.GetBiome(chunk.Biomes[newX * Chunk.Width + newZ]);
-                            var coordinates = new Coordinates3D((int)newX, (int)newY, (int)newZ);
-                            if (Biome.Ores.Contains(data.Type) && chunk.GetBlockID(coordinates).Equals(StoneBlock.BlockID))
-                            {
+                            var Biome = biomes.GetBiome(chunk.Biomes[newX * Chunk.Width + newZ]);
+                            var coordinates = new Coordinates3D(newX, newY, newZ);
+                            if (Biome.Ores.Contains(data.Type) &&
+                                chunk.GetBlockID(coordinates).Equals(StoneBlock.BlockID))
                                 chunk.SetBlockID(coordinates, data.ID);
-                            }
                         }
                     }
                 }

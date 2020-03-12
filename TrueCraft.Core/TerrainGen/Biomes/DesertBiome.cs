@@ -1,68 +1,29 @@
-﻿using TrueCraft.Core.Logic.Blocks;
-using TrueCraft.API;
+﻿using TrueCraft.API;
+using TrueCraft.Core.Logic.Blocks;
 
 namespace TrueCraft.Core.TerrainGen.Biomes
 {
     public class DesertBiome : BiomeProvider
     {
-        public override byte ID
-        {
-            get { return (byte)Biome.Desert; }
-        }
+        public override byte ID => (byte) Biome.Desert;
 
-        public override double Temperature
-        {
-            get { return 2.0f; }
-        }
+        public override double Temperature => 2.0f;
 
-        public override double Rainfall
-        {
-            get { return 0.0f; }
-        }
-        
-        public override bool Spawn
-        {
-            get { return false; }
-        }
+        public override double Rainfall => 0.0f;
 
-        public override TreeSpecies[] Trees
-        {
-            get
-            {
-                return new TreeSpecies[0];
-            }
-        }
+        public override bool Spawn => false;
+
+        public override TreeSpecies[] Trees => new TreeSpecies[0];
 
         public override PlantSpecies[] Plants
         {
-            get
-            {
-                return new[] { PlantSpecies.Deadbush, PlantSpecies.Cactus };
-            }
+            get { return new[] {PlantSpecies.Deadbush, PlantSpecies.Cactus}; }
         }
 
-        public override byte SurfaceBlock
-        {
-            get
-            {
-                return SandBlock.BlockID;
-            }
-        }
+        public override byte SurfaceBlock => SandBlock.BlockID;
 
-        public override byte FillerBlock
-        {
-            get
-            {
-                return SandstoneBlock.BlockID;
-            }
-        }
+        public override byte FillerBlock => SandstoneBlock.BlockID;
 
-        public override int SurfaceDepth
-        {
-            get
-            {
-                return 4;
-            }
-        }
+        public override int SurfaceDepth => 4;
     }
 }

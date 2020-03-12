@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by servers to indicate that a player is using a bed. More research required on this packet.
+    ///     Sent by servers to indicate that a player is using a bed. More research required on this packet.
     /// </summary>
     public struct UseBedPacket : IPacket
     {
-        public byte ID { get { return 0x11; } }
+        public byte ID => 0x11;
 
         public int EntityID;
         public bool InBed;

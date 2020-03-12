@@ -1,10 +1,11 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Vector3 = TrueCraft.API.Vector3;
 
 namespace TrueCraft.Client.Rendering
 {
     /// <summary>
-    /// Represents a camera for use with rendering.
+    ///     Represents a camera for use with rendering.
     /// </summary>
     public class Camera
     {
@@ -12,92 +13,29 @@ namespace TrueCraft.Client.Rendering
         private float _aspectRatio;
         private float _fov, _nearZ, _farZ;
 
-        // Position/rotation
-        private TrueCraft.API.Vector3 _position;
+        // Dependent variables
+        private readonly BoundingFrustum _frustum;
+        private bool _isDirty; // Whether dependent variables need to be recalculated.
         private float _pitch, _yaw;
 
-        // Dependent variables
-        private BoundingFrustum _frustum;
+        // Position/rotation
+        private Vector3 _position;
         private Matrix _view, _projection;
-        private bool _isDirty; // Whether dependent variables need to be recalculated.
 
         /// <summary>
-        /// Gets or sets the aspect ratio for this camera.
-        /// </summary>
-        public float AspectRatio
-        {
-            get => _aspectRatio;
-            set { _aspectRatio = value; _isDirty = true; }
-        }
-
-        /// <summary>
-        /// Gets or sets the field of view for this camera, in degrees.
-        /// </summary>
-        public float Fov
-        {
-            get => _fov;
-            set { _fov = value; _isDirty = true; }
-        }
-
-        /// <summary>
-        /// Gets or sets the near Z clipping plane for this camera.
-        /// </summary>
-        public float NearZ
-        {
-            get => _nearZ;
-            set { _nearZ = value; _isDirty = true; }
-        }
-
-        /// <summary>
-        /// Gets or sets the far Z clipping plane for this camera.
-        /// </summary>
-        public float FarZ
-        {
-            get => _farZ;
-            set { _farZ = value; _isDirty = true; }
-        }
-
-        /// <summary>
-        /// Gets or sets the position of this camera.
-        /// </summary>
-        public TrueCraft.API.Vector3 Position
-        {
-            get => _position;
-            set { _position = value; _isDirty = true; }
-        }
-
-        /// <summary>
-        /// Gets or sets the pitch for this camera, in degrees.
-        /// </summary>
-        public float Pitch
-        {
-            get => _pitch;
-            set { _pitch = value; _isDirty = true; }
-        }
-
-        /// <summary>
-        /// Gets or sets the yaw for this camera, in degrees.
-        /// </summary>
-        public float Yaw
-        {
-            get => _yaw;
-            set { _yaw = value; _isDirty = true; }
-        }
-
-        /// <summary>
-        /// Creates a new camera from the specified values.
+        ///     Creates a new camera from the specified values.
         /// </summary>
         /// <param name="aspectRatio"></param>
         /// <param name="fov"></param>
         /// <param name="nearZ"></param>
         /// <param name="farZ"></param>
         public Camera(float aspectRatio, float fov, float nearZ, float farZ)
-            : this(aspectRatio, fov, nearZ, farZ, TrueCraft.API.Vector3.Zero, 0.0f, 0.0f)
+            : this(aspectRatio, fov, nearZ, farZ, Vector3.Zero, 0.0f, 0.0f)
         {
         }
 
         /// <summary>
-        /// Creates a new camera from the specified values.
+        ///     Creates a new camera from the specified values.
         /// </summary>
         /// <param name="aspectRatio"></param>
         /// <param name="fov"></param>
@@ -106,7 +44,7 @@ namespace TrueCraft.Client.Rendering
         /// <param name="position"></param>
         /// <param name="pitch"></param>
         /// <param name="yaw"></param>
-        public Camera(float aspectRatio, float fov, float nearZ, float farZ, TrueCraft.API.Vector3 position, float pitch, float yaw)
+        public Camera(float aspectRatio, float fov, float nearZ, float farZ, Vector3 position, float pitch, float yaw)
         {
             AspectRatio = aspectRatio;
             Fov = fov;
@@ -114,7 +52,8 @@ namespace TrueCraft.Client.Rendering
             FarZ = farZ;
 
             Position = position;
-            Pitch = pitch; Yaw = yaw;
+            Pitch = pitch;
+            Yaw = yaw;
 
             _frustum = new BoundingFrustum(Matrix.Identity);
             _view = _projection = Matrix.Identity;
@@ -122,20 +61,98 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// Applies this camera to the specified effect.
+        ///     Gets or sets the aspect ratio for this camera.
         /// </summary>
-        /// <param name="effect">The effect to apply this camera to.</param>
-        public void ApplyTo(IEffectMatrices effectMatrices)
+        public float AspectRatio
         {
-            if (_isDirty)
-                Recalculate();
-
-            effectMatrices.View = _view;
-            effectMatrices.Projection = _projection;
+            get => _aspectRatio;
+            set
+            {
+                _aspectRatio = value;
+                _isDirty = true;
+            }
         }
 
         /// <summary>
-        /// Returns the bounding frustum calculated for this camera.
+        ///     Gets or sets the field of view for this camera, in degrees.
+        /// </summary>
+        public float Fov
+        {
+            get => _fov;
+            set
+            {
+                _fov = value;
+                _isDirty = true;
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the near Z clipping plane for this camera.
+        /// </summary>
+        public float NearZ
+        {
+            get => _nearZ;
+            set
+            {
+                _nearZ = value;
+                _isDirty = true;
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the far Z clipping plane for this camera.
+        /// </summary>
+        public float FarZ
+        {
+            get => _farZ;
+            set
+            {
+                _farZ = value;
+                _isDirty = true;
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the position of this camera.
+        /// </summary>
+        public Vector3 Position
+        {
+            get => _position;
+            set
+            {
+                _position = value;
+                _isDirty = true;
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the pitch for this camera, in degrees.
+        /// </summary>
+        public float Pitch
+        {
+            get => _pitch;
+            set
+            {
+                _pitch = value;
+                _isDirty = true;
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the yaw for this camera, in degrees.
+        /// </summary>
+        public float Yaw
+        {
+            get => _yaw;
+            set
+            {
+                _yaw = value;
+                _isDirty = true;
+            }
+        }
+
+        /// <summary>
+        ///     Returns the bounding frustum calculated for this camera.
         /// </summary>
         /// <returns></returns>
         public BoundingFrustum Frustum
@@ -149,7 +166,20 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// Returns the view matrix calculated for this camera.
+        ///     Applies this camera to the specified effect.
+        /// </summary>
+        /// <param name="effect">The effect to apply this camera to.</param>
+        public void ApplyTo(IEffectMatrices effectMatrices)
+        {
+            if (_isDirty)
+                Recalculate();
+
+            effectMatrices.View = _view;
+            effectMatrices.Projection = _projection;
+        }
+
+        /// <summary>
+        ///     Returns the view matrix calculated for this camera.
         /// </summary>
         /// <returns></returns>
         public Matrix GetViewMatrix()
@@ -160,7 +190,7 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// Gets the projection matrix calculated for this camera.
+        ///     Gets the projection matrix calculated for this camera.
         /// </summary>
         /// <returns></returns>
         public Matrix GetProjectionMatrix()
@@ -171,20 +201,20 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// Recalculates the dependent variables for this camera.
+        ///     Recalculates the dependent variables for this camera.
         /// </summary>
         private void Recalculate()
         {
-            var origin = new Vector3(
-                (float)this._position.X,
-                (float)this._position.Y,
-                (float)this._position.Z);
+            var origin = new Microsoft.Xna.Framework.Vector3(
+                (float) _position.X,
+                (float) _position.Y,
+                (float) _position.Z);
 
-            var direction = Vector3.Transform(Vector3.UnitZ,
+            var direction = Microsoft.Xna.Framework.Vector3.Transform(Microsoft.Xna.Framework.Vector3.UnitZ,
                 Matrix.CreateRotationX(MathHelper.ToRadians(_pitch)) *
                 Matrix.CreateRotationY(MathHelper.ToRadians(-(_yaw - 180) + 180)));
 
-            _view = Matrix.CreateLookAt(origin, origin + direction, Vector3.Up);
+            _view = Matrix.CreateLookAt(origin, origin + direction, Microsoft.Xna.Framework.Vector3.Up);
             _projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(_fov), _aspectRatio, _nearZ, _farZ);
             _frustum.Matrix = _view * _projection;
             _isDirty = false;

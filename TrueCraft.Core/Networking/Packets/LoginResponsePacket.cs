@@ -1,14 +1,14 @@
-﻿using TrueCraft.API.Networking;
-using TrueCraft.API;
+﻿using TrueCraft.API;
+using TrueCraft.API.Networking;
 
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by the server to allow the player to spawn, with information about the world being spawned into.
+    ///     Sent by the server to allow the player to spawn, with information about the world being spawned into.
     /// </summary>
     public struct LoginResponsePacket : IPacket
     {
-        public byte ID { get { return 0x01; } }
+        public byte ID => 0x01;
 
         public LoginResponsePacket(int entityID, long seed, Dimension dimension)
         {
@@ -26,7 +26,7 @@ namespace TrueCraft.Core.Networking.Packets
             EntityID = stream.ReadInt32();
             stream.ReadString(); // Unused
             Seed = stream.ReadInt64();
-            Dimension = (Dimension)stream.ReadInt8();
+            Dimension = (Dimension) stream.ReadInt8();
         }
 
         public void WritePacket(IMinecraftStream stream)
@@ -34,7 +34,7 @@ namespace TrueCraft.Core.Networking.Packets
             stream.WriteInt32(EntityID);
             stream.WriteString(""); // Unused
             stream.WriteInt64(Seed);
-            stream.WriteInt8((sbyte)Dimension);
+            stream.WriteInt8((sbyte) Dimension);
         }
     }
 }

@@ -3,13 +3,14 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by servers to set the position and look of the player. Can be used to teleport players.
+    ///     Sent by servers to set the position and look of the player. Can be used to teleport players.
     /// </summary>
     public struct SetPlayerPositionPacket : IPacket
     {
-        public byte ID { get { return 0x0D; } }
+        public byte ID => 0x0D;
 
-        public SetPlayerPositionPacket(double x, double y, double stance, double z, float yaw, float pitch, bool onGround)
+        public SetPlayerPositionPacket(double x, double y, double stance, double z, float yaw, float pitch,
+            bool onGround)
         {
             X = x;
             Y = y;

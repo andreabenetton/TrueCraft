@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent to update the client's list of player statistics.
+    ///     Sent to update the client's list of player statistics.
     /// </summary>
     public struct UpdateStatisticPacket : IPacket
     {
-        public byte ID { get { return 0xC8; } }
+        public byte ID => 0xC8;
 
         public int StatisticID;
         public sbyte Delta;

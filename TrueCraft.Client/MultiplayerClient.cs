@@ -1,73 +1,39 @@
 ﻿using System;
-using System.Net;
-using System.Net.Sockets;
-using TrueCraft.API.Networking;
-using System.Threading;
-using TrueCraft.Core.Networking;
-using TrueCraft.Core.Networking.Packets;
-using TrueCraft.Client.Events;
-using TrueCraft.Core.Logic;
-using TrueCraft.API;
 using System.ComponentModel;
 using System.IO;
-using TrueCraft.Core;
-using TrueCraft.API.Physics;
-using TrueCraft.Core.Physics;
-using TrueCraft.Core.Windows;
-using TrueCraft.API.Windows;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using TrueCraft.API;
 using TrueCraft.API.Logic;
+using TrueCraft.API.Networking;
+using TrueCraft.API.Physics;
+using TrueCraft.API.Windows;
 using TrueCraft.API.World;
+using TrueCraft.Client.Events;
+using TrueCraft.Core;
+using TrueCraft.Core.Logic;
+using TrueCraft.Core.Networking;
+using TrueCraft.Core.Networking.Packets;
+using TrueCraft.Core.Physics;
 using TrueCraft.Core.TerrainGen;
+using TrueCraft.Core.Windows;
 
 namespace TrueCraft.Client
 {
     public delegate void PacketHandler(IPacket packet, MultiplayerClient client);
 
-    public class MultiplayerClient : IAABBEntity, INotifyPropertyChanged, IDisposable // TODO: Make IMultiplayerClient and so on
+    public class
+        MultiplayerClient : IAABBEntity, INotifyPropertyChanged, IDisposable // TODO: Make IMultiplayerClient and so on
     {
-        public event EventHandler<ChatMessageEventArgs> ChatMessage;
-        public event EventHandler<ChunkEventArgs> ChunkModified;
-        public event EventHandler<ChunkEventArgs> ChunkLoaded;
-        public event EventHandler<ChunkEventArgs> ChunkUnloaded;
-        public event EventHandler<BlockChangeEventArgs> BlockChanged;
-        public event PropertyChangedEventHandler PropertyChanged;
+        private readonly CancellationTokenSource cancel;
+
+        private readonly PacketHandler[] PacketHandlers;
 
         private long _connected;
         private int _hotbarSelection;
 
-        public TrueCraftUser User { get; set; }
-        public ReadOnlyWorld World { get; private set; }
-        public PhysicsEngine Physics { get; set; }
-        public bool LoggedIn { get; internal set; }
-        public int EntityID { get; internal set; }
-        public InventoryWindow Inventory { get; set; }
-        public int Health { get; set; }
-        public IWindow CurrentWindow { get; set; }
-        public ICraftingRepository CraftingRepository { get; set; }
-
-        public bool Connected => Interlocked.Read(ref _connected) == 1;
-
-        public int HotbarSelection
-        {
-            get => _hotbarSelection;
-            set
-            {
-                _hotbarSelection = value;
-                QueuePacket(new ChangeHeldItemPacket() { Slot = (short)value });
-            }
-        }
-
-        private TcpClient Client { get; set; }
-        private IMinecraftStream Stream { get; set; }
-        private PacketReader PacketReader { get; set; }
-
-        private readonly PacketHandler[] PacketHandlers;
-
         private SemaphoreSlim sem = new SemaphoreSlim(1, 1);
-
-        private readonly CancellationTokenSource cancel;
-
-        private SocketAsyncEventArgsPool SocketPool { get; set; }
 
         public MultiplayerClient(TrueCraftUser user)
         {
@@ -93,6 +59,48 @@ namespace TrueCraft.Client
             crafting.DiscoverRecipes();
         }
 
+        public TrueCraftUser User { get; set; }
+        public ReadOnlyWorld World { get; }
+        public PhysicsEngine Physics { get; set; }
+        public bool LoggedIn { get; internal set; }
+        public int EntityID { get; internal set; }
+        public InventoryWindow Inventory { get; set; }
+        public int Health { get; set; }
+        public IWindow CurrentWindow { get; set; }
+        public ICraftingRepository CraftingRepository { get; set; }
+
+        public bool Connected => Interlocked.Read(ref _connected) == 1;
+
+        public int HotbarSelection
+        {
+            get => _hotbarSelection;
+            set
+            {
+                _hotbarSelection = value;
+                QueuePacket(new ChangeHeldItemPacket {Slot = (short) value});
+            }
+        }
+
+        private TcpClient Client { get; }
+        private IMinecraftStream Stream { get; set; }
+        private PacketReader PacketReader { get; }
+
+        private SocketAsyncEventArgsPool SocketPool { get; }
+
+        public void Dispose()
+        {
+            Dispose(true);
+
+            GC.SuppressFinalize(this);
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public event EventHandler<ChatMessageEventArgs> ChatMessage;
+        public event EventHandler<ChunkEventArgs> ChunkModified;
+        public event EventHandler<ChunkEventArgs> ChunkLoaded;
+        public event EventHandler<ChunkEventArgs> ChunkUnloaded;
+        public event EventHandler<BlockChangeEventArgs> BlockChanged;
+
         public void RegisterPacketHandler(byte packetId, PacketHandler handler)
         {
             PacketHandlers[packetId] = handler;
@@ -100,7 +108,7 @@ namespace TrueCraft.Client
 
         public void Connect(IPEndPoint endPoint)
         {
-            SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+            var args = new SocketAsyncEventArgs();
             args.Completed += Connection_Completed;
             args.RemoteEndPoint = endPoint;
 
@@ -131,7 +139,7 @@ namespace TrueCraft.Client
                 return;
 
             QueuePacket(new DisconnectPacket("Disconnecting"));
-            
+
             Interlocked.CompareExchange(ref _connected, 0, 1);
         }
 
@@ -144,20 +152,20 @@ namespace TrueCraft.Client
 
         public void QueuePacket(IPacket packet)
         {
-            if (!Connected || (Client != null && !Client.Connected))
+            if (!Connected || Client != null && !Client.Connected)
                 return;
 
-            using (MemoryStream writeStream = new MemoryStream())
+            using (var writeStream = new MemoryStream())
             {
-                using (MinecraftStream ms = new MinecraftStream(writeStream))
+                using (var ms = new MinecraftStream(writeStream))
                 {
                     ms.WriteUInt8(packet.ID);
                     packet.WritePacket(ms);
                 }
 
-                byte[] buffer = writeStream.ToArray();
+                var buffer = writeStream.ToArray();
 
-                SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+                var args = new SocketAsyncEventArgs();
                 args.UserToken = packet;
                 args.Completed += OperationCompleted;
                 args.SetBuffer(buffer, 0, buffer.Length);
@@ -169,7 +177,7 @@ namespace TrueCraft.Client
 
         private void StartReceive()
         {
-            SocketAsyncEventArgs args = SocketPool.Get();
+            var args = SocketPool.Get();
             args.Completed += OperationCompleted;
 
             if (!Client.Client.ReceiveAsync(args))
@@ -188,7 +196,7 @@ namespace TrueCraft.Client
                     SocketPool.Add(e);
                     break;
                 case SocketAsyncOperation.Send:
-                    IPacket packet = e.UserToken as IPacket;
+                    var packet = e.UserToken as IPacket;
 
                     if (packet is DisconnectPacket)
                     {
@@ -207,7 +215,7 @@ namespace TrueCraft.Client
         {
             if (e.SocketError == SocketError.Success && e.BytesTransferred > 0)
             {
-                SocketAsyncEventArgs newArgs = SocketPool.Get();
+                var newArgs = SocketPool.Get();
                 newArgs.Completed += OperationCompleted;
 
                 if (Client != null && !Client.Client.ReceiveAsync(newArgs))
@@ -224,11 +232,9 @@ namespace TrueCraft.Client
 
                 var packets = PacketReader.ReadPackets(this, e.Buffer, e.Offset, e.BytesTransferred, false);
 
-                foreach (IPacket packet in packets)
-                {
+                foreach (var packet in packets)
                     if (PacketHandlers.Length > packet.ID && PacketHandlers[packet.ID] != null)
                         PacketHandlers[packet.ID](packet, this);
-                }
 
                 sem?.Release();
             }
@@ -261,6 +267,23 @@ namespace TrueCraft.Client
         protected internal void OnBlockChanged(BlockChangeEventArgs e)
         {
             BlockChanged?.Invoke(this, e);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Disconnect();
+
+                sem.Dispose();
+            }
+
+            sem = null;
+        }
+
+        ~MultiplayerClient()
+        {
+            Dispose(false);
         }
 
         #region IAABBEntity implementation
@@ -303,6 +326,7 @@ namespace TrueCraft.Client
         public float Pitch { get; set; }
 
         internal Vector3 _Position;
+
         public Vector3 Position
         {
             get => _Position;
@@ -314,6 +338,7 @@ namespace TrueCraft.Client
                         value.Z, Yaw, Pitch, false));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
                 }
+
                 _Position = value;
             }
         }
@@ -327,29 +352,5 @@ namespace TrueCraft.Client
         public float TerminalVelocity => 78.4f;
 
         #endregion
-
-        public void Dispose()
-        {
-            Dispose(true);
-
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                Disconnect();
-
-                sem.Dispose();
-            }
-
-            sem = null;
-        }
-
-        ~MultiplayerClient()
-        {
-            Dispose(false);
-        }
     }
 }

@@ -17,7 +17,7 @@ using TrueCraft.Core.Lighting;
 using TrueCraft.Core.World;
 using System.Diagnostics;
 using System.Collections.Concurrent;
-using TrueCraft.Profiling;
+using TrueCraft.Core.Profiling;
 
 namespace TrueCraft
 {

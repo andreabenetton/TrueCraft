@@ -1,10 +1,9 @@
 ﻿using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
-using TrueCraft.API.World;
+using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
+using TrueCraft.API.World;
 using TrueCraft.Core.Logic.Items;
-using TrueCraft.Nbt;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.Nbt.Tags;
 
@@ -13,36 +12,25 @@ namespace TrueCraft.Core.Logic.Blocks
     public class UprightSignBlock : BlockProvider
     {
         public static readonly byte BlockID = 0x3F;
-        
-        public override byte ID { get { return 0x3F; } }
-        
-        public override double BlastResistance { get { return 5; } }
 
-        public override double Hardness { get { return 1; } }
+        public override byte ID => 0x3F;
 
-        public override byte Luminance { get { return 0; } }
+        public override double BlastResistance => 5;
 
-        public override bool Opaque { get { return true; } } // This is weird. You can stack signs on signs in Minecraft.
-        
-        public override string DisplayName { get { return "Sign"; } }
+        public override double Hardness => 1;
 
-        public override SoundEffectClass SoundEffect
-        {
-            get
-            {
-                return SoundEffectClass.Wood;
-            }
-        }
+        public override byte Luminance => 0;
 
-        public override BoundingBox? BoundingBox { get { return null; } }
+        public override bool Opaque => true; // This is weird. You can stack signs on signs in Minecraft.
 
-        public override BoundingBox? InteractiveBoundingBox
-        {
-            get
-            {
-                return new BoundingBox(new Vector3(6 / 16.0, 0, 6 / 16.0), new Vector3(10 / 16.0, 10 / 16.0, 10 / 16.0));
-            }
-        }
+        public override string DisplayName => "Sign";
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Wood;
+
+        public override BoundingBox? BoundingBox => null;
+
+        public override BoundingBox? InteractiveBoundingBox => new BoundingBox(new Vector3(6 / 16.0, 0, 6 / 16.0),
+            new Vector3(10 / 16.0, 10 / 16.0, 10 / 16.0));
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
@@ -55,12 +43,12 @@ namespace TrueCraft.Core.Logic.Blocks
             if (rotation < 0)
                 rotation += 360;
 
-            world.SetMetadata(descriptor.Coordinates, (byte)(rotation / 22.5));
+            world.SetMetadata(descriptor.Coordinates, (byte) (rotation / 22.5));
         }
 
         protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
         {
-            return new[] { new ItemStack(SignItem.ItemID) };
+            return new[] {new ItemStack(SignItem.ItemID)};
         }
 
         public override void BlockMined(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
@@ -69,12 +57,13 @@ namespace TrueCraft.Core.Logic.Blocks
             base.BlockMined(descriptor, face, world, user);
         }
 
-        public override void TileEntityLoadedForClient(BlockDescriptor descriptor, IWorld world, NbtCompound entity, IRemoteClient client)
+        public override void TileEntityLoadedForClient(BlockDescriptor descriptor, IWorld world, NbtCompound entity,
+            IRemoteClient client)
         {
             client.QueuePacket(new UpdateSignPacket
             {
                 X = descriptor.Coordinates.X,
-                Y = (short)descriptor.Coordinates.Y,
+                Y = (short) descriptor.Coordinates.Y,
                 Z = descriptor.Coordinates.Z,
                 Text = new[]
                 {

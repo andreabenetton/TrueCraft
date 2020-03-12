@@ -1,9 +1,9 @@
 ﻿using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
 using TrueCraft.API.Entities;
-using TrueCraft.API.World;
+using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
+using TrueCraft.API.World;
 
 namespace TrueCraft.Core.Logic
 {
@@ -13,16 +13,17 @@ namespace TrueCraft.Core.Logic
 
         public abstract Tuple<int, int> GetIconTexture(byte metadata);
 
-        public virtual sbyte MaximumStack { get { return 64; } }
+        public virtual sbyte MaximumStack => 64;
 
-        public virtual string DisplayName { get { return string.Empty; } }
+        public virtual string DisplayName => string.Empty;
 
         public virtual void ItemUsedOnEntity(ItemStack item, IEntity usedOn, IWorld world, IRemoteClient user)
         {
             // This space intentionally left blank
         }
 
-        public virtual void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world, IRemoteClient user)
+        public virtual void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             // This space intentionally left blank
         }

@@ -1,50 +1,18 @@
 ﻿using System;
-using TrueCraft.Core.World;
-using TrueCraft.API;
 using System.Collections.Generic;
-using Vector3 = Microsoft.Xna.Framework.Vector3;
+using TrueCraft.API;
 using TrueCraft.API.Logic;
+using TrueCraft.Core.World;
+using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace TrueCraft.Client.Rendering
 {
     /// <summary>
-    /// A daemon of sorts that creates meshes from chunks.
-    /// Passing meshes back is NOT thread-safe.
+    ///     A daemon of sorts that creates meshes from chunks.
+    ///     Passing meshes back is NOT thread-safe.
     /// </summary>
     public class ChunkRenderer : Renderer<ReadOnlyChunk>
     {
-        public class ChunkSorter : Comparer<Mesh>
-        {
-            public Coordinates3D Camera { get; set; }
-
-            public ChunkSorter(Coordinates3D camera)
-            {
-                Camera = camera;
-            }
-
-            public override int Compare(Mesh x, Mesh y)
-            {
-                var xChunk = ((ChunkMesh)x).Chunk;
-                var yChunk = ((ChunkMesh)y).Chunk;
-                return (int)(new Coordinates3D(yChunk.X * Chunk.Width, 0, yChunk.Z * Chunk.Depth).DistanceTo(Camera) -
-                    new Coordinates3D(xChunk.X * Chunk.Width, 0, xChunk.Z * Chunk.Depth).DistanceTo(Camera));
-            }
-        }
-
-        public int PendingChunks => Items.Count + PriorityItems.Count;
-
-        private ReadOnlyWorld World { get; set; }
-        private TrueCraftGame Game { get; set; }
-        private IBlockRepository BlockRepository { get; set; }
-
-        public ChunkRenderer(ReadOnlyWorld world, TrueCraftGame game, IBlockRepository blockRepository)
-            : base()
-        {
-            World = world;
-            BlockRepository = blockRepository;
-            Game = game;
-        }
-
         private static readonly Coordinates3D[] AdjacentCoordinates =
         {
             Coordinates3D.Up,
@@ -65,6 +33,19 @@ namespace TrueCraft.Client.Rendering
             VisibleFaces.East
         };
 
+        public ChunkRenderer(ReadOnlyWorld world, TrueCraftGame game, IBlockRepository blockRepository)
+        {
+            World = world;
+            BlockRepository = blockRepository;
+            Game = game;
+        }
+
+        public int PendingChunks => Items.Count + PriorityItems.Count;
+
+        private ReadOnlyWorld World { get; }
+        private TrueCraftGame Game { get; }
+        private IBlockRepository BlockRepository { get; }
+
         protected override bool TryRender(ReadOnlyChunk item, out Mesh result)
         {
             var state = new RenderState();
@@ -73,17 +54,7 @@ namespace TrueCraft.Client.Rendering
             result = new ChunkMesh(item, Game, state.Verticies.ToArray(),
                 state.OpaqueIndicies.ToArray(), state.TransparentIndicies.ToArray());
 
-            return (result != null);
-        }
-
-        private class RenderState
-        {
-            public readonly List<VertexPositionNormalColorTexture> Verticies 
-                = new List<VertexPositionNormalColorTexture>();
-            public readonly List<int> OpaqueIndicies = new List<int>();
-            public readonly List<int> TransparentIndicies = new List<int>();
-            public readonly Dictionary<Coordinates3D, VisibleFaces> DrawableCoordinates
-                = new Dictionary<Coordinates3D, VisibleFaces>();
+            return result != null;
         }
 
         private void AddBottomBlock(Coordinates3D coords, RenderState state, ReadOnlyChunk chunk)
@@ -111,15 +82,13 @@ namespace TrueCraft.Client.Rendering
         private void AddAdjacentBlocks(Coordinates3D coords, RenderState state, ReadOnlyChunk chunk)
         {
             // Add adjacent blocks
-            for (int i = 0; i < AdjacentCoordinates.Length; i++)
+            for (var i = 0; i < AdjacentCoordinates.Length; i++)
             {
                 var next = coords + AdjacentCoordinates[i];
                 if (next.X < 0 || next.X >= Chunk.Width
-                    || next.Y < 0 || next.Y >= Chunk.Height
-                    || next.Z < 0 || next.Z >= Chunk.Depth)
-                {
+                               || next.Y < 0 || next.Y >= Chunk.Height
+                               || next.Z < 0 || next.Z >= Chunk.Depth)
                     continue;
-                }
                 var provider = BlockRepository.GetBlockProvider(chunk.GetBlockId(next));
                 if (provider.Opaque)
                 {
@@ -135,20 +104,22 @@ namespace TrueCraft.Client.Rendering
         private void AddTransparentBlock(Coordinates3D coords, RenderState state, ReadOnlyChunk chunk)
         {
             // Add adjacent blocks
-            VisibleFaces faces = VisibleFaces.None;
-            for (int i = 0; i < AdjacentCoordinates.Length; i++)
+            var faces = VisibleFaces.None;
+            for (var i = 0; i < AdjacentCoordinates.Length; i++)
             {
                 var next = coords + AdjacentCoordinates[i];
                 if (next.X < 0 || next.X >= Chunk.Width
-                    || next.Y < 0 || next.Y >= Chunk.Height
-                    || next.Z < 0 || next.Z >= Chunk.Depth)
+                               || next.Y < 0 || next.Y >= Chunk.Height
+                               || next.Z < 0 || next.Z >= Chunk.Depth)
                 {
                     faces |= AdjacentCoordFaces[i];
                     continue;
                 }
+
                 if (chunk.GetBlockId(next) == 0)
                     faces |= AdjacentCoordFaces[i];
             }
+
             if (faces != VisibleFaces.None)
                 state.DrawableCoordinates[coords] = faces;
         }
@@ -168,7 +139,7 @@ namespace TrueCraft.Client.Rendering
             VisibleFaces faces;
             if (!state.DrawableCoordinates.TryGetValue(coords, out faces))
                 faces = VisibleFaces.None;
-            VisibleFaces oldFaces = faces;
+            var oldFaces = faces;
 
             if (coords.X == 0)
             {
@@ -212,35 +183,30 @@ namespace TrueCraft.Client.Rendering
             state.DrawableCoordinates.Clear();
 
             for (byte x = 0; x < Chunk.Width; x++)
+            for (byte z = 0; z < Chunk.Depth; z++)
+            for (byte y = 0; y < Chunk.Height; y++)
             {
-                for (byte z = 0; z < Chunk.Depth; z++)
+                var coords = new Coordinates3D(x, y, z);
+                var id = chunk.GetBlockId(coords);
+                var provider = BlockRepository.GetBlockProvider(id);
+                if (id != 0 && coords.Y == 0)
+                    AddBottomBlock(coords, state, chunk);
+                if (!provider.Opaque)
                 {
-                    for (byte y = 0; y < Chunk.Height; y++)
-                    {
-                        var coords = new Coordinates3D(x, y, z);
-                        var id = chunk.GetBlockId(coords);
-                        var provider = BlockRepository.GetBlockProvider(id);
-                        if (id != 0 && coords.Y == 0)
-                            AddBottomBlock(coords, state, chunk);
-                        if (!provider.Opaque)
-                        {
-                            AddAdjacentBlocks(coords, state, chunk);
-                            if (id != 0)
-                                AddTransparentBlock(coords, state, chunk);
-                        }
-                        else
-                        {
-                            if (coords.X == 0 || coords.X == Chunk.Width - 1 ||
-                                coords.Z == 0 || coords.Z == Chunk.Depth - 1)
-                            {
-                                AddChunkBoundaryBlocks(coords, state, chunk);
-                            }
-                        }
-                    }
+                    AddAdjacentBlocks(coords, state, chunk);
+                    if (id != 0)
+                        AddTransparentBlock(coords, state, chunk);
+                }
+                else
+                {
+                    if (coords.X == 0 || coords.X == Chunk.Width - 1 ||
+                        coords.Z == 0 || coords.Z == Chunk.Depth - 1)
+                        AddChunkBoundaryBlocks(coords, state, chunk);
                 }
             }
+
             var enumerator = state.DrawableCoordinates.GetEnumerator();
-            for (int j = 0; j <= state.DrawableCoordinates.Count; j++)
+            for (var j = 0; j <= state.DrawableCoordinates.Count; j++)
             {
                 var coords = enumerator.Current;
                 enumerator.MoveNext();
@@ -274,6 +240,36 @@ namespace TrueCraft.Client.Rendering
                     state.TransparentIndicies.AddRange(i);
                 }
             }
+        }
+
+        public class ChunkSorter : Comparer<Mesh>
+        {
+            public ChunkSorter(Coordinates3D camera)
+            {
+                Camera = camera;
+            }
+
+            public Coordinates3D Camera { get; set; }
+
+            public override int Compare(Mesh x, Mesh y)
+            {
+                var xChunk = ((ChunkMesh) x).Chunk;
+                var yChunk = ((ChunkMesh) y).Chunk;
+                return (int) (new Coordinates3D(yChunk.X * Chunk.Width, 0, yChunk.Z * Chunk.Depth).DistanceTo(Camera) -
+                              new Coordinates3D(xChunk.X * Chunk.Width, 0, xChunk.Z * Chunk.Depth).DistanceTo(Camera));
+            }
+        }
+
+        private class RenderState
+        {
+            public readonly Dictionary<Coordinates3D, VisibleFaces> DrawableCoordinates
+                = new Dictionary<Coordinates3D, VisibleFaces>();
+
+            public readonly List<int> OpaqueIndicies = new List<int>();
+            public readonly List<int> TransparentIndicies = new List<int>();
+
+            public readonly List<VertexPositionNormalColorTexture> Verticies
+                = new List<VertexPositionNormalColorTexture>();
         }
     }
 

@@ -5,7 +5,8 @@ namespace TrueCraft.Core.Logging
 {
     public static class LogHelpers
     {
-        public static string GetTimestamp(bool utc = true, string timeFormat = "yyyy-MM-dd H:mm:ss", string suffix = "    ")
+        public static string GetTimestamp(bool utc = true, string timeFormat = "yyyy-MM-dd H:mm:ss",
+            string suffix = "    ")
         {
             return (utc ? DateTime.UtcNow : DateTime.Now).ToString(timeFormat) + suffix;
         }

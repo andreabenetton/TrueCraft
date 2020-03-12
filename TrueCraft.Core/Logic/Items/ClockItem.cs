@@ -1,6 +1,6 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
 
 namespace TrueCraft.Core.Logic.Items
 {
@@ -8,14 +8,9 @@ namespace TrueCraft.Core.Logic.Items
     {
         public static readonly short ItemID = 0x15B;
 
-        public override short ID { get { return 0x15B; } }
+        public override short ID => 0x15B;
 
-        public override Tuple<int, int> GetIconTexture(byte metadata)
-        {
-            return new Tuple<int, int>(6, 4);
-        }
-
-        public override string DisplayName { get { return "Clock"; } }
+        public override string DisplayName => "Clock";
 
         public ItemStack[,] Pattern
         {
@@ -23,27 +18,23 @@ namespace TrueCraft.Core.Logic.Items
             {
                 return new[,]
                 {
-                    { ItemStack.EmptyStack, new ItemStack(GoldIngotItem.ItemID), ItemStack.EmptyStack },
-                    { new ItemStack(GoldIngotItem.ItemID), new ItemStack(RedstoneItem.ItemID), new ItemStack(GoldIngotItem.ItemID) },
-                    { ItemStack.EmptyStack, new ItemStack(GoldIngotItem.ItemID), ItemStack.EmptyStack },
+                    {ItemStack.EmptyStack, new ItemStack(GoldIngotItem.ItemID), ItemStack.EmptyStack},
+                    {
+                        new ItemStack(GoldIngotItem.ItemID), new ItemStack(RedstoneItem.ItemID),
+                        new ItemStack(GoldIngotItem.ItemID)
+                    },
+                    {ItemStack.EmptyStack, new ItemStack(GoldIngotItem.ItemID), ItemStack.EmptyStack}
                 };
             }
         }
 
-        public ItemStack Output
-        {
-            get
-            {
-                return new ItemStack(ItemID);
-            }
-        }
+        public ItemStack Output => new ItemStack(ItemID);
 
-        public bool SignificantMetadata
+        public bool SignificantMetadata => false;
+
+        public override Tuple<int, int> GetIconTexture(byte metadata)
         {
-            get
-            {
-                return false;
-            }
+            return new Tuple<int, int>(6, 4);
         }
     }
 }

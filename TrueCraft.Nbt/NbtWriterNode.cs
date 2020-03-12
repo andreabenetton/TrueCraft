@@ -1,9 +1,11 @@
-﻿namespace TrueCraft.Nbt {
+﻿namespace TrueCraft.Nbt
+{
     // Represents state of a node in the NBT file tree, used by NbtWriter
-    internal sealed class NbtWriterNode {
-        public NbtTagType ParentType;
-        public NbtTagType ListType;
-        public int ListSize;
+    internal sealed class NbtWriterNode
+    {
         public int ListIndex;
+        public int ListSize;
+        public NbtTagType ListType;
+        public NbtTagType ParentType;
     }
 }

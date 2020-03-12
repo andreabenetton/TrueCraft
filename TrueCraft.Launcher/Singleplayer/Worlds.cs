@@ -1,11 +1,11 @@
 ﻿using System;
-using System.IO;
-using TrueCraft.Core.World;
 using System.Collections.Generic;
-using TrueCraft.Core.TerrainGen;
+using System.IO;
+using System.Linq;
 using TrueCraft.Core;
 using TrueCraft.Core.Logic;
-using System.Linq;
+using TrueCraft.Core.TerrainGen;
+using TrueCraft.Core.World;
 
 namespace TrueCraft.Launcher.Singleplayer
 {
@@ -25,7 +25,6 @@ namespace TrueCraft.Launcher.Singleplayer
             var directories = Directory.GetDirectories(Paths.Worlds);
             var saves = new List<World>();
             foreach (var d in directories)
-            {
                 try
                 {
                     var w = World.LoadWorld(d);
@@ -36,17 +35,15 @@ namespace TrueCraft.Launcher.Singleplayer
                     Console.WriteLine(e);
                     /* Who cares */
                 }
-            }
+
             Saves = saves.ToArray();
         }
 
         public World CreateNewWorld(string name, string seed)
         {
             if (!int.TryParse(seed, out var s))
-            {
                 // TODO: Hash seed string
                 s = MathHelper.Random.Next();
-            }
             var world = new World(name, s, new StandardGenerator());
             world.BlockRepository = BlockRepository;
             var safeName = name;
@@ -54,7 +51,7 @@ namespace TrueCraft.Launcher.Singleplayer
                 safeName = safeName.Replace(c.ToString(), "");
             world.Name = name;
             world.Save(Path.Combine(Paths.Worlds, safeName));
-            Saves = Saves.Concat(new[] { world }).ToArray();
+            Saves = Saves.Concat(new[] {world}).ToArray();
             return world;
         }
     }

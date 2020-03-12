@@ -6,6 +6,14 @@ namespace TrueCraft.Core.AI
 {
     public class AStarPathFinder
     {
+        private readonly Coordinates3D[][] DiagonalNeighbors =
+        {
+            new[] {Coordinates3D.North, Coordinates3D.East},
+            new[] {Coordinates3D.North, Coordinates3D.West},
+            new[] {Coordinates3D.South, Coordinates3D.East},
+            new[] {Coordinates3D.South, Coordinates3D.West}
+        };
+
         private readonly Coordinates3D[] Neighbors =
         {
             Coordinates3D.North,
@@ -14,15 +22,8 @@ namespace TrueCraft.Core.AI
             Coordinates3D.West
         };
 
-        private readonly Coordinates3D[][] DiagonalNeighbors =
-        {
-            new[] { Coordinates3D.North, Coordinates3D.East },
-            new[] { Coordinates3D.North, Coordinates3D.West },
-            new[] { Coordinates3D.South, Coordinates3D.East },
-            new[] { Coordinates3D.South, Coordinates3D.West },
-        };
-
-        private PathResult TracePath(Coordinates3D start, Coordinates3D goal, Dictionary<Coordinates3D, Coordinates3D> parents)
+        private PathResult TracePath(Coordinates3D start, Coordinates3D goal,
+            Dictionary<Coordinates3D, Coordinates3D> parents)
         {
             var list = new List<Coordinates3D>();
             var current = goal;
@@ -31,8 +32,9 @@ namespace TrueCraft.Core.AI
                 current = parents[current];
                 list.Insert(0, current);
             }
+
             list.Add(goal);
-            return new PathResult { Waypoints = list };
+            return new PathResult {Waypoints = list};
         }
 
         private bool CanOccupyVoxel(IWorld world, BoundingBox box, Coordinates3D voxel)
@@ -48,13 +50,14 @@ namespace TrueCraft.Core.AI
 
         private IEnumerable<Coordinates3D> GetNeighbors(IWorld world, BoundingBox subject, Coordinates3D current)
         {
-            for (int i = 0; i < Neighbors.Length; i++)
+            for (var i = 0; i < Neighbors.Length; i++)
             {
                 var next = Neighbors[i] + current;
                 if (CanOccupyVoxel(world, subject, next))
                     yield return next;
             }
-            for (int i = 0; i < DiagonalNeighbors.Length; i++)
+
+            for (var i = 0; i < DiagonalNeighbors.Length; i++)
             {
                 var pair = DiagonalNeighbors[i];
                 var next = pair[0] + pair[1] + current;
@@ -90,7 +93,7 @@ namespace TrueCraft.Core.AI
                 {
                     if (closedset.Contains(next))
                         continue;
-                    var cost = (int)(costs[current] + current.DistanceTo(next));
+                    var cost = (int) (costs[current] + current.DistanceTo(next));
                     if (!costs.ContainsKey(next) || cost < costs[next])
                     {
                         costs[next] = cost;

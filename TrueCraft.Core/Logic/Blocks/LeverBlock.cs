@@ -1,6 +1,6 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Items;
 
 namespace TrueCraft.Core.Logic.Blocks
@@ -8,31 +8,20 @@ namespace TrueCraft.Core.Logic.Blocks
     public class LeverBlock : BlockProvider, ICraftingRecipe
     {
         public static readonly byte BlockID = 0x45;
-        
-        public override byte ID { get { return 0x45; } }
-        
-        public override double BlastResistance { get { return 2.5; } }
 
-        public override double Hardness { get { return 0.5; } }
+        public override byte ID => 0x45;
 
-        public override byte Luminance { get { return 0; } }
+        public override double BlastResistance => 2.5;
 
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Lever"; } }
+        public override double Hardness => 0.5;
 
-        public override SoundEffectClass SoundEffect
-        {
-            get
-            {
-                return SoundEffectClass.Wood;
-            }
-        }
+        public override byte Luminance => 0;
 
-        public override Tuple<int, int> GetTextureMap(byte metadata)
-        {
-            return new Tuple<int, int>(0, 6);
-        }
+        public override bool Opaque => false;
+
+        public override string DisplayName => "Lever";
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Wood;
 
         public ItemStack[,] Pattern
         {
@@ -46,14 +35,13 @@ namespace TrueCraft.Core.Logic.Blocks
             }
         }
 
-        public ItemStack Output
-        {
-            get { return new ItemStack(BlockID); }
-        }
+        public ItemStack Output => new ItemStack(BlockID);
 
-        public bool SignificantMetadata
+        public bool SignificantMetadata => false;
+
+        public override Tuple<int, int> GetTextureMap(byte metadata)
         {
-            get { return false; }
+            return new Tuple<int, int>(0, 6);
         }
     }
 }

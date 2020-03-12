@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by clients upon clicking an entity.
+    ///     Sent by clients upon clicking an entity.
     /// </summary>
     public struct UseEntityPacket : IPacket
     {
-        public byte ID { get { return 0x07; } }
+        public byte ID => 0x07;
 
         public int UserID;
         public int TargetID;

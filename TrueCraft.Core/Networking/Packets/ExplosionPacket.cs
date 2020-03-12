@@ -5,7 +5,7 @@ namespace TrueCraft.Core.Networking.Packets
 {
     public struct ExplosionPacket : IPacket
     {
-        public byte ID { get { return 0x3C; } }
+        public byte ID => 0x3C;
 
         public double X, Y, Z;
         public float Radius;
@@ -18,13 +18,11 @@ namespace TrueCraft.Core.Networking.Packets
             Z = stream.ReadDouble();
             Radius = stream.ReadSingle();
             AffectedBlocks = new Tuple<sbyte, sbyte, sbyte>[stream.ReadInt32()];
-            for (int i = 0; i < AffectedBlocks.Length; i++)
-            {
+            for (var i = 0; i < AffectedBlocks.Length; i++)
                 AffectedBlocks[i] = new Tuple<sbyte, sbyte, sbyte>(
                     stream.ReadInt8(),
                     stream.ReadInt8(),
                     stream.ReadInt8());
-            }
         }
 
         public void WritePacket(IMinecraftStream stream)
@@ -34,13 +32,12 @@ namespace TrueCraft.Core.Networking.Packets
             stream.WriteDouble(Z);
             stream.WriteSingle(Radius);
             stream.WriteInt32(AffectedBlocks.Length);
-            for (int i = 0; i < AffectedBlocks.Length; i++)
+            foreach (var block in AffectedBlocks)
             {
-                stream.WriteInt8(AffectedBlocks[i].Item1);
-                stream.WriteInt8(AffectedBlocks[i].Item2);
-                stream.WriteInt8(AffectedBlocks[i].Item3);
+                stream.WriteInt8(block.Item1);
+                stream.WriteInt8(block.Item2);
+                stream.WriteInt8(block.Item3);
             }
         }
     }
 }
-

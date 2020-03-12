@@ -4,7 +4,7 @@ namespace TrueCraft.Core.Networking.Packets
 {
     public struct MapDataPacket : IPacket
     {
-        public byte ID { get { return 0x83; } }
+        public byte ID => 0x83;
 
         public short ItemID;
         public short Metadata;
@@ -14,7 +14,7 @@ namespace TrueCraft.Core.Networking.Packets
         {
             ItemID = stream.ReadInt16();
             Metadata = stream.ReadInt16();
-            byte length = stream.ReadUInt8();
+            var length = stream.ReadUInt8();
             Data = stream.ReadUInt8Array(length);
         }
 
@@ -22,7 +22,7 @@ namespace TrueCraft.Core.Networking.Packets
         {
             stream.WriteInt16(ItemID);
             stream.WriteInt16(Metadata);
-            stream.WriteUInt8((byte)Data.Length);
+            stream.WriteUInt8((byte) Data.Length);
             stream.WriteUInt8Array(Data);
         }
     }

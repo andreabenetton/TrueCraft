@@ -4,67 +4,26 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Net;
+using System.Threading;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Utilities.Png;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
-using TrueCraft.API.World;
-using TrueCraft.Core;
-using TrueCraft.Core.Networking.Packets;
 using TrueCraft.Client.Input;
 using TrueCraft.Client.Modules;
 using TrueCraft.Client.Rendering;
-using TVector3 = TrueCraft.API.Vector3;
+using TrueCraft.Core;
 using TrueCraft.Core.Logic;
-using System.Threading;
+using TrueCraft.Core.Networking.Packets;
+using TVector3 = TrueCraft.API.Vector3;
 
 namespace TrueCraft.Client
 {
     public class TrueCraftGame : Game
     {
-        public MultiplayerClient Client { get; private set; }
-        public GraphicsDeviceManager Graphics { get; private set; }
-        public TextureMapper TextureMapper { get; private set; }
-        public Camera Camera { get; private set; }
-        public ConcurrentBag<Action> PendingMainThreadActions { get; set; }
-        public double Bobbing { get; set; }
-        public ChunkModule ChunkModule { get; set; }
-        public ChatModule ChatModule { get; set; }
-        public float ScaleFactor { get; set; }
-        public Coordinates3D HighlightedBlock { get; set; }
-        public BlockFace HighlightedBlockFace { get; set; }
-        public DateTime StartDigging { get; set; }
-        public DateTime EndDigging { get; set; }
-        public Coordinates3D TargetBlock { get; set; }
-        public AudioManager Audio { get; set; }
-        public Texture2D White1x1 { get; set; }
-        public PlayerControlModule ControlModule { get; set; }
-        public SkyModule SkyModule { get; set; }
-
-        private List<IGameplayModule> InputModules { get; set; }
-        private List<IGameplayModule> GraphicalModules { get; set; }
-        private SpriteBatch SpriteBatch { get; set; }
-        private KeyboardHandler KeyboardComponent { get; set; }
-        private MouseHandler MouseComponent { get; set; }
-        private GamePadHandler GamePadComponent { get; set; }
-        private RenderTarget2D RenderTarget { get; set; }
-        private int ThreadID { get; set; }
-
-        private FontRenderer Pixel { get; set; }
-        private IPEndPoint EndPoint { get; set; }
-        private DateTime LastPhysicsUpdate { get; set; }
-        private DateTime NextPhysicsUpdate { get; set; }
-        private bool MouseCaptured { get; set; }
-        private GameTime GameTime { get; set; }
-        private DebugInfoModule DebugInfoModule { get; set; }
-
         public static readonly int Reach = 3;
-
-        public IBlockRepository BlockRepository => Client.World.World.BlockRepository;
-
-        public IItemRepository ItemRepository { get; set; }
 
         public TrueCraftGame(MultiplayerClient client, IPEndPoint endPoint)
         {
@@ -99,12 +58,52 @@ namespace TrueCraft.Client
             Components.Add(GamePadComponent);
         }
 
+        public MultiplayerClient Client { get; }
+        public GraphicsDeviceManager Graphics { get; }
+        public TextureMapper TextureMapper { get; private set; }
+        public Camera Camera { get; private set; }
+        public ConcurrentBag<Action> PendingMainThreadActions { get; set; }
+        public double Bobbing { get; set; }
+        public ChunkModule ChunkModule { get; set; }
+        public ChatModule ChatModule { get; set; }
+        public float ScaleFactor { get; set; }
+        public Coordinates3D HighlightedBlock { get; set; }
+        public BlockFace HighlightedBlockFace { get; set; }
+        public DateTime StartDigging { get; set; }
+        public DateTime EndDigging { get; set; }
+        public Coordinates3D TargetBlock { get; set; }
+        public AudioManager Audio { get; set; }
+        public Texture2D White1x1 { get; set; }
+        public PlayerControlModule ControlModule { get; set; }
+        public SkyModule SkyModule { get; set; }
+
+        private List<IGameplayModule> InputModules { get; set; }
+        private List<IGameplayModule> GraphicalModules { get; set; }
+        private SpriteBatch SpriteBatch { get; set; }
+        private KeyboardHandler KeyboardComponent { get; }
+        private MouseHandler MouseComponent { get; }
+        private GamePadHandler GamePadComponent { get; }
+        private RenderTarget2D RenderTarget { get; set; }
+        private int ThreadID { get; set; }
+
+        private FontRenderer Pixel { get; set; }
+        private IPEndPoint EndPoint { get; }
+        private DateTime LastPhysicsUpdate { get; }
+        private DateTime NextPhysicsUpdate { get; set; }
+        private bool MouseCaptured { get; }
+        private GameTime GameTime { get; set; }
+        private DebugInfoModule DebugInfoModule { get; set; }
+
+        public IBlockRepository BlockRepository => Client.World.World.BlockRepository;
+
+        public IItemRepository ItemRepository { get; set; }
+
         private void Graphics_PreparingDeviceSettings(object sender, PreparingDeviceSettingsEventArgs e)
         {
             e.GraphicsDeviceInformation.GraphicsProfile = GraphicsProfile.HiDef;
         }
 
-        void Window_ClientSizeChanged(object sender, EventArgs e)
+        private void Window_ClientSizeChanged(object sender, EventArgs e)
         {
             if (GraphicsDevice.Viewport.Width < 640 || GraphicsDevice.Viewport.Height < 480)
                 ScaleFactor = 0.5f;
@@ -128,7 +127,7 @@ namespace TrueCraft.Client
             UpdateCamera();
 
             White1x1 = new Texture2D(GraphicsDevice, 1, 1);
-            White1x1.SetData(new[] { Color.White });
+            White1x1.SetData(new[] {Color.White});
 
             Audio = new AudioManager();
             Audio.LoadDefaultPacks(Content);
@@ -193,11 +192,12 @@ namespace TrueCraft.Client
 
         private void CreateRenderTarget()
         {
-            RenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height,
+            RenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width,
+                GraphicsDevice.Viewport.Height,
                 false, GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
         }
 
-        void HandleClientPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void HandleClientPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
             {
@@ -229,97 +229,65 @@ namespace TrueCraft.Client
         private void OnKeyboardKeyDown(object sender, KeyboardKeyEventArgs e)
         {
             foreach (var module in InputModules)
-            {
                 if (module is IInputModule input)
-                {
                     if (input.KeyDown(GameTime, e))
                         break;
-                }
-            }
         }
 
         private void OnKeyboardKeyUp(object sender, KeyboardKeyEventArgs e)
         {
             foreach (var module in InputModules)
-            {
                 if (module is IInputModule input)
-                {
                     if (input.KeyUp(GameTime, e))
                         break;
-                }
-            }
         }
 
         private void OnGamePadButtonUp(object sender, GamePadButtonEventArgs e)
         {
             foreach (var module in InputModules)
-            {
                 if (module is IInputModule input)
-                {
                     if (input.GamePadButtonUp(GameTime, e))
                         break;
-                }
-            }
         }
 
         private void OnGamePadButtonDown(object sender, GamePadButtonEventArgs e)
         {
             foreach (var module in InputModules)
-            {
                 if (module is IInputModule input)
-                {
                     if (input.GamePadButtonDown(GameTime, e))
                         break;
-                }
-            }
         }
 
         private void OnMouseComponentScroll(object sender, MouseScrollEventArgs e)
         {
             foreach (var module in InputModules)
-            {
                 if (module is IInputModule input)
-                {
                     if (input.MouseScroll(GameTime, e))
                         break;
-                }
-            }
         }
 
         private void OnMouseComponentButtonDown(object sender, MouseButtonEventArgs e)
         {
             foreach (var module in InputModules)
-            {
                 if (module is IInputModule input)
-                {
                     if (input.MouseButtonDown(GameTime, e))
                         break;
-                }
-            }
         }
 
         private void OnMouseComponentButtonUp(object sender, MouseButtonEventArgs e)
         {
             foreach (var module in InputModules)
-            {
                 if (module is IInputModule input)
-                {
                     if (input.MouseButtonUp(GameTime, e))
                         break;
-                }
-            }
         }
 
         private void OnMouseComponentMove(object sender, MouseMoveEventArgs e)
         {
             foreach (var module in InputModules)
-            {
                 if (module is IInputModule input)
-                {
                     if (input.MouseMove(GameTime, e))
                         break;
-                }
-            }
         }
 
         public void TakeScreenshot()
@@ -328,7 +296,10 @@ namespace TrueCraft.Client
             if (!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
             using (var stream = File.OpenWrite(path))
+            {
                 new PngWriter().Write(RenderTarget, stream);
+            }
+
             ChatModule.AddMessage("Screenshot saved to " + Path.GetFileName(path));
         }
 
@@ -346,18 +317,16 @@ namespace TrueCraft.Client
                 action();
 
             var adjusted = Client.World.World.FindBlockPosition(
-                new Coordinates3D((int)Client.Position.X, 0, (int)Client.Position.Z), out var chunk);
+                new Coordinates3D((int) Client.Position.X, 0, (int) Client.Position.Z), out var chunk);
             if (chunk != null && Client.LoggedIn)
-            {
-                if (chunk.GetHeight((byte)adjusted.X, (byte)adjusted.Z) != 0)
+                if (chunk.GetHeight((byte) adjusted.X, (byte) adjusted.Z) != 0)
                     Client.Physics.Update(gameTime.ElapsedGameTime);
-            }
             if (NextPhysicsUpdate < DateTime.UtcNow && Client.LoggedIn)
             {
                 // NOTE: This is to make the vanilla server send us chunk packets
                 // We should eventually make some means of detecing that we're on a vanilla server to enable this
                 // It's a waste of bandwidth to do it on a TrueCraft server
-                Client.QueuePacket(new PlayerGroundedPacket { OnGround = true });
+                Client.QueuePacket(new PlayerGroundedPacket {OnGround = true});
                 NextPhysicsUpdate = DateTime.UtcNow.AddMilliseconds(50);
             }
 
@@ -377,7 +346,7 @@ namespace TrueCraft.Client
 
             var bobbing = Bobbing * 1.5;
             var xbob = Math.Cos(bobbing + Math.PI / 2) * bobbingMultiplier;
-            var ybob = Math.Sin(Math.PI / 2 - (2 * bobbing)) * bobbingMultiplier;
+            var ybob = Math.Sin(Math.PI / 2 - 2 * bobbing) * bobbingMultiplier;
 
             Camera.Position = new TVector3(
                 Client.Position.X + xbob, Client.Position.Y + Client.Size.Height + ybob, Client.Position.Z);
@@ -396,10 +365,8 @@ namespace TrueCraft.Client
 
             Mesh.ResetStats();
             foreach (var module in GraphicalModules)
-            {
                 if (module is IGraphicalModule drawable)
                     drawable.Draw(gameTime);
-            }
 
             GraphicsDevice.SetRenderTarget(null);
 

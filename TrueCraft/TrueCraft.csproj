@@ -41,10 +41,10 @@
     <Reference Include="Ionic.Zip.Reduced, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
       <HintPath>..\packages\DotNetZip.Reduced.1.9.1.8\lib\net20\Ionic.Zip.Reduced.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="YamlDotNet, Version=8.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
-      <HintPath>..\packages\YamlDotNet.8.1.0\lib\net45\YamlDotNet.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccessConfiguration.cs" />
@@ -87,10 +87,6 @@
     <ProjectReference Include="..\TrueCraft.Nbt\TrueCraft.Nbt.csproj">
       <Project>{4488498d-976d-4da3-bf72-109531af0488}</Project>
       <Name>TrueCraft.Nbt</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TrueCraft.Profiling\TrueCraft.Profiling.csproj">
-      <Project>{BCA0E139-CF47-43B3-9DC9-D4611C0A2AAD}</Project>
-      <Name>TrueCraft.Profiling</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

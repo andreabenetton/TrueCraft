@@ -5,16 +5,16 @@ namespace TrueCraft.Core.Logic.Blocks
     public class CobblestoneBlock : BlockProvider
     {
         public static readonly byte BlockID = 0x04;
-        
-        public override byte ID { get { return 0x04; } }
-        
-        public override double BlastResistance { get { return 30; } }
 
-        public override double Hardness { get { return 2; } }
+        public override byte ID => 0x04;
 
-        public override byte Luminance { get { return 0; } }
-        
-        public override string DisplayName { get { return "Cobblestone"; } }
+        public override double BlastResistance => 30;
+
+        public override double Hardness => 2;
+
+        public override byte Luminance => 0;
+
+        public override string DisplayName => "Cobblestone";
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {

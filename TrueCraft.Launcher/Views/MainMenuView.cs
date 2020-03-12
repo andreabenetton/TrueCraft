@@ -4,18 +4,10 @@ namespace TrueCraft.Launcher.Views
 {
     public class MainMenuView : VBox
     {
-        public LauncherWindow Window { get; set; }
-
-        public Label WelcomeText { get; set; }
-        public Button SingleplayerButton { get; set; }
-        public Button MultiplayerButton { get; set; }
-        public Button OptionsButton { get; set; }
-        public Button QuitButton { get; set; }
-
         public MainMenuView(LauncherWindow window)
         {
             Window = window;
-            this.MinWidth = 250;
+            MinWidth = 250;
 
             WelcomeText = new Label("Welcome, " + Window.User.Username)
             {
@@ -43,11 +35,19 @@ namespace TrueCraft.Launcher.Views
             };
             QuitButton.Clicked += (sender, e) => Application.Exit();
 
-            this.PackStart(WelcomeText);
-            this.PackStart(SingleplayerButton);
-            this.PackStart(MultiplayerButton);
-            this.PackStart(OptionsButton);
-            this.PackEnd(QuitButton);
+            PackStart(WelcomeText);
+            PackStart(SingleplayerButton);
+            PackStart(MultiplayerButton);
+            PackStart(OptionsButton);
+            PackEnd(QuitButton);
         }
+
+        public LauncherWindow Window { get; set; }
+
+        public Label WelcomeText { get; set; }
+        public Button SingleplayerButton { get; set; }
+        public Button MultiplayerButton { get; set; }
+        public Button OptionsButton { get; set; }
+        public Button QuitButton { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using TrueCraft.API;
-using YamlDotNet.Serialization;
 
 namespace TrueCraft
 {
@@ -13,13 +13,13 @@ namespace TrueCraft
             Oplist = new List<string>();
         }
 
-        [YamlMember(Alias = "blacklist")]
+        [JsonProperty(PropertyName = "blacklist")]
         public IList<string> Blacklist { get; private set; }
 
-        [YamlMember(Alias = "whitelist")]
+        [JsonProperty(PropertyName = "whitelist")]
         public IList<string> Whitelist { get; private set; }
         
-        [YamlMember(Alias = "ops")]
+        [JsonProperty(PropertyName = "ops")]
         public IList<string> Oplist { get; private set; }
     }
 }

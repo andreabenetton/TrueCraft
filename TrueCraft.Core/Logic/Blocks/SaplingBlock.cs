@@ -1,6 +1,6 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
 
 namespace TrueCraft.Core.Logic.Blocks
 {
@@ -14,30 +14,25 @@ namespace TrueCraft.Core.Logic.Blocks
         }
 
         public static readonly byte BlockID = 0x06;
-        
-        public override byte ID { get { return 0x06; } }
-        
-        public override double BlastResistance { get { return 0; } }
 
-        public override double Hardness { get { return 0; } }
+        public override byte ID => 0x06;
 
-        public override byte Luminance { get { return 0; } }
+        public override double BlastResistance => 0;
 
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Sapling"; } }
+        public override double Hardness => 0;
 
-        public override BoundingBox? BoundingBox { get { return null; } }
+        public override byte Luminance => 0;
 
-        public TimeSpan BurnTime { get { return TimeSpan.FromSeconds(5); } }
+        public override bool Opaque => false;
 
-        public override BoundingBox? InteractiveBoundingBox
-        {
-            get
-            {
-                return new BoundingBox(new Vector3(1 / 16.0, 0, 1 / 16.0), new Vector3(14 / 16.0));
-            }
-        }
+        public override string DisplayName => "Sapling";
+
+        public override BoundingBox? BoundingBox => null;
+
+        public override BoundingBox? InteractiveBoundingBox =>
+            new BoundingBox(new Vector3(1 / 16.0, 0, 1 / 16.0), new Vector3(14 / 16.0));
+
+        public TimeSpan BurnTime => TimeSpan.FromSeconds(5);
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {

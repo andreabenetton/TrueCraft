@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Instructs the client to open an inventory window.
+    ///     Instructs the client to open an inventory window.
     /// </summary>
     public struct OpenWindowPacket : IPacket
     {
-        public byte ID { get { return 0x64; } }
+        public byte ID => 0x64;
 
         public OpenWindowPacket(sbyte windowID, sbyte type, string title, sbyte totalSlots)
         {

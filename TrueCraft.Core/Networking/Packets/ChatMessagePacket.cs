@@ -3,13 +3,15 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Used by clients to send messages and by servers to propegate messages to clients.
-    /// Note that the server is expected to include the username, i.e. <User> message, but the
-    /// client is not given the same expectation.
+    ///     Used by clients to send messages and by servers to propegate messages to clients.
+    ///     Note that the server is expected to include the username, i.e.
+    ///     <User>
+    ///         message, but the
+    ///         client is not given the same expectation.
     /// </summary>
     public struct ChatMessagePacket : IPacket
     {
-        public byte ID { get { return 0x03; } }
+        public byte ID => 0x03;
 
         public ChatMessagePacket(string message)
         {

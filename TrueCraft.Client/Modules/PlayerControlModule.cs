@@ -2,28 +2,22 @@ using System;
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using TrueCraft.API;
+using TrueCraft.API.Logic;
 using TrueCraft.Client.Input;
+using TrueCraft.Core;
+using TrueCraft.Core.Logic;
+using TrueCraft.Core.Logic.Blocks;
+using TrueCraft.Core.Networking.Packets;
+using MathHelper = Microsoft.Xna.Framework.MathHelper;
 using Matrix = Microsoft.Xna.Framework.Matrix;
 using TVector3 = TrueCraft.API.Vector3;
 using XVector3 = Microsoft.Xna.Framework.Vector3;
-using TrueCraft.API;
-using TrueCraft.Core.Logic;
-using TrueCraft.Core.Networking.Packets;
-using TrueCraft.Core.Logic.Blocks;
-using TrueCraft.API.Logic;
 
 namespace TrueCraft.Client.Modules
 {
     public class PlayerControlModule : InputModule
     {
-        private TrueCraftGame Game { get; set; }
-        private DateTime NextAnimation { get; set; }
-        private XVector3 Delta { get; set; }
-        private bool Capture { get; set; }
-        private bool Digging { get; set; }
-        private GamePadState GamePadState { get; set; }
-        public bool IgnoreNextUpdate { get; set; }
-
         public PlayerControlModule(TrueCraftGame game)
         {
             Game = game;
@@ -35,6 +29,14 @@ namespace TrueCraft.Client.Modules
             NextAnimation = DateTime.MaxValue;
             GamePadState = GamePad.GetState(PlayerIndex.One);
         }
+
+        private TrueCraftGame Game { get; }
+        private DateTime NextAnimation { get; set; }
+        private XVector3 Delta { get; set; }
+        private bool Capture { get; set; }
+        private bool Digging { get; set; }
+        private GamePadState GamePadState { get; set; }
+        public bool IgnoreNextUpdate { get; set; }
 
         public override bool KeyDown(GameTime gameTime, KeyboardKeyEventArgs e)
         {
@@ -88,7 +90,7 @@ namespace TrueCraft.Client.Modules
 
                 case Keys.Space:
                     if (Math.Floor(Game.Client.Position.Y) == Game.Client.Position.Y)
-                        Game.Client.Velocity += TrueCraft.API.Vector3.Up * 0.3;
+                        Game.Client.Velocity += TVector3.Up * 0.3;
                     return true;
 
                 case Keys.D1:
@@ -136,6 +138,7 @@ namespace TrueCraft.Client.Modules
                     Game.Client.HotbarSelection = 8;
                     return true;
             }
+
             return false;
         }
 
@@ -167,6 +170,7 @@ namespace TrueCraft.Client.Modules
                     Delta -= XVector3.Backward;
                     return true;
             }
+
             return false;
         }
 
@@ -193,9 +197,10 @@ namespace TrueCraft.Client.Modules
                     break;
                 case Buttons.A:
                     if (Math.Floor(Game.Client.Position.Y) == Game.Client.Position.Y)
-                        Game.Client.Velocity += TrueCraft.API.Vector3.Up * 0.3;
+                        Game.Client.Velocity += TVector3.Up * 0.3;
                     break;
             }
+
             return false;
         }
 
@@ -210,7 +215,7 @@ namespace TrueCraft.Client.Modules
             Game.Client.HotbarSelection = selected;
             return true;
         }
-        
+
         public override bool MouseMove(GameTime gameTime, MouseMoveEventArgs e)
         {
             if (!Capture)
@@ -220,6 +225,7 @@ namespace TrueCraft.Client.Modules
                 IgnoreNextUpdate = false;
                 return true;
             }
+
             var centerX = Game.GraphicsDevice.Viewport.Width / 2;
             var centerY = Game.GraphicsDevice.Viewport.Height / 2;
 
@@ -231,10 +237,10 @@ namespace TrueCraft.Client.Modules
                 return true;
             }
 
-            var look = new Vector2((-e.DeltaX), (-e.DeltaY))
-                * (float)(gameTime.ElapsedGameTime.TotalSeconds * 30);
+            var look = new Vector2(-e.DeltaX, -e.DeltaY)
+                       * (float) (gameTime.ElapsedGameTime.TotalSeconds * 30);
 
-            if (Core.UserSettings.Local.InvertedMouse)
+            if (UserSettings.Local.InvertedMouse)
                 look.Y = -look.Y;
             Game.Client.Yaw -= look.X;
             Game.Client.Pitch -= look.Y;
@@ -253,11 +259,12 @@ namespace TrueCraft.Client.Modules
                     return true;
                 case MouseButton.Right:
                     var item = Game.Client.Inventory.Hotbar[Game.Client.HotbarSelection];
-                        Game.Client.QueuePacket(new PlayerBlockPlacementPacket(
-                        Game.HighlightedBlock.X, (sbyte)Game.HighlightedBlock.Y, Game.HighlightedBlock.Z,
+                    Game.Client.QueuePacket(new PlayerBlockPlacementPacket(
+                        Game.HighlightedBlock.X, (sbyte) Game.HighlightedBlock.Y, Game.HighlightedBlock.Z,
                         Game.HighlightedBlockFace, item.ID, item.Count, item.Metadata));
                     return true;
             }
+
             return false;
         }
 
@@ -272,7 +279,7 @@ namespace TrueCraft.Client.Modules
                     Game.Client.Inventory.Hotbar[Game.Client.HotbarSelection].ID, out var damage));
             Game.Client.QueuePacket(new PlayerDiggingPacket(
                 PlayerDiggingPacket.Action.StartDigging,
-                Game.TargetBlock.X, (sbyte)Game.TargetBlock.Y, Game.TargetBlock.Z,
+                Game.TargetBlock.X, (sbyte) Game.TargetBlock.Y, Game.TargetBlock.Z,
                 Game.HighlightedBlockFace));
             NextAnimation = DateTime.UtcNow.AddSeconds(0.25);
         }
@@ -291,12 +298,13 @@ namespace TrueCraft.Client.Modules
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
             return false;
         }
 
         private void PlayFootstep()
         {
-            var coords = (Coordinates3D)Game.Client.BoundingBox.Min.Floor();
+            var coords = (Coordinates3D) Game.Client.BoundingBox.Min.Floor();
             var target = Game.Client.World.GetBlockID(coords);
             if (target == AirBlock.BlockID)
                 target = Game.Client.World.GetBlockID(coords + Coordinates3D.Down);
@@ -311,7 +319,8 @@ namespace TrueCraft.Client.Modules
         {
             var delta = Delta;
 
-            var gamePad = GamePad.GetState(PlayerIndex.One); // TODO: Can this stuff be done effectively in the GamePadHandler?
+            var gamePad =
+                GamePad.GetState(PlayerIndex.One); // TODO: Can this stuff be done effectively in the GamePadHandler?
             if (gamePad.IsConnected && gamePad.ThumbSticks.Left.Length() != 0)
                 delta = new XVector3(gamePad.ThumbSticks.Left.X, 0, gamePad.ThumbSticks.Left.Y);
 
@@ -323,12 +332,13 @@ namespace TrueCraft.Client.Modules
             {
                 var item = Game.Client.Inventory.Hotbar[Game.Client.HotbarSelection];
                 Game.Client.QueuePacket(new PlayerBlockPlacementPacket(
-                    Game.HighlightedBlock.X, (sbyte)Game.HighlightedBlock.Y, Game.HighlightedBlock.Z,
+                    Game.HighlightedBlock.X, (sbyte) Game.HighlightedBlock.Y, Game.HighlightedBlock.Z,
                     Game.HighlightedBlockFace, item.ID, item.Count, item.Metadata));
             }
+
             if (gamePad.IsConnected && gamePad.ThumbSticks.Right.Length() != 0)
             {
-                var look = -(gamePad.ThumbSticks.Right * 8) * (float)(gameTime.ElapsedGameTime.TotalSeconds * 30);
+                var look = -(gamePad.ThumbSticks.Right * 8) * (float) (gameTime.ElapsedGameTime.TotalSeconds * 30);
 
                 Game.Client.Yaw -= look.X;
                 Game.Client.Pitch -= look.Y;
@@ -354,7 +364,9 @@ namespace TrueCraft.Client.Modules
                         Game.TargetBlock = -Coordinates3D.One;
                     }
                     else if (target != Game.TargetBlock) // Change target
+                    {
                         BeginDigging(target);
+                    }
                 }
             }
             else
@@ -367,21 +379,24 @@ namespace TrueCraft.Client.Modules
             if (delta != XVector3.Zero)
             {
                 var lookAt = XVector3.Transform(-delta,
-                                 Matrix.CreateRotationY(MathHelper.ToRadians(-(Game.Client.Yaw - 180) + 180)));
+                    Matrix.CreateRotationY(MathHelper.ToRadians(-(Game.Client.Yaw - 180) + 180)));
 
-                lookAt.X *= (float)(gameTime.ElapsedGameTime.TotalSeconds * 4.3717);
-                lookAt.Z *= (float)(gameTime.ElapsedGameTime.TotalSeconds * 4.3717);
+                lookAt.X *= (float) (gameTime.ElapsedGameTime.TotalSeconds * 4.3717);
+                lookAt.Z *= (float) (gameTime.ElapsedGameTime.TotalSeconds * 4.3717);
 
                 var bobbing = Game.Bobbing;
                 Game.Bobbing += Math.Max(Math.Abs(lookAt.X), Math.Abs(lookAt.Z));
 
                 Game.Client.Velocity = new TVector3(lookAt.X, Game.Client.Velocity.Y, lookAt.Z);
 
-                if ((int)bobbing % 2 == 0 && (int)Game.Bobbing % 2 != 0)
+                if ((int) bobbing % 2 == 0 && (int) Game.Bobbing % 2 != 0)
                     PlayFootstep();
             }
             else
+            {
                 Game.Client.Velocity *= new TVector3(0, 1, 0);
+            }
+
             if (Game.EndDigging != DateTime.MaxValue)
             {
                 if (NextAnimation < DateTime.UtcNow)
@@ -390,11 +405,12 @@ namespace TrueCraft.Client.Modules
                     Game.Client.QueuePacket(new AnimationPacket(Game.Client.EntityID,
                         AnimationPacket.PlayerAnimation.SwingArm));
                 }
+
                 if (DateTime.UtcNow > Game.EndDigging && Game.HighlightedBlock == Game.TargetBlock)
                 {
                     Game.Client.QueuePacket(new PlayerDiggingPacket(
                         PlayerDiggingPacket.Action.StopDigging,
-                        Game.TargetBlock.X, (sbyte)Game.TargetBlock.Y, Game.TargetBlock.Z,
+                        Game.TargetBlock.X, (sbyte) Game.TargetBlock.Y, Game.TargetBlock.Z,
                         Game.HighlightedBlockFace));
                     Game.EndDigging = DateTime.MaxValue;
                 }

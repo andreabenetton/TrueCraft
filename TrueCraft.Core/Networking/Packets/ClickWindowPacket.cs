@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by clients when clicking on an inventory window.
+    ///     Sent by clients when clicking on an inventory window.
     /// </summary>
     public struct ClickWindowPacket : IPacket
     {
-        public byte ID { get { return 0x66; } }
+        public byte ID => 0x66;
 
         public ClickWindowPacket(sbyte windowID, short slotIndex, bool rightClick, short transactionID, bool shift,
             short itemID, sbyte count, short metadata)
@@ -27,16 +27,19 @@ namespace TrueCraft.Core.Networking.Packets
         public bool RightClick;
         public short TransactionID;
         public bool Shift;
+
         /// <summary>
-        /// You should probably ignore this.
+        ///     You should probably ignore this.
         /// </summary>
         public short ItemID;
+
         /// <summary>
-        /// You should probably ignore this.
+        ///     You should probably ignore this.
         /// </summary>
         public sbyte Count;
+
         /// <summary>
-        /// You should probably ignore this.
+        ///     You should probably ignore this.
         /// </summary>
         public short Metadata;
 

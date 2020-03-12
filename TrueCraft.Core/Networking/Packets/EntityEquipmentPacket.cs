@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sets the equipment visible on player entities (i.e. armor).
+    ///     Sets the equipment visible on player entities (i.e. armor).
     /// </summary>
     public struct EntityEquipmentPacket : IPacket
     {
-        public byte ID { get { return 0x05; } }
+        public byte ID => 0x05;
 
         public EntityEquipmentPacket(int entityID, short slot, short itemID, short metadata)
         {
@@ -19,10 +19,12 @@ namespace TrueCraft.Core.Networking.Packets
 
         public int EntityID;
         public short Slot;
+
         /// <summary>
-        /// The ID of the item to show on this player. Set to -1 for nothing.
+        ///     The ID of the item to show on this player. Set to -1 for nothing.
         /// </summary>
         public short ItemID;
+
         public short Metadata;
 
         public void ReadPacket(IMinecraftStream stream)

@@ -8,15 +8,6 @@ namespace TrueCraft.Core.Networking
 {
     public class PacketSegmentProcessor : IPacketSegmentProcessor
     {
-
-        public List<byte> PacketBuffer { get; private set; }
-
-        public PacketReader PacketReader { get; protected set; }
-
-        public bool ServerBound { get; private set; }
-        
-        public IPacket CurrentPacket { get; protected set; }
-
         public PacketSegmentProcessor(PacketReader packetReader, bool serverBound)
         {
             PacketBuffer = new List<byte>();
@@ -24,22 +15,27 @@ namespace TrueCraft.Core.Networking
             ServerBound = serverBound;
         }
 
+        public List<byte> PacketBuffer { get; }
+
+        public PacketReader PacketReader { get; protected set; }
+
+        public bool ServerBound { get; }
+
+        public IPacket CurrentPacket { get; protected set; }
+
         public bool ProcessNextSegment(byte[] nextSegment, int offset, int len, out IPacket packet)
         {
             packet = null;
             CurrentPacket = null;
 
-            if (nextSegment.Length > 0)
-            {
-                PacketBuffer.AddRange(new ByteArraySegment(nextSegment, offset, len));
-            }
+            if (nextSegment.Length > 0) PacketBuffer.AddRange(new ByteArraySegment(nextSegment, offset, len));
 
             if (PacketBuffer.Count == 0)
                 return false;
-            
+
             if (CurrentPacket == null)
             {
-                byte packetId = PacketBuffer[0];
+                var packetId = PacketBuffer[0];
 
                 Func<IPacket> createPacket;
                 if (ServerBound)
@@ -52,10 +48,10 @@ namespace TrueCraft.Core.Networking
 
                 CurrentPacket = createPacket();
             }
-            
-            using (ByteListMemoryStream listStream = new ByteListMemoryStream(PacketBuffer, 1))
+
+            using (var listStream = new ByteListMemoryStream(PacketBuffer, 1))
             {
-                using (MinecraftStream ms = new MinecraftStream(listStream))
+                using (var ms = new MinecraftStream(listStream))
                 {
                     try
                     {
@@ -66,15 +62,14 @@ namespace TrueCraft.Core.Networking
                         return false;
                     }
                 }
-                
-                PacketBuffer.RemoveRange(0, (int)listStream.Position);
+
+                PacketBuffer.RemoveRange(0, (int) listStream.Position);
             }
-            
+
             packet = CurrentPacket;
             CurrentPacket = null;
 
             return PacketBuffer.Count > 0;
         }
-
     }
 }

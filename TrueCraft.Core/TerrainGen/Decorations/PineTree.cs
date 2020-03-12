@@ -8,7 +8,7 @@ namespace TrueCraft.Core.TerrainGen.Decorations
 {
     public class PineTree : Decoration
     {
-        const int LeafRadius = 2;
+        private const int LeafRadius = 2;
 
         public override bool ValidLocation(Coordinates3D location)
         {
@@ -26,19 +26,22 @@ namespace TrueCraft.Core.TerrainGen.Decorations
                 return false;
 
             var random = new Random(world.Seed);
-            int height = random.Next(7, 8);
+            var height = random.Next(7, 8);
             GenerateColumn(chunk, location, height, WoodBlock.BlockID, 0x1);
-            for (int y = 1; y < height; y++)
+            for (var y = 1; y < height; y++)
             {
                 if (y % 2 == 0)
                 {
-                    GenerateVanillaCircle(chunk, location + new Coordinates3D(0, y + 1, 0), LeafRadius - 1, LeavesBlock.BlockID, 0x1);
+                    GenerateVanillaCircle(chunk, location + new Coordinates3D(0, y + 1), LeafRadius - 1,
+                        LeavesBlock.BlockID, 0x1);
                     continue;
                 }
-                GenerateVanillaCircle(chunk, location + new Coordinates3D(0, y + 1, 0), LeafRadius, LeavesBlock.BlockID, 0x1);
+
+                GenerateVanillaCircle(chunk, location + new Coordinates3D(0, y + 1), LeafRadius, LeavesBlock.BlockID,
+                    0x1);
             }
 
-            GenerateTopper(chunk, location + new Coordinates3D(0, height, 0), 0x1);
+            GenerateTopper(chunk, location + new Coordinates3D(0, height), 0x1);
             return true;
         }
 
@@ -56,7 +59,7 @@ namespace TrueCraft.Core.TerrainGen.Decorations
             chunk.SetBlockID(top, LeavesBlock.BlockID);
             chunk.SetMetadata(top, 0x1);
             if (type == 0x1 && (top + Coordinates3D.Up).Y < Chunk.Height)
-                GenerateVanillaCircle(chunk, top + Coordinates3D.Up, sectionRadius, LeavesBlock.BlockID, 0x1); 
+                GenerateVanillaCircle(chunk, top + Coordinates3D.Up, sectionRadius, LeavesBlock.BlockID, 0x1);
         }
     }
 }

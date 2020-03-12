@@ -13,28 +13,22 @@ namespace TrueCraft.Core.Logic.Blocks
         }
 
         public static readonly byte BlockID = 0x11;
-        
-        public override byte ID { get { return 0x11; } }
-        
-        public override double BlastResistance { get { return 10; } }
 
-        public override double Hardness { get { return 2; } }
+        public override byte ID => 0x11;
 
-        public override byte Luminance { get { return 0; } }
-        
-        public override string DisplayName { get { return "Wood"; } }
+        public override double BlastResistance => 10;
 
-        public override bool Flammable { get { return true; } }
+        public override double Hardness => 2;
 
-        public TimeSpan BurnTime { get { return TimeSpan.FromSeconds(15); } }
+        public override byte Luminance => 0;
 
-        public override SoundEffectClass SoundEffect
-        {
-            get
-            {
-                return SoundEffectClass.Wood;
-            }
-        }
+        public override string DisplayName => "Wood";
+
+        public override bool Flammable => true;
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Wood;
+
+        public TimeSpan BurnTime => TimeSpan.FromSeconds(15);
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {

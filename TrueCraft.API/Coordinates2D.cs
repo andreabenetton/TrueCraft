@@ -3,22 +3,22 @@
 namespace TrueCraft.API
 {
     /// <summary>
-    /// Represents a tuple of 2D coordinates.
+    ///     Represents a tuple of 2D coordinates.
     /// </summary>
     public struct Coordinates2D : IEquatable<Coordinates2D>
     {
         /// <summary>
-        /// The X component of the coordinates.
+        ///     The X component of the coordinates.
         /// </summary>
         public int X;
 
         /// <summary>
-        /// The Y component of the coordinates.
+        ///     The Y component of the coordinates.
         /// </summary>
         public int Z;
 
         /// <summary>
-        /// Creates a new pair of coordinates from the specified value.
+        ///     Creates a new pair of coordinates from the specified value.
         /// </summary>
         /// <param name="value">The value for the components of the coordinates.</param>
         public Coordinates2D(int value)
@@ -27,7 +27,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Creates a new pair of coordinates from the specified values.
+        ///     Creates a new pair of coordinates from the specified values.
         /// </summary>
         /// <param name="x">The X component of the coordinates.</param>
         /// <param name="z">The Y component of the coordinates.</param>
@@ -38,7 +38,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Creates a new pair of coordinates by copying another.
+        ///     Creates a new pair of coordinates by copying another.
         /// </summary>
         /// <param name="v">The coordinates to copy.</param>
         public Coordinates2D(Coordinates2D v)
@@ -48,7 +48,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Returns the string representation of this 2D coordinates.
+        ///     Returns the string representation of this 2D coordinates.
         /// </summary>
         /// <returns></returns>
         public override string ToString()
@@ -59,7 +59,7 @@ namespace TrueCraft.API
         #region Math
 
         /// <summary>
-        /// Calculates the distance between two Coordinates2D objects.
+        ///     Calculates the distance between two Coordinates2D objects.
         /// </summary>
         public double DistanceTo(Coordinates2D other)
         {
@@ -68,7 +68,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Calculates the square of a num.
+        ///     Calculates the square of a num.
         /// </summary>
         private int Square(int num)
         {
@@ -76,18 +76,12 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Finds the distance of this Coordinates2D from Coordinates2D.Zero
+        ///     Finds the distance of this Coordinates2D from Coordinates2D.Zero
         /// </summary>
-        public double Distance
-        {
-            get
-            {
-                return DistanceTo(Zero);
-            }
-        }
+        public double Distance => DistanceTo(Zero);
 
         /// <summary>
-        /// Returns the component-wise minimum of two 2D coordinates.
+        ///     Returns the component-wise minimum of two 2D coordinates.
         /// </summary>
         /// <param name="value1">The first coordinates.</param>
         /// <param name="value2">The second coordinates.</param>
@@ -97,11 +91,11 @@ namespace TrueCraft.API
             return new Coordinates2D(
                 Math.Min(value1.X, value2.X),
                 Math.Min(value1.Z, value2.Z)
-                );
+            );
         }
 
         /// <summary>
-        /// Returns the component-wise maximum of two 2D coordinates.
+        ///     Returns the component-wise maximum of two 2D coordinates.
         /// </summary>
         /// <param name="value1">The first coordinates.</param>
         /// <param name="value2">The second coordinates.</param>
@@ -111,7 +105,7 @@ namespace TrueCraft.API
             return new Coordinates2D(
                 Math.Max(value1.X, value2.X),
                 Math.Max(value1.Z, value2.Z)
-                );
+            );
         }
 
         #endregion
@@ -220,60 +214,60 @@ namespace TrueCraft.API
         #region Constants
 
         /// <summary>
-        /// A pair of 2D coordinates with components set to 0.0.
+        ///     A pair of 2D coordinates with components set to 0.0.
         /// </summary>
         public static readonly Coordinates2D Zero = new Coordinates2D(0);
 
         /// <summary>
-        /// A pair of 2D coordinates with components set to 1.0.
+        ///     A pair of 2D coordinates with components set to 1.0.
         /// </summary>
         public static readonly Coordinates2D One = new Coordinates2D(1);
 
 
         /// <summary>
-        /// A pair of 2D coordinates facing forwards.
+        ///     A pair of 2D coordinates facing forwards.
         /// </summary>
         public static readonly Coordinates2D Forward = new Coordinates2D(0, 1);
 
         /// <summary>
-        /// A pair of 2D coordinates facing backwards.
+        ///     A pair of 2D coordinates facing backwards.
         /// </summary>
         public static readonly Coordinates2D Backward = new Coordinates2D(0, -1);
 
         /// <summary>
-        /// A pair of 2D coordinates facing left.
+        ///     A pair of 2D coordinates facing left.
         /// </summary>
         public static readonly Coordinates2D Left = new Coordinates2D(-1, 0);
 
         /// <summary>
-        /// A pair of 2D coordinates facing right.
+        ///     A pair of 2D coordinates facing right.
         /// </summary>
         public static readonly Coordinates2D Right = new Coordinates2D(1, 0);
 
         /// <summary>
-        /// A trio of 3D coordinates facing to the east.
+        ///     A trio of 3D coordinates facing to the east.
         /// </summary>
         public static readonly Coordinates2D East = new Coordinates2D(1, 0);
 
         /// <summary>
-        /// A trio of 3D coordinates facing to the west.
+        ///     A trio of 3D coordinates facing to the west.
         /// </summary>
         public static readonly Coordinates2D West = new Coordinates2D(-1, 0);
 
         /// <summary>
-        /// A trio of 3D coordinates facing to the north.
+        ///     A trio of 3D coordinates facing to the north.
         /// </summary>
         public static readonly Coordinates2D North = new Coordinates2D(0, -1);
 
         /// <summary>
-        /// A trio of 3D coordinates facing to the south.
+        ///     A trio of 3D coordinates facing to the south.
         /// </summary>
         public static readonly Coordinates2D South = new Coordinates2D(0, 1);
 
         #endregion
 
         /// <summary>
-        /// Determines whether this 2D coordinates and another are equal.
+        ///     Determines whether this 2D coordinates and another are equal.
         /// </summary>
         /// <param name="other">The other coordinates.</param>
         /// <returns></returns>
@@ -283,7 +277,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Determines whether this and another object are equal.
+        ///     Determines whether this and another object are equal.
         /// </summary>
         /// <param name="obj">The other object.</param>
         /// <returns></returns>
@@ -291,18 +285,18 @@ namespace TrueCraft.API
         {
             if (ReferenceEquals(null, obj)) return false;
             if (obj.GetType() != typeof(Coordinates2D)) return false;
-            return Equals((Coordinates2D)obj);
+            return Equals((Coordinates2D) obj);
         }
 
         /// <summary>
-        /// Returns the hash code for this 2D coordinates.
+        ///     Returns the hash code for this 2D coordinates.
         /// </summary>
         /// <returns></returns>
         public override int GetHashCode()
         {
             unchecked
             {
-                int result = X.GetHashCode();
+                var result = X.GetHashCode();
                 result = (result * 397) ^ Z.GetHashCode();
                 return result;
             }

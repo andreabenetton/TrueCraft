@@ -4,7 +4,7 @@ namespace TrueCraft.Core.Networking.Packets
 {
     public struct BlockChangePacket : IPacket
     {
-        public byte ID { get { return 0x35; } }
+        public byte ID => 0x35;
 
         public BlockChangePacket(int x, sbyte y, int z, sbyte blockID, sbyte metadata)
         {

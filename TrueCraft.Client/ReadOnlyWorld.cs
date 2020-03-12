@@ -1,24 +1,24 @@
 using System;
 using System.Collections.ObjectModel;
+using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.Core.World;
-using TrueCraft.API;
 
 namespace TrueCraft.Client
 {
     public class ReadOnlyWorld
     {
-        private bool UnloadChunks { get; set; }
-
-        internal World World { get; set; }
-
-        public long Time => World.Time;
-
         internal ReadOnlyWorld()
         {
             World = new World("default");
             UnloadChunks = true;
         }
+
+        private bool UnloadChunks { get; }
+
+        internal World World { get; set; }
+
+        public long Time => World.Time;
 
         public byte GetBlockID(Coordinates3D coordinates)
         {
@@ -27,12 +27,12 @@ namespace TrueCraft.Client
 
         internal void SetBlockID(Coordinates3D coordinates, byte value)
         {
-          World.SetBlockID(coordinates, value);
+            World.SetBlockID(coordinates, value);
         }
 
         internal void SetMetadata(Coordinates3D coordinates, byte value)
         {
-          World.SetMetadata(coordinates, value);
+            World.SetMetadata(coordinates, value);
         }
 
         public byte GetMetadata(Coordinates3D coordinates)
@@ -81,12 +81,22 @@ namespace TrueCraft.Client
 
     public class ReadOnlyChunk
     {
-        internal IChunk Chunk { get; set; }
-
         internal ReadOnlyChunk(IChunk chunk)
         {
             Chunk = chunk;
         }
+
+        internal IChunk Chunk { get; set; }
+
+        public Coordinates2D Coordinates => Chunk.Coordinates;
+
+        public int X => Chunk.X;
+        public int Z => Chunk.Z;
+
+        public ReadOnlyCollection<byte> Blocks => Array.AsReadOnly(Chunk.Data);
+        public ReadOnlyNibbleArray Metadata => new ReadOnlyNibbleArray(Chunk.Metadata);
+        public ReadOnlyNibbleArray BlockLight => new ReadOnlyNibbleArray(Chunk.BlockLight);
+        public ReadOnlyNibbleArray SkyLight => new ReadOnlyNibbleArray(Chunk.SkyLight);
 
         public byte GetBlockId(Coordinates3D coordinates)
         {
@@ -107,15 +117,5 @@ namespace TrueCraft.Client
         {
             return Chunk.GetBlockLight(coordinates);
         }
-
-        public Coordinates2D Coordinates => Chunk.Coordinates;
-
-        public int X => Chunk.X;
-        public int Z => Chunk.Z;
-
-        public ReadOnlyCollection<byte> Blocks => Array.AsReadOnly(Chunk.Data);
-        public ReadOnlyNibbleArray Metadata => new ReadOnlyNibbleArray(Chunk.Metadata);
-        public ReadOnlyNibbleArray BlockLight => new ReadOnlyNibbleArray(Chunk.BlockLight);
-        public ReadOnlyNibbleArray SkyLight => new ReadOnlyNibbleArray(Chunk.SkyLight);
     }
 }

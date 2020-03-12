@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by servers to inform clients of their current health.
+    ///     Sent by servers to inform clients of their current health.
     /// </summary>
     public struct UpdateHealthPacket : IPacket
     {
-        public byte ID { get { return 0x08; } }
+        public byte ID => 0x08;
 
         public UpdateHealthPacket(short health)
         {

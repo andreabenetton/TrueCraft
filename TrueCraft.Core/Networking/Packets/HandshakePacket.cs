@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent from clients to begin a new connection.
+    ///     Sent from clients to begin a new connection.
     /// </summary>
     public struct HandshakePacket : IPacket
     {
-        public byte ID { get { return 0x02; } }
+        public byte ID => 0x02;
 
         public HandshakePacket(string username)
         {

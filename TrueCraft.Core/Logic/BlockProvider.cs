@@ -1,37 +1,47 @@
 ﻿using System;
-using TrueCraft.API.Logic;
-using TrueCraft.API.World;
-using TrueCraft.API;
-using TrueCraft.API.Networking;
-using TrueCraft.Core.Entities;
-using TrueCraft.API.Entities;
-using TrueCraft.API.Server;
-using TrueCraft.Core.Logic.Blocks;
 using System.Linq;
-using TrueCraft.Nbt;
-using TrueCraft.Nbt.Tags;
-using TrueCraft.Nbt.Serialization;
-using TrueCraft.Core.Logic.Items;
+using TrueCraft.API;
+using TrueCraft.API.Entities;
+using TrueCraft.API.Logic;
+using TrueCraft.API.Networking;
 using TrueCraft.API.Physics;
+using TrueCraft.API.Server;
+using TrueCraft.API.World;
+using TrueCraft.Core.Entities;
+using TrueCraft.Core.Logic.Blocks;
+using TrueCraft.Core.Logic.Items;
+using TrueCraft.Nbt.Tags;
 
 namespace TrueCraft.Core.Logic
 {
     /// <summary>
-    /// Provides common implementations of block logic.
+    ///     Provides common implementations of block logic.
     /// </summary>
-    public abstract class BlockProvider : IItemProvider, IBlockProvider
+    public abstract class BlockProvider : IBlockProvider
     {
+        public static readonly byte[] Overwritable =
+        {
+            AirBlock.BlockID,
+            WaterBlock.BlockID,
+            StationaryWaterBlock.BlockID,
+            LavaBlock.BlockID,
+            StationaryLavaBlock.BlockID,
+            SnowfallBlock.BlockID
+        };
+
         public static IBlockRepository BlockRepository { get; set; }
         public static IItemRepository ItemRepository { get; set; }
 
-        public virtual void BlockLeftClicked(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
+        public virtual void BlockLeftClicked(BlockDescriptor descriptor, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             var coords = descriptor.Coordinates + MathHelper.BlockFaceToCoordinates(face);
             if (world.IsValidPosition(coords) && world.GetBlockID(coords) == FireBlock.BlockID)
                 world.SetBlockID(coords, 0);
         }
 
-        public virtual bool BlockRightClicked(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
+        public virtual bool BlockRightClicked(BlockDescriptor descriptor, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             return true;
         }
@@ -47,7 +57,8 @@ namespace TrueCraft.Core.Logic
             world.SetBlockID(descriptor.Coordinates, 0);
         }
 
-        public void GenerateDropEntity(BlockDescriptor descriptor, IWorld world, IMultiplayerServer server, ItemStack item)
+        public void GenerateDropEntity(BlockDescriptor descriptor, IWorld world, IMultiplayerServer server,
+            ItemStack item)
         {
             var entityManager = server.GetEntityManagerForWorld(world);
             var items = new ItemStack[0];
@@ -55,18 +66,15 @@ namespace TrueCraft.Core.Logic
             var material = ToolMaterial.None;
             var held = ItemRepository.GetItemProvider(item.ID);
 
-            if (held is ToolItem)
+            if (held is ToolItem tool)
             {
-                var tool = held as ToolItem;
                 material = tool.Material;
                 type = tool.ToolType;
             }
 
             if ((EffectiveTools & type) > 0)
-            {
                 if ((EffectiveToolMaterials & material) > 0)
                     items = GetDrop(descriptor, item);
-            }
 
             foreach (var i in items)
             {
@@ -76,35 +84,14 @@ namespace TrueCraft.Core.Logic
             }
         }
 
-        public virtual bool IsSupported(BlockDescriptor descriptor, IMultiplayerServer server, IWorld world)
-        {
-            var support = GetSupportDirection(descriptor);
-            if (support != Coordinates3D.Zero)
-            {
-                var supportingBlock = server.BlockRepository.GetBlockProvider(world.GetBlockID(descriptor.Coordinates + support));
-                if (!supportingBlock.Opaque)
-                    return false;
-            }
-            return true;
-        }
-
-        public virtual void BlockUpdate(BlockDescriptor descriptor, BlockDescriptor source, IMultiplayerServer server, IWorld world)
+        public virtual void BlockUpdate(BlockDescriptor descriptor, BlockDescriptor source, IMultiplayerServer server,
+            IWorld world)
         {
             if (!IsSupported(descriptor, server, world))
             {
                 GenerateDropEntity(descriptor, world, server, ItemStack.EmptyStack);
                 world.SetBlockID(descriptor.Coordinates, 0);
             }
-        }
-
-        protected virtual ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
-        {
-            short meta;
-            if (this is ICraftingRecipe)
-                meta = (short)((this as ICraftingRecipe).SignificantMetadata ? descriptor.Metadata : 0);
-            else
-                meta = descriptor.Metadata;
-            return new[] { new ItemStack(descriptor.ID, 1, meta) };
         }
 
         public virtual void ItemUsedOnEntity(ItemStack item, IEntity usedOn, IWorld world, IRemoteClient user)
@@ -117,24 +104,15 @@ namespace TrueCraft.Core.Logic
             // This space intentionally left blank
         }
 
-        public static readonly byte[] Overwritable =
-        {
-            AirBlock.BlockID,
-            WaterBlock.BlockID,
-            StationaryWaterBlock.BlockID,
-            LavaBlock.BlockID,
-            StationaryLavaBlock.BlockID,
-            SnowfallBlock.BlockID
-        };
-
-        public virtual void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world, IRemoteClient user)
+        public virtual void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             var old = world.GetBlockData(coordinates);
-            if (!Overwritable.Any(b => b == old.ID))
+            if (Overwritable.All(b => b != old.ID))
             {
                 coordinates += MathHelper.BlockFaceToCoordinates(face);
                 old = world.GetBlockData(coordinates);
-                if (!Overwritable.Any(b => b == old.ID))
+                if (Overwritable.All(b => b != old.ID))
                     return;
             }
 
@@ -143,34 +121,31 @@ namespace TrueCraft.Core.Logic
             {
                 var em = user.Server.GetEntityManagerForWorld(world);
                 var entities = em.EntitiesInRange(coordinates, 3);
-                var box = new BoundingBox(BoundingBox.Value.Min + (Vector3)coordinates,
-                    BoundingBox.Value.Max + (Vector3)coordinates);
+                var box = new BoundingBox(BoundingBox.Value.Min + (Vector3) coordinates,
+                    BoundingBox.Value.Max + (Vector3) coordinates);
                 foreach (var entity in entities)
                 {
-                    var aabb = entity as IAABBEntity;
-                    if (aabb != null && !(entity is ItemEntity))
-                    {
+                    if (entity is IAABBEntity aabb && !(entity is ItemEntity))
                         if (aabb.BoundingBox.Intersects(box))
                             return;
-                    }
-                    var player = entity as PlayerEntity; // Players do not implement IAABBEntity
-                    if (player != null)
-                    {
+
+                    if (entity is PlayerEntity player)
                         if (new BoundingBox(player.Position, player.Position + player.Size)
                             .Intersects(box))
                             return;
-                    }
                 }
             }
 
             // Place block
             world.SetBlockID(coordinates, ID);
-            world.SetMetadata(coordinates, (byte)item.Metadata);
+            world.SetMetadata(coordinates, (byte) item.Metadata);
 
             BlockPlaced(world.GetBlockData(coordinates), face, world, user);
 
             if (!IsSupported(world.GetBlockData(coordinates), user.Server, world))
+            {
                 world.SetBlockData(coordinates, old);
+            }
             else
             {
                 item.Count--;
@@ -183,21 +158,16 @@ namespace TrueCraft.Core.Logic
             // This space intentionally left blank
         }
 
-        public virtual void TileEntityLoadedForClient(BlockDescriptor descriptor, IWorld world, NbtCompound entity, IRemoteClient client)
+        public virtual void TileEntityLoadedForClient(BlockDescriptor descriptor, IWorld world, NbtCompound entity,
+            IRemoteClient client)
         {
             // This space intentionally left blank
         }
 
-        short IItemProvider.ID
-        {
-            get
-            {
-                return ID;
-            }
-        }
+        short IItemProvider.ID => ID;
 
         /// <summary>
-        /// The ID of the block.
+        ///     The ID of the block.
         /// </summary>
         public abstract byte ID { get; }
 
@@ -206,51 +176,47 @@ namespace TrueCraft.Core.Logic
             return null; // Blocks are rendered in 3D
         }
 
-        public virtual Coordinates3D GetSupportDirection(BlockDescriptor descriptor)
-        {
-            return Coordinates3D.Zero;
-        }
-
-        public virtual SoundEffectClass SoundEffect { get { return SoundEffectClass.Stone; } }
+        public virtual SoundEffectClass SoundEffect => SoundEffectClass.Stone;
 
         /// <summary>
-        /// The maximum amount that can be in a single stack of this block.
+        ///     The maximum amount that can be in a single stack of this block.
         /// </summary>
-        public virtual sbyte MaximumStack { get { return 64; } }
+        public virtual sbyte MaximumStack => 64;
 
         /// <summary>
-        /// How resist the block is to explosions.
+        ///     How resist the block is to explosions.
         /// </summary>
-        public virtual double BlastResistance { get { return 0; } }
+        public virtual double BlastResistance => 0;
 
         /// <summary>
-        /// How resist the block is to player mining/digging.
+        ///     How resist the block is to player mining/digging.
         /// </summary>
-        public virtual double Hardness { get { return 0; } }
+        public virtual double Hardness => 0;
 
         /// <summary>
-        /// The light level emitted by the block. 0 - 15
+        ///     The light level emitted by the block. 0 - 15
         /// </summary>
-        public virtual byte Luminance { get { return 0; } }
+        public virtual byte Luminance => 0;
 
         /// <summary>
-        /// Whether or not the block is opaque
+        ///     Whether or not the block is opaque
         /// </summary>
-        public virtual bool Opaque { get { return true; } }
+        public virtual bool Opaque => true;
 
         /// <summary>
-        /// Whether or not the block is rendered opaque
+        ///     Whether or not the block is rendered opaque
         /// </summary>
-        public virtual bool RenderOpaque { get { return Opaque; } }
+        public virtual bool RenderOpaque => Opaque;
 
-        public virtual bool Flammable { get { return false; } }
+        public virtual bool Flammable => false;
 
         /// <summary>
-        /// The amount removed from the light level as it passes through this block.
-        /// 255 - Let no light pass through(this may change)
-        /// Notes:
-        /// - This isn't needed for opaque blocks
-        /// - This is needed since some "partial" transparent blocks remove more than 1 level from light passing through such as Ice.
+        ///     The amount removed from the light level as it passes through this block.
+        ///     255 - Let no light pass through(this may change)
+        ///     Notes:
+        ///     - This isn't needed for opaque blocks
+        ///     - This is needed since some "partial" transparent blocks remove more than 1 level from light passing through such
+        ///     as Ice.
         /// </summary>
         public virtual byte LightOpacity
         {
@@ -258,45 +224,61 @@ namespace TrueCraft.Core.Logic
             {
                 if (Opaque)
                     return 255;
-                else
-                    return 0;
+                return 0;
             }
         }
 
-        public virtual bool DiffuseSkyLight { get { return false; } }
+        public virtual bool DiffuseSkyLight => false;
 
         /// <summary>
-        /// The name of the block as it would appear to players.
+        ///     The name of the block as it would appear to players.
         /// </summary>
-        public virtual string DisplayName { get { return string.Empty; } }
+        public virtual string DisplayName => string.Empty;
 
-        public virtual ToolMaterial EffectiveToolMaterials { get { return ToolMaterial.All; } }
+        public virtual ToolMaterial EffectiveToolMaterials => ToolMaterial.All;
 
-        public virtual ToolType EffectiveTools { get { return ToolType.All; } }
+        public virtual ToolType EffectiveTools => ToolType.All;
 
         public virtual Tuple<int, int> GetTextureMap(byte metadata)
         {
             return null;
         }
 
-        public virtual BoundingBox? BoundingBox
+        public virtual BoundingBox? BoundingBox => new BoundingBox(Vector3.Zero, Vector3.One);
+
+        public virtual BoundingBox? InteractiveBoundingBox => BoundingBox;
+
+        public virtual bool IsSupported(BlockDescriptor descriptor, IMultiplayerServer server, IWorld world)
         {
-            get
+            var support = GetSupportDirection(descriptor);
+            if (support != Coordinates3D.Zero)
             {
-                return new BoundingBox(Vector3.Zero, Vector3.One);
+                var supportingBlock =
+                    server.BlockRepository.GetBlockProvider(world.GetBlockID(descriptor.Coordinates + support));
+                if (!supportingBlock.Opaque)
+                    return false;
             }
+
+            return true;
         }
 
-        public virtual BoundingBox? InteractiveBoundingBox
+        protected virtual ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
         {
-            get
-            {
-                return BoundingBox;
-            }
+            short meta;
+            if (this is ICraftingRecipe)
+                meta = (short) (((ICraftingRecipe) this).SignificantMetadata ? descriptor.Metadata : 0);
+            else
+                meta = descriptor.Metadata;
+            return new[] {new ItemStack(descriptor.ID, 1, meta)};
+        }
+
+        public virtual Coordinates3D GetSupportDirection(BlockDescriptor descriptor)
+        {
+            return Coordinates3D.Zero;
         }
 
         /// <summary>
-        /// Gets the time required to mine the given block with the given item.
+        ///     Gets the time required to mine the given block with the given item.
         /// </summary>
         /// <returns>The harvest time in milliseconds.</returns>
         /// <param name="blockId">Block identifier.</param>
@@ -312,27 +294,20 @@ namespace TrueCraft.Core.Logic
             var block = BlockRepository.GetBlockProvider(blockId);
             var item = ItemRepository.GetItemProvider(itemId);
 
-            double hardness = block.Hardness;
+            var hardness = block.Hardness;
             if (hardness == -1)
                 return -1;
 
-            double time = hardness * 1.5;
+            var time = hardness * 1.5;
 
-            var tool = ToolType.None;
-            var material = ToolMaterial.None;
-
-            if (item is ToolItem)
+            if (item is ToolItem unknown)
             {
-                var _ = item as ToolItem;
-                tool = _.ToolType;
-                material = _.Material;
+                var tool = unknown.ToolType;
+                var material = unknown.Material;
 
                 if ((block.EffectiveTools & tool) == 0 || (block.EffectiveToolMaterials & material) == 0)
-                {
                     time *= 3.33; // Add time for ineffective tools
-                }
                 if (material != ToolMaterial.None)
-                {
                     switch (material)
                     {
                         case ToolMaterial.Wood:
@@ -351,22 +326,24 @@ namespace TrueCraft.Core.Logic
                             time /= 12;
                             break;
                     }
-                }
+
                 damage = 1;
                 if (tool == ToolType.Shovel || tool == ToolType.Axe || tool == ToolType.Pickaxe)
                 {
-                    damage = (short)(hardness != 0 ? 1 : 0);
+                    damage = (short) (hardness != 0 ? 1 : 0);
                 }
                 else if (tool == ToolType.Sword)
                 {
-                    damage = (short)(hardness != 0 ? 2 : 0);
+                    damage = (short) (hardness != 0 ? 2 : 0);
                     time /= 1.5;
                     if (block is CobwebBlock)
                         time /= 1.5;
                 }
                 else if (tool == ToolType.Hoe)
+                {
                     damage = 0; // What? This doesn't seem right
-                else if (item is ShearsItem)
+                }
+                else if (unknown is ShearsItem)
                 {
                     if (block is WoolBlock)
                         time /= 5;
@@ -378,7 +355,8 @@ namespace TrueCraft.Core.Logic
                         damage = 0;
                 }
             }
-            return (int)(time * 1000);
+
+            return (int) (time * 1000);
         }
     }
 }

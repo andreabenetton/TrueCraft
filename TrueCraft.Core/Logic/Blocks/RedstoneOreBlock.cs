@@ -1,6 +1,6 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Items;
 
 namespace TrueCraft.Core.Logic.Blocks
@@ -9,17 +9,17 @@ namespace TrueCraft.Core.Logic.Blocks
     {
         public static readonly byte BlockID = 0x49;
 
-        public override byte ID { get { return 0x49; } }
+        public override byte ID => 0x49;
 
-        public override double BlastResistance { get { return 15; } }
+        public override double BlastResistance => 15;
 
-        public override double Hardness { get { return 3; } }
+        public override double Hardness => 3;
 
-        public override byte Luminance { get { return 0; } }
+        public override byte Luminance => 0;
 
-        public override string DisplayName { get { return "Redstone Ore"; } }
+        public override string DisplayName => "Redstone Ore";
 
-        public ItemStack SmeltingOutput { get { return new ItemStack(RedstoneItem.ItemID); } }
+        public ItemStack SmeltingOutput => new ItemStack(RedstoneItem.ItemID);
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
@@ -28,20 +28,20 @@ namespace TrueCraft.Core.Logic.Blocks
 
         protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
         {
-            return new[] { new ItemStack(RedstoneItem.ItemID, (sbyte)new Random().Next(4, 5), descriptor.Metadata) };
+            return new[] {new ItemStack(RedstoneItem.ItemID, (sbyte) new Random().Next(4, 5), descriptor.Metadata)};
         }
     }
 
     public class GlowingRedstoneOreBlock : RedstoneOreBlock
     {
-        public static readonly new byte BlockID = 0x4A;
-        
-        public override byte ID { get { return 0x4A; } }
+        public new static readonly byte BlockID = 0x4A;
 
-        public override byte Luminance { get { return 9; } }
+        public override byte ID => 0x4A;
 
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Redstone Ore (glowing)"; } }
+        public override byte Luminance => 9;
+
+        public override bool Opaque => false;
+
+        public override string DisplayName => "Redstone Ore (glowing)";
     }
 }

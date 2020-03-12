@@ -1,5 +1,7 @@
-﻿namespace TrueCraft.Nbt {
-    internal enum NbtParseState {
+﻿namespace TrueCraft.Nbt
+{
+    internal enum NbtParseState
+    {
         AtStreamBeginning,
         AtCompoundBeginning,
         InCompound,

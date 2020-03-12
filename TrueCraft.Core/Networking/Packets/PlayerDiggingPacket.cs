@@ -1,11 +1,11 @@
-﻿using TrueCraft.API.Networking;
-using TrueCraft.API;
+﻿using TrueCraft.API;
+using TrueCraft.API.Networking;
 
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by clients when they start or stop digging. Also used to throw items.
-    /// Also sent with action set to StartDigging when clicking to open a door.
+    ///     Sent by clients when they start or stop digging. Also used to throw items.
+    ///     Also sent with action set to StartDigging when clicking to open a door.
     /// </summary>
     public struct PlayerDiggingPacket : IPacket
     {
@@ -24,8 +24,8 @@ namespace TrueCraft.Core.Networking.Packets
             Z = z;
             Face = face;
         }
-        
-        public byte ID { get { return 0x0E; } }
+
+        public byte ID => 0x0E;
 
         public Action PlayerAction;
         public int X;
@@ -35,20 +35,20 @@ namespace TrueCraft.Core.Networking.Packets
 
         public void ReadPacket(IMinecraftStream stream)
         {
-            PlayerAction = (Action)stream.ReadInt8();
+            PlayerAction = (Action) stream.ReadInt8();
             X = stream.ReadInt32();
             Y = stream.ReadInt8();
             Z = stream.ReadInt32();
-            Face = (BlockFace)stream.ReadInt8();
+            Face = (BlockFace) stream.ReadInt8();
         }
 
         public void WritePacket(IMinecraftStream stream)
         {
-            stream.WriteInt8((sbyte)PlayerAction);
+            stream.WriteInt8((sbyte) PlayerAction);
             stream.WriteInt32(X);
             stream.WriteInt8(Y);
             stream.WriteInt32(Z);
-            stream.WriteInt8((sbyte)Face);
+            stream.WriteInt8((sbyte) Face);
         }
     }
 }

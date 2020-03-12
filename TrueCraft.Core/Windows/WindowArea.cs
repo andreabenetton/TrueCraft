@@ -1,6 +1,6 @@
 using System;
-using TrueCraft.API.Windows;
 using TrueCraft.API;
+using TrueCraft.API.Windows;
 
 namespace TrueCraft.Core.Windows
 {
@@ -13,7 +13,7 @@ namespace TrueCraft.Core.Windows
             Items = new ItemStack[Length];
             Width = width;
             Height = height;
-            for (int i = 0; i < Items.Length; i++)
+            for (var i = 0; i < Items.Length; i++)
                 Items[i] = ItemStack.EmptyStack;
         }
 
@@ -26,7 +26,7 @@ namespace TrueCraft.Core.Windows
 
         public virtual ItemStack this[int index]
         {
-            get { return Items[index]; }
+            get => Items[index];
             set
             {
                 if (IsValid(value, index))
@@ -37,66 +37,69 @@ namespace TrueCraft.Core.Windows
 
         public virtual int MoveOrMergeItem(int index, ItemStack item, IWindowArea from)
         {
-            int emptyIndex = -1;
+            var emptyIndex = -1;
             //var maximumStackSize = Item.GetMaximumStackSize(new ItemDescriptor(item.Id, item.Metadata));
             // TODO
             var maximumStackSize = 64;
-            for (int i = 0; i < Length; i++)
-            {
+            for (var i = 0; i < Length; i++)
                 if (this[i].Empty && emptyIndex == -1)
+                {
                     emptyIndex = i;
+                }
                 else if (this[i].ID == item.ID &&
-                    this[i].Metadata == item.Metadata &&
-                    this[i].Count < maximumStackSize)
+                         this[i].Metadata == item.Metadata &&
+                         this[i].Count < maximumStackSize)
                 {
                     // Merging takes precedence over empty slots
                     emptyIndex = -1;
-                    if (from != null)
-                        from[index] = ItemStack.EmptyStack;
+                    if (@from != null)
+                        @from[index] = ItemStack.EmptyStack;
                     if (this[i].Count + item.Count > maximumStackSize)
                     {
-                        item = new ItemStack(item.ID, (sbyte)(item.Count - (maximumStackSize - this[i].Count)),
+                        item = new ItemStack(item.ID, (sbyte) (item.Count - (maximumStackSize - this[i].Count)),
                             item.Metadata, item.Nbt);
-                        this[i] = new ItemStack(item.ID, (sbyte)maximumStackSize, item.Metadata, item.Nbt);
+                        this[i] = new ItemStack(item.ID, (sbyte) maximumStackSize, item.Metadata, item.Nbt);
                         continue;
                     }
-                    this[i] = new ItemStack(item.ID, (sbyte)(this[i].Count + item.Count), item.Metadata);
+
+                    this[i] = new ItemStack(item.ID, (sbyte) (this[i].Count + item.Count), item.Metadata);
                     return i;
                 }
-            }
+
             if (emptyIndex != -1)
             {
                 if (from != null)
                     from[index] = ItemStack.EmptyStack;
                 this[emptyIndex] = item;
             }
+
             return emptyIndex;
         }
 
+        public void CopyTo(IWindowArea area)
+        {
+            for (var i = 0; i < area.Length && i < Length; i++)
+                area[i] = this[i];
+        }
+
+        public virtual void Dispose()
+        {
+            WindowChange = null;
+        }
+
         /// <summary>
-        /// Returns true if the specified slot is valid to
-        /// be placed in this index.
+        ///     Returns true if the specified slot is valid to
+        ///     be placed in this index.
         /// </summary>
         protected virtual bool IsValid(ItemStack slot, int index)
         {
             return true;
         }
 
-        public void CopyTo(IWindowArea area)
-        {
-            for (int i = 0; i < area.Length && i < Length; i++)
-                area[i] = this[i];
-        }
-
         protected internal virtual void OnWindowChange(WindowChangeEventArgs e)
         {
             if (WindowChange != null)
                 WindowChange(this, e);
-        }
-
-        public virtual void Dispose()
-        {
-            WindowChange = null;
         }
     }
 }

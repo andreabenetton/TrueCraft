@@ -9,13 +9,24 @@ namespace TrueCraft.Core.Collections
     {
         private readonly byte[] array;
         private readonly int start;
-        private readonly int count;
 
         public ByteArraySegment(byte[] array, int start, int count)
         {
             this.array = array;
             this.start = start;
-            this.count = count;
+            Count = count;
+        }
+
+        public byte this[int index]
+        {
+            get => array[index];
+            set
+            {
+                if (index > array.Length)
+                    throw new ArgumentOutOfRangeException("value");
+
+                array[index] = value;
+            }
         }
 
         public void Add(byte item)
@@ -35,7 +46,7 @@ namespace TrueCraft.Core.Collections
 
         public void CopyTo(byte[] target, int index)
         {
-            Buffer.BlockCopy(array, start, target, index, count);
+            Buffer.BlockCopy(array, start, target, index, Count);
         }
 
         public bool Remove(byte item)
@@ -43,36 +54,9 @@ namespace TrueCraft.Core.Collections
             throw new NotImplementedException();
         }
 
-        public int Count
-        {
-            get
-            {
-                return count;
-            }
-        }
+        public int Count { get; }
 
-        public bool IsReadOnly
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        public byte this[int index]
-        {
-            get
-            {
-                return array[index];
-            }
-            set
-            {
-                if (index > array.Length)
-                    throw new ArgumentOutOfRangeException("value");
-
-                array[index] = value;
-            }
-        }
+        public bool IsReadOnly => true;
 
         public IEnumerator<byte> GetEnumerator()
         {
@@ -84,12 +68,10 @@ namespace TrueCraft.Core.Collections
             return GetEnumerator();
         }
 
-        class ByteArraySegmentEnumerator : IEnumerator<byte>
+        private class ByteArraySegmentEnumerator : IEnumerator<byte>
         {
-            private byte current;
-            private int pos;
-
             private readonly ByteArraySegment _segment;
+            private int pos;
 
             public ByteArraySegmentEnumerator(ByteArraySegment segment)
             {
@@ -102,7 +84,7 @@ namespace TrueCraft.Core.Collections
                 if (pos >= _segment.Count)
                     return false;
 
-                current = _segment.array[++pos];
+                Current = _segment.array[++pos];
 
                 return true;
             }
@@ -112,23 +94,13 @@ namespace TrueCraft.Core.Collections
                 pos = _segment.start;
             }
 
-            public byte Current
-            {
-                get
-                {
-                    return current;
-                }
-            }
+            public byte Current { get; private set; }
 
             public void Dispose()
             {
             }
 
-            object IEnumerator.Current
-            {
-                get { return Current; }
-            }
-
+            object IEnumerator.Current => Current;
         }
     }
 }

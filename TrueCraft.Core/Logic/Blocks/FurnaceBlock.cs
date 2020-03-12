@@ -1,77 +1,78 @@
 using System;
-using TrueCraft.API.Logic;
-using TrueCraft.API;
-using TrueCraft.API.Networking;
-using TrueCraft.API.World;
-using TrueCraft.Core.Windows;
-using TrueCraft.API.Windows;
 using System.Collections.Generic;
-using TrueCraft.Nbt;
+using TrueCraft.API;
+using TrueCraft.API.Logic;
+using TrueCraft.API.Networking;
 using TrueCraft.API.Server;
-using TrueCraft.Core.Networking.Packets;
+using TrueCraft.API.Windows;
+using TrueCraft.API.World;
 using TrueCraft.Core.Entities;
+using TrueCraft.Core.Networking.Packets;
+using TrueCraft.Core.Windows;
+using TrueCraft.Nbt;
 using TrueCraft.Nbt.Tags;
 
 namespace TrueCraft.Core.Logic.Blocks
 {
     public class FurnaceBlock : BlockProvider, ICraftingRecipe
     {
-        protected class FurnaceState
-        {
-            public short BurnTimeRemaining { get; set; }
-            public short BurnTimeTotal { get; set; }
-            public short CookTime { get; set; }
-            public ItemStack[] Items { get; set; }
-
-            public FurnaceState()
-            {
-                Items = new ItemStack[3];
-            }
-        }
-
-        protected class FurnaceEventSubject : IEventSubject
-        {
-            public event EventHandler Disposed;
-
-            public void Dispose()
-            {
-                if (Disposed != null)
-                    Dispose();
-            }
-        }
-
         public static readonly byte BlockID = 0x3D;
 
-        public override byte ID { get { return 0x3D; } }
-
-        public override double BlastResistance { get { return 17.5; } }
-
-        public override double Hardness { get { return 3.5; } }
-
-        public override byte Luminance { get { return 0; } }
-
-        public override string DisplayName { get { return "Furnace"; } }
-
-        public override ToolType EffectiveTools
-        {
-            get
-            {
-                return ToolType.Pickaxe;
-            }
-        }
-
-        protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
-        {
-            return new[] { new ItemStack(BlockID) };
-        }
-
-        protected static Dictionary<Coordinates3D, FurnaceEventSubject> TrackedFurnaces { get; set; }
-        protected static Dictionary<Coordinates3D, List<IWindow>> TrackedFurnaceWindows { get; set; }
+        private bool Handling;
 
         public FurnaceBlock()
         {
             TrackedFurnaces = new Dictionary<Coordinates3D, FurnaceEventSubject>();
             TrackedFurnaceWindows = new Dictionary<Coordinates3D, List<IWindow>>();
+        }
+
+        public override byte ID => 0x3D;
+
+        public override double BlastResistance => 17.5;
+
+        public override double Hardness => 3.5;
+
+        public override byte Luminance => 0;
+
+        public override string DisplayName => "Furnace";
+
+        public override ToolType EffectiveTools => ToolType.Pickaxe;
+
+        protected static Dictionary<Coordinates3D, FurnaceEventSubject> TrackedFurnaces { get; set; }
+        protected static Dictionary<Coordinates3D, List<IWindow>> TrackedFurnaceWindows { get; set; }
+
+        public ItemStack[,] Pattern
+        {
+            get
+            {
+                return new[,]
+                {
+                    {
+                        new ItemStack(CobblestoneBlock.BlockID),
+                        new ItemStack(CobblestoneBlock.BlockID),
+                        new ItemStack(CobblestoneBlock.BlockID)
+                    },
+                    {
+                        new ItemStack(CobblestoneBlock.BlockID),
+                        ItemStack.EmptyStack,
+                        new ItemStack(CobblestoneBlock.BlockID)
+                    },
+                    {
+                        new ItemStack(CobblestoneBlock.BlockID),
+                        new ItemStack(CobblestoneBlock.BlockID),
+                        new ItemStack(CobblestoneBlock.BlockID)
+                    }
+                };
+            }
+        }
+
+        public ItemStack Output => new ItemStack(BlockID);
+
+        public bool SignificantMetadata => false;
+
+        protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
+        {
+            return new[] {new ItemStack(BlockID)};
         }
 
         private NbtCompound CreateTileEntity()
@@ -100,17 +101,18 @@ namespace TrueCraft.Core.Logic.Blocks
             var cookTime = tileEntity.Get<NbtShort>("CookTime");
             var state = new FurnaceState
             {
-                BurnTimeTotal = burnTotal == null ? (short)0 : burnTotal.Value,
-                BurnTimeRemaining = burnTime == null ? (short)0 : burnTime.Value,
-                CookTime = cookTime == null ? (short)200 : cookTime.Value
+                BurnTimeTotal = burnTotal == null ? (short) 0 : burnTotal.Value,
+                BurnTimeRemaining = burnTime == null ? (short) 0 : burnTime.Value,
+                CookTime = cookTime == null ? (short) 200 : cookTime.Value
             };
             var items = tileEntity.Get<NbtList>("Items");
             if (items != null)
             {
-                int i = 0;
+                var i = 0;
                 foreach (var item in items)
-                    state.Items[i++] = ItemStack.FromNbt((NbtCompound)item);
+                    state.Items[i++] = ItemStack.FromNbt((NbtCompound) item);
             }
+
             return state;
         }
 
@@ -127,11 +129,12 @@ namespace TrueCraft.Core.Logic.Blocks
 
                     window.Client.QueuePacket(new UpdateProgressPacket(
                         window.ID, UpdateProgressPacket.ProgressTarget.ItemCompletion, state.CookTime));
-                    var burnProgress = state.BurnTimeRemaining / (double)state.BurnTimeTotal;
-                    var burn = (short)(burnProgress * 250);
+                    var burnProgress = state.BurnTimeRemaining / (double) state.BurnTimeTotal;
+                    var burn = (short) (burnProgress * 250);
                     window.Client.QueuePacket(new UpdateProgressPacket(
                         window.ID, UpdateProgressPacket.ProgressTarget.AvailableHeat, burn));
                 }
+
                 Handling = false;
             }
         }
@@ -164,24 +167,27 @@ namespace TrueCraft.Core.Logic.Blocks
             var entity = world.GetTileEntity(descriptor.Coordinates);
             if (entity != null)
             {
-                foreach (var item in (NbtList)entity["Items"])
+                foreach (var item in (NbtList) entity["Items"])
                 {
                     var manager = user.Server.GetEntityManagerForWorld(world);
-                    var slot = ItemStack.FromNbt((NbtCompound)item);
+                    var slot = ItemStack.FromNbt((NbtCompound) item);
                     manager.SpawnEntity(new ItemEntity(descriptor.Coordinates + new Vector3(0.5), slot));
                 }
+
                 world.SetTileEntity(descriptor.Coordinates, null);
             }
+
             base.BlockMined(descriptor, face, world, user);
         }
 
-        public override bool BlockRightClicked(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
+        public override bool BlockRightClicked(BlockDescriptor descriptor, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             var window = new FurnaceWindow(user.Server.Scheduler, descriptor.Coordinates,
-                             user.Server.ItemRepository, (InventoryWindow)user.Inventory);
+                user.Server.ItemRepository, (InventoryWindow) user.Inventory);
 
             var state = GetState(world, descriptor.Coordinates);
-            for (int i = 0; i < state.Items.Length; i++)
+            for (var i = 0; i < state.Items.Length; i++)
                 window[i] = state.Items[i];
 
             user.OpenWindow(window);
@@ -196,8 +202,6 @@ namespace TrueCraft.Core.Logic.Blocks
             window.WindowChange += (sender, e) => FurnaceWindowChanged(sender, e, world);
             return false;
         }
-
-        private bool Handling = false;
 
         protected void FurnaceWindowChanged(object sender, WindowChangeEventArgs e, IWorld world)
         {
@@ -223,16 +227,14 @@ namespace TrueCraft.Core.Logic.Blocks
             Handling = true;
 
             if (!TrackedFurnaces.ContainsKey(window.Coordinates))
-            {
                 // Set up the initial state
                 TryInitializeFurnace(state, window.EventScheduler, world, window.Coordinates, window.ItemRepository);
-            }
 
             Handling = false;
         }
 
         private void TryInitializeFurnace(FurnaceState state, IEventScheduler scheduler, IWorld world,
-                                          Coordinates3D coords, IItemRepository itemRepository)
+            Coordinates3D coords, IItemRepository itemRepository)
         {
             if (TrackedFurnaces.ContainsKey(coords))
                 return;
@@ -246,11 +248,13 @@ namespace TrueCraft.Core.Logic.Blocks
 
             if (state.BurnTimeRemaining > 0)
             {
-                if (state.CookTime == -1 && input != null && (outputStack.Empty || outputStack.CanMerge(input.SmeltingOutput)))
+                if (state.CookTime == -1 && input != null &&
+                    (outputStack.Empty || outputStack.CanMerge(input.SmeltingOutput)))
                 {
                     state.CookTime = 0;
                     SetState(world, coords, state);
                 }
+
                 var subject = new FurnaceEventSubject();
                 TrackedFurnaces[coords] = subject;
                 scheduler.ScheduleEvent("smelting", subject, TimeSpan.FromSeconds(1),
@@ -259,11 +263,10 @@ namespace TrueCraft.Core.Logic.Blocks
             }
 
             if (fuel != null && input != null) // We can maybe start
-            {
                 if (outputStack.Empty || outputStack.CanMerge(input.SmeltingOutput))
                 {
                     // We can definitely start
-                    state.BurnTimeRemaining = state.BurnTimeTotal = (short)(fuel.BurnTime.TotalSeconds * 20);
+                    state.BurnTimeRemaining = state.BurnTimeTotal = (short) (fuel.BurnTime.TotalSeconds * 20);
                     state.CookTime = 0;
                     state.Items[FurnaceWindow.FuelIndex].Count--;
                     SetState(world, coords, state);
@@ -273,20 +276,18 @@ namespace TrueCraft.Core.Logic.Blocks
                     scheduler.ScheduleEvent("smelting", subject, TimeSpan.FromSeconds(1),
                         server => UpdateFurnace(server.Scheduler, world, coords, itemRepository));
                 }
-            }
         }
 
-        private void UpdateFurnace(IEventScheduler scheduler, IWorld world, Coordinates3D coords, IItemRepository itemRepository)
+        private void UpdateFurnace(IEventScheduler scheduler, IWorld world, Coordinates3D coords,
+            IItemRepository itemRepository)
         {
             if (TrackedFurnaces.ContainsKey(coords))
                 TrackedFurnaces.Remove(coords);
 
-            if (world.GetBlockID(coords) != FurnaceBlock.BlockID && world.GetBlockID(coords) != LitFurnaceBlock.BlockID)
-            {
+            if (world.GetBlockID(coords) != BlockID && world.GetBlockID(coords) != LitFurnaceBlock.BlockID)
                 /*if (window != null && !window.IsDisposed)
-                    window.Dispose();*/
+                        window.Dispose();*/
                 return;
-            }
 
             var state = GetState(world, coords);
 
@@ -304,7 +305,7 @@ namespace TrueCraft.Core.Logic.Blocks
                 {
                     state.BurnTimeRemaining = 0;
                     state.BurnTimeTotal = 0;
-                    world.SetBlockID(coords, FurnaceBlock.BlockID);
+                    world.SetBlockID(coords, BlockID);
                 }
             }
 
@@ -340,57 +341,48 @@ namespace TrueCraft.Core.Logic.Blocks
             return new Tuple<int, int>(13, 2);
         }
 
-        public ItemStack[,] Pattern
+        public override void BlockPlaced(BlockDescriptor descriptor, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
-            get
+            world.SetMetadata(descriptor.Coordinates,
+                (byte) MathHelper.DirectionByRotationFlat(user.Entity.Yaw, true));
+        }
+
+        protected class FurnaceState
+        {
+            public FurnaceState()
             {
-                return new[,]
-                {
-                    {
-                        new ItemStack(CobblestoneBlock.BlockID),
-                        new ItemStack(CobblestoneBlock.BlockID),
-                        new ItemStack(CobblestoneBlock.BlockID)
-                    },
-                    {
-                        new ItemStack(CobblestoneBlock.BlockID),
-                        ItemStack.EmptyStack,
-                        new ItemStack(CobblestoneBlock.BlockID)
-                    },
-                    {
-                        new ItemStack(CobblestoneBlock.BlockID),
-                        new ItemStack(CobblestoneBlock.BlockID),
-                        new ItemStack(CobblestoneBlock.BlockID)
-                    }
-                };
+                Items = new ItemStack[3];
             }
+
+            public short BurnTimeRemaining { get; set; }
+            public short BurnTimeTotal { get; set; }
+            public short CookTime { get; set; }
+            public ItemStack[] Items { get; set; }
         }
 
-        public ItemStack Output
+        protected class FurnaceEventSubject : IEventSubject
         {
-            get { return new ItemStack(BlockID); }
-        }
+            public event EventHandler Disposed;
 
-        public bool SignificantMetadata
-        {
-            get { return false; }
-        }
-
-        public override void BlockPlaced(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
-        {
-            world.SetMetadata(descriptor.Coordinates, (byte)MathHelper.DirectionByRotationFlat(user.Entity.Yaw, true));
+            public void Dispose()
+            {
+                if (Disposed != null)
+                    Dispose();
+            }
         }
     }
 
     public class LitFurnaceBlock : FurnaceBlock
     {
-        public static readonly new byte BlockID = 0x3E;
+        public new static readonly byte BlockID = 0x3E;
 
-        public override byte ID { get { return 0x3E; } }
+        public override byte ID => 0x3E;
 
-        public override byte Luminance { get { return 13; } }
+        public override byte Luminance => 13;
 
-        public override bool Opaque { get { return false; } }
+        public override bool Opaque => false;
 
-        public override string DisplayName { get { return "Furnace (lit)"; } }
+        public override string DisplayName => "Furnace (lit)";
     }
 }

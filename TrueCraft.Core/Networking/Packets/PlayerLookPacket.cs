@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent to update the rotation of the player's head and body.
+    ///     Sent to update the rotation of the player's head and body.
     /// </summary>
     public struct PlayerLookPacket : IPacket
     {
-        public byte ID { get { return 0x0C; } }
+        public byte ID => 0x0C;
 
         public float Yaw, Pitch;
         public bool OnGround;

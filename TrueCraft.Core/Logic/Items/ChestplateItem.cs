@@ -6,8 +6,8 @@ namespace TrueCraft.Core.Logic.Items
 {
     public abstract class ChestplateItem : ArmorItem, ICraftingRecipe
     {
-        public override sbyte MaximumStack { get { return 1; } }
-        
+        public override sbyte MaximumStack => 1;
+
         public ItemStack[,] Pattern
         {
             get
@@ -31,127 +31,115 @@ namespace TrueCraft.Core.Logic.Items
 
                 return new[,]
                 {
-                    { new ItemStack(baseMaterial), ItemStack.EmptyStack, new ItemStack(baseMaterial) },
-                    { new ItemStack(baseMaterial), new ItemStack(baseMaterial), new ItemStack(baseMaterial) },
-                    { new ItemStack(baseMaterial), new ItemStack(baseMaterial), new ItemStack(baseMaterial) }
+                    {new ItemStack(baseMaterial), ItemStack.EmptyStack, new ItemStack(baseMaterial)},
+                    {new ItemStack(baseMaterial), new ItemStack(baseMaterial), new ItemStack(baseMaterial)},
+                    {new ItemStack(baseMaterial), new ItemStack(baseMaterial), new ItemStack(baseMaterial)}
                 };
             }
         }
 
-        public ItemStack Output
-        {
-            get
-            {
-                return new ItemStack(ID);
-            }
-        }
+        public ItemStack Output => new ItemStack(ID);
 
-        public bool SignificantMetadata
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public bool SignificantMetadata => false;
     }
 
     public class LeatherTunicItem : ChestplateItem
     {
         public static readonly short ItemID = 0x12B;
 
-        public override short ID { get { return 0x12B; } }
+        public override short ID => 0x12B;
+
+        public override ArmorMaterial Material => ArmorMaterial.Leather;
+
+        public override short BaseDurability => 49;
+
+        public override float BaseArmor => 4;
+
+        public override string DisplayName => "Leather Tunic";
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
             return new Tuple<int, int>(0, 1);
         }
-
-        public override ArmorMaterial Material { get { return ArmorMaterial.Leather; } }
-
-        public override short BaseDurability { get { return 49; } }
-
-        public override float BaseArmor { get { return 4; } }
-
-        public override string DisplayName { get { return "Leather Tunic"; } }
     }
 
     public class IronChestplateItem : ChestplateItem
     {
         public static readonly short ItemID = 0x133;
 
-        public override short ID { get { return 0x133; } }
+        public override short ID => 0x133;
+
+        public override ArmorMaterial Material => ArmorMaterial.Iron;
+
+        public override short BaseDurability => 192;
+
+        public override float BaseArmor => 4;
+
+        public override string DisplayName => "Iron Chestplate";
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
             return new Tuple<int, int>(2, 1);
         }
-
-        public override ArmorMaterial Material { get { return ArmorMaterial.Iron; } }
-
-        public override short BaseDurability { get { return 192; } }
-
-        public override float BaseArmor { get { return 4; } }
-
-        public override string DisplayName { get { return "Iron Chestplate"; } }
     }
 
     public class GoldenChestplateItem : ChestplateItem
     {
         public static readonly short ItemID = 0x13B;
 
-        public override short ID { get { return 0x13B; } }
+        public override short ID => 0x13B;
+
+        public override ArmorMaterial Material => ArmorMaterial.Gold;
+
+        public override short BaseDurability => 96;
+
+        public override float BaseArmor => 4;
+
+        public override string DisplayName => "Golden Chestplate";
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
             return new Tuple<int, int>(4, 1);
         }
-
-        public override ArmorMaterial Material { get { return ArmorMaterial.Gold; } }
-
-        public override short BaseDurability { get { return 96; } }
-
-        public override float BaseArmor { get { return 4; } }
-
-        public override string DisplayName { get { return "Golden Chestplate"; } }
     }
 
     public class DiamondChestplateItem : ChestplateItem
     {
         public static readonly short ItemID = 0x137;
 
-        public override short ID { get { return 0x137; } }
+        public override short ID => 0x137;
+
+        public override ArmorMaterial Material => ArmorMaterial.Diamond;
+
+        public override short BaseDurability => 384;
+
+        public override float BaseArmor => 4;
+
+        public override string DisplayName => "Diamond Chestplate";
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
             return new Tuple<int, int>(3, 1);
         }
-
-        public override ArmorMaterial Material { get { return ArmorMaterial.Diamond; } }
-
-        public override short BaseDurability { get { return 384; } }
-
-        public override float BaseArmor { get { return 4; } }
-
-        public override string DisplayName { get { return "Diamond Chestplate"; } }
     }
 
     public class ChainChestplateItem : ArmorItem // Not HelmentItem because it can't inherit the recipe
     {
         public static readonly short ItemID = 0x12F;
 
-        public override short ID { get { return 0x12F; } }
+        public override short ID => 0x12F;
+
+        public override ArmorMaterial Material => ArmorMaterial.Chain;
+
+        public override short BaseDurability => 96;
+
+        public override float BaseArmor => 4;
+
+        public override string DisplayName => "Chain Chestplate";
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
             return new Tuple<int, int>(1, 1);
         }
-
-        public override ArmorMaterial Material { get { return ArmorMaterial.Chain; } }
-
-        public override short BaseDurability { get { return 96; } }
-
-        public override float BaseArmor { get { return 4; } }
-
-        public override string DisplayName { get { return "Chain Chestplate"; } }
     }
 }

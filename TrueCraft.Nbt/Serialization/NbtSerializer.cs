@@ -6,16 +6,16 @@ namespace TrueCraft.Nbt.Serialization
 {
     public class NbtSerializer
     {
-        public Type Type { get; set; }
-
         /// <summary>
-        /// Decorates the given property or field with the specified
-        /// NBT tag name.
+        ///     Decorates the given property or field with the specified
+        ///     NBT tag name.
         /// </summary>
         public NbtSerializer(Type type)
         {
             Type = type;
         }
+
+        public Type Type { get; set; }
 
         public NbtTag Serialize(object value, bool skipInterfaceCheck = false)
         {
@@ -83,10 +83,11 @@ namespace TrueCraft.Nbt.Serialization
                     listType = NbtTagType.String;
                 var list = new NbtList(tagName, listType);
                 var innerSerializer = new NbtSerializer(elementType);
-                for (int i = 0; i < array.Length; i++)
+                for (var i = 0; i < array.Length; i++)
                     list.Add(innerSerializer.Serialize(array.GetValue(i)));
                 return list;
             }
+
             if (value is NbtFile)
                 return ((NbtFile) value).RootTag;
             var compound = new NbtCompound(tagName);
@@ -107,7 +108,7 @@ namespace TrueCraft.Nbt.Serialization
 
                 NbtTag tag = null;
 
-                string name = property.Name;
+                var name = property.Name;
                 nameAttributes = Attribute.GetCustomAttributes(property, typeof(TagNameAttribute));
                 var ignoreOnNullAttribute = Attribute.GetCustomAttribute(property, typeof(IgnoreOnNullAttribute));
                 if (nameAttributes.Length != 0)
@@ -120,9 +121,7 @@ namespace TrueCraft.Nbt.Serialization
                 {
                     if (ignoreOnNullAttribute != null) continue;
                     if (property.PropertyType.IsValueType)
-                    {
                         propValue = Activator.CreateInstance(property.PropertyType);
-                    }
                     else if (property.PropertyType == typeof(string))
                         propValue = "";
                 }
@@ -166,9 +165,13 @@ namespace TrueCraft.Nbt.Serialization
                 var list = (NbtList) value;
                 var type = typeof(object);
                 if (list.ListType == NbtTagType.Byte)
+                {
                     type = typeof(byte);
+                }
                 else if (list.ListType == NbtTagType.ByteArray)
+                {
                     type = typeof(byte[]);
+                }
                 else if (list.ListType == NbtTagType.Compound)
                 {
                     if (Type.IsArray)
@@ -177,28 +180,45 @@ namespace TrueCraft.Nbt.Serialization
                         type = typeof(object);
                 }
                 else if (list.ListType == NbtTagType.Double)
+                {
                     type = typeof(double);
+                }
                 else if (list.ListType == NbtTagType.Float)
+                {
                     type = typeof(float);
+                }
                 else if (list.ListType == NbtTagType.Int)
+                {
                     type = typeof(int);
+                }
                 else if (list.ListType == NbtTagType.IntArray)
+                {
                     type = typeof(int[]);
+                }
                 else if (list.ListType == NbtTagType.Long)
+                {
                     type = typeof(long);
+                }
                 else if (list.ListType == NbtTagType.Short)
+                {
                     type = typeof(short);
+                }
                 else if (list.ListType == NbtTagType.String)
+                {
                     type = typeof(string);
+                }
                 else
+                {
                     throw new NotSupportedException("The NBT list type '" + list.TagType + "' is not supported.");
+                }
 
                 var array = Array.CreateInstance(type, list.Count);
                 var innerSerializer = new NbtSerializer(type);
-                for (int i = 0; i < array.Length; i++)
+                for (var i = 0; i < array.Length; i++)
                     array.SetValue(innerSerializer.Deserialize(list[i]), i);
                 return array;
             }
+
             if (value is NbtCompound)
             {
                 var compound = value as NbtCompound;
@@ -209,7 +229,7 @@ namespace TrueCraft.Nbt.Serialization
                 {
                     if (!property.CanWrite)
                         continue;
-                    string name = property.Name;
+                    var name = property.Name;
                     var nameAttributes = Attribute.GetCustomAttributes(property, typeof(TagNameAttribute));
 
                     if (nameAttributes.Length != 0)
@@ -223,7 +243,9 @@ namespace TrueCraft.Nbt.Serialization
                         ((INbtSerializable) data).Deserialize(node);
                     }
                     else
+                    {
                         data = new NbtSerializer(property.PropertyType).Deserialize(node);
+                    }
 
                     // Some manual casting for edge cases
                     if (property.PropertyType == typeof(bool)

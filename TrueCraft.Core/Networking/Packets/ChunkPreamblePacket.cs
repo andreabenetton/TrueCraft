@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Used to allocate or unload chunks.
+    ///     Used to allocate or unload chunks.
     /// </summary>
     public struct ChunkPreamblePacket : IPacket
     {
-        public byte ID { get { return 0x32; } }
+        public byte ID => 0x32;
 
         public ChunkPreamblePacket(int x, int z, bool load = true)
         {
@@ -17,8 +17,9 @@ namespace TrueCraft.Core.Networking.Packets
         }
 
         public int X, Z;
+
         /// <summary>
-        /// If false, free the chunk. If true, allocate it.
+        ///     If false, free the chunk. If true, allocate it.
         /// </summary>
         public bool Load;
 

@@ -4,15 +4,7 @@ namespace TrueCraft.API
 {
     public class MetadataFloat : MetadataEntry
     {
-        public override byte Identifier { get { return 3; } }
-        public override string FriendlyName { get { return "float"; } }
-
         public float Value;
-
-        public static implicit operator MetadataFloat(float value)
-        {
-            return new MetadataFloat(value);
-        }
 
         public MetadataFloat()
         {
@@ -21,6 +13,14 @@ namespace TrueCraft.API
         public MetadataFloat(float value)
         {
             Value = value;
+        }
+
+        public override byte Identifier => 3;
+        public override string FriendlyName => "float";
+
+        public static implicit operator MetadataFloat(float value)
+        {
+            return new MetadataFloat(value);
         }
 
         public override void FromStream(IMinecraftStream stream)

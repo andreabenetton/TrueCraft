@@ -1,5 +1,3 @@
-using System;
-using System.Reflection;
 using TrueCraft.API.Networking;
 
 namespace TrueCraft.API
@@ -9,10 +7,10 @@ namespace TrueCraft.API
         public abstract byte Identifier { get; }
         public abstract string FriendlyName { get; }
 
+        internal byte Index { get; set; }
+
         public abstract void FromStream(IMinecraftStream stream);
         public abstract void WriteTo(IMinecraftStream stream, byte index);
-
-        internal byte Index { get; set; }
 
         public static implicit operator MetadataEntry(byte value)
         {
@@ -47,14 +45,14 @@ namespace TrueCraft.API
         protected byte GetKey(byte index)
         {
             Index = index; // Cheat to get this for ToString
-            return (byte)((Identifier << 5) | (index & 0x1F));
+            return (byte) ((Identifier << 5) | (index & 0x1F));
         }
 
         public override string ToString()
         {
-            Type type = GetType();
-            FieldInfo[] fields = type.GetFields();
-            string result = FriendlyName + "[" + Index + "]: ";
+            var type = GetType();
+            var fields = type.GetFields();
+            var result = FriendlyName + "[" + Index + "]: ";
             if (fields.Length != 0)
                 result += fields[0].GetValue(this).ToString();
             return result;

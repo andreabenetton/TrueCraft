@@ -1,10 +1,10 @@
-﻿using TrueCraft.API;
+﻿using System.Linq;
+using TrueCraft.API;
 using TrueCraft.API.Networking;
-using TrueCraft.Core.Networking.Packets;
-using TrueCraft.Core.Logic.Blocks;
 using TrueCraft.API.Physics;
 using TrueCraft.Core.Logic;
-using System.Linq;
+using TrueCraft.Core.Logic.Blocks;
+using TrueCraft.Core.Networking.Packets;
 
 namespace TrueCraft.Core.Entities
 {
@@ -15,27 +15,15 @@ namespace TrueCraft.Core.Entities
             _Position = position + new Vector3(0.5);
         }
 
-        public override byte EntityType { get { return 70; } }
+        public override byte EntityType => 70;
 
-        public override Size Size
-        {
-            get
-            {
-                return new Size(0.98);
-            }
-        }
+        public override IPacket SpawnPacket =>
+            new SpawnGenericEntityPacket(EntityID, (sbyte) EntityType,
+                MathHelper.CreateAbsoluteInt(Position.X), MathHelper.CreateAbsoluteInt(Position.Y),
+                MathHelper.CreateAbsoluteInt(Position.Z), 0, null, null, null);
 
-        public override IPacket SpawnPacket
-        {
-            get
-            {
-                return new SpawnGenericEntityPacket(EntityID, (sbyte)EntityType,
-                    MathHelper.CreateAbsoluteInt(Position.X), MathHelper.CreateAbsoluteInt(Position.Y),
-                    MathHelper.CreateAbsoluteInt(Position.Z), 0, null, null, null);
-            }
-        }
-
-        public override int Data { get { return 1; } }
+        public override int Data => 1;
+        public override Size Size => new Size(0.98);
 
         public void TerrainCollision(Vector3 collisionPoint, Vector3 collisionDirection)
         {
@@ -47,22 +35,16 @@ namespace TrueCraft.Core.Entities
                 if (EntityType == 71)
                     id = GravelBlock.BlockID;
                 EntityManager.DespawnEntity(this);
-                var position = (Coordinates3D)collisionPoint + Coordinates3D.Up;
+                var position = (Coordinates3D) collisionPoint + Coordinates3D.Up;
                 var hit = World.BlockRepository.GetBlockProvider(World.GetBlockID(position));
-                if (hit.BoundingBox == null && !BlockProvider.Overwritable.Any(o => o == hit.ID))
+                if (hit.BoundingBox == null && BlockProvider.Overwritable.All(o => o != hit.ID))
                     EntityManager.SpawnEntity(new ItemEntity(position + new Vector3(0.5), new ItemStack(id)));
                 else
                     World.SetBlockID(position, id);
             }
         }
 
-        public BoundingBox BoundingBox
-        {
-            get
-            {
-                return new BoundingBox(Position - (Size / 2), Position + (Size / 2));
-            }
-        }
+        public BoundingBox BoundingBox => new BoundingBox(Position - Size / 2, Position + Size / 2);
 
         public bool BeginUpdate()
         {
@@ -76,28 +58,8 @@ namespace TrueCraft.Core.Entities
             Position = newPosition;
         }
 
-        public float AccelerationDueToGravity
-        {
-            get
-            {
-                return 0.8f;
-            }
-        }
-
-        public float Drag
-        {
-            get
-            {
-                return 0.40f;
-            }
-        }
-
-        public float TerminalVelocity
-        {
-            get
-            {
-                return 39.2f;
-            }
-        }
+        public float AccelerationDueToGravity => 0.8f;
+        public float Drag => 0.40f;
+        public float TerminalVelocity => 39.2f;
     }
 }

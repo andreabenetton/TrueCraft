@@ -1,29 +1,29 @@
 ﻿using System;
-using System.Text;
 using System.IO;
-using TrueCraft.Nbt;
-using TrueCraft.Nbt.Tags;
-using TrueCraft.Nbt.Serialization;
+using System.Text;
 using TrueCraft.API.Networking;
+using TrueCraft.Nbt;
+using TrueCraft.Nbt.Serialization;
+using TrueCraft.Nbt.Tags;
 
 namespace TrueCraft.API
 {
     /// <summary>
-    /// Represents a stack of items.
+    ///     Represents a stack of items.
     /// </summary>
     public struct ItemStack : ICloneable, IEquatable<ItemStack>
     {
         /// <summary>
-        /// Returns the hash code for this item stack.
+        ///     Returns the hash code for this item stack.
         /// </summary>
         /// <returns></returns>
         public override int GetHashCode()
         {
             unchecked
             {
-                int hashCode = _Id.GetHashCode();
+                var hashCode = _Id.GetHashCode();
                 hashCode = (hashCode * 397) ^ _Count.GetHashCode();
-                hashCode = (hashCode * 397) ^ _Metadata.GetHashCode();
+                hashCode = (hashCode * 397) ^ Metadata.GetHashCode();
                 hashCode = (hashCode * 397) ^ Index;
                 hashCode = (hashCode * 397) ^ (Nbt != null ? Nbt.GetHashCode() : 0);
                 return hashCode;
@@ -41,7 +41,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Creates a new item stack with the specified values.
+        ///     Creates a new item stack with the specified values.
         /// </summary>
         /// <param name="id">The item ID for the item stack.</param>
         public ItemStack(short id) : this()
@@ -54,7 +54,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Creates a new item stack with the specified values.
+        ///     Creates a new item stack with the specified values.
         /// </summary>
         /// <param name="id">The item ID for the item stack.</param>
         /// <param name="count">The item count for the item stack.</param>
@@ -64,7 +64,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Creates a new item stack with the specified values.
+        ///     Creates a new item stack with the specified values.
         /// </summary>
         /// <param name="id">The item ID for the item stack.</param>
         /// <param name="count">The item count for the item stack.</param>
@@ -75,7 +75,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Creates a new item stack with the specified values.
+        ///     Creates a new item stack with the specified values.
         /// </summary>
         /// <param name="id">The item ID for the item stack.</param>
         /// <param name="count">The item count for the item stack.</param>
@@ -93,13 +93,13 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Creates and returns a new item stack read from a Minecraft stream.
+        ///     Creates and returns a new item stack read from a Minecraft stream.
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
         /// <returns></returns>
         public static ItemStack FromStream(IMinecraftStream stream)
         {
-            var slot = ItemStack.EmptyStack;
+            var slot = EmptyStack;
             slot.ID = stream.ReadInt16();
             if (slot.Empty)
                 return slot;
@@ -117,7 +117,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Writes this item stack to a Minecraft stream.
+        ///     Writes this item stack to a Minecraft stream.
         /// </summary>
         /// <param name="stream">The stream to write to.</param>
         public void WriteTo(IMinecraftStream stream)
@@ -132,24 +132,25 @@ namespace TrueCraft.API
                 stream.WriteInt16(-1);
                 return;
             }
+
             var mStream = new MemoryStream();
             var file = new NbtFile(Nbt);
             file.SaveToStream(mStream, NbtCompression.GZip);
-            stream.WriteInt16((short)mStream.Position);
+            stream.WriteInt16((short) mStream.Position);
             stream.WriteUInt8Array(mStream.GetBuffer());
         }
 
         /// <summary>
-        /// Creates and returns a new item stack created from an NBT compound tag.
+        ///     Creates and returns a new item stack created from an NBT compound tag.
         /// </summary>
         /// <param name="compound">The compound tag to create the item stack from.</param>
         /// <returns></returns>
         public static ItemStack FromNbt(NbtCompound compound)
         {
-            var s = ItemStack.EmptyStack;
+            var s = EmptyStack;
             s.ID = compound.Get<NbtShort>("id").Value;
             s.Metadata = compound.Get<NbtShort>("Damage").Value;
-            s.Count = (sbyte)compound.Get<NbtByte>("Count").Value;
+            s.Count = (sbyte) compound.Get<NbtByte>("Count").Value;
             s.Index = compound.Get<NbtByte>("Slot").Value;
             if (compound.Get<NbtCompound>("tag") != null)
                 s.Nbt = compound.Get<NbtCompound>("tag");
@@ -157,7 +158,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Creates and returns a new NBT compound tag containing this item stack.
+        ///     Creates and returns a new NBT compound tag containing this item stack.
         /// </summary>
         /// <returns></returns>
         public NbtCompound ToNbt()
@@ -165,28 +166,25 @@ namespace TrueCraft.API
             var c = new NbtCompound();
             c.Add(new NbtShort("id", ID));
             c.Add(new NbtShort("Damage", Metadata));
-            c.Add(new NbtByte("Count", (byte)Count));
-            c.Add(new NbtByte("Slot", (byte)Index));
+            c.Add(new NbtByte("Count", (byte) Count));
+            c.Add(new NbtByte("Slot", (byte) Index));
             if (Nbt != null)
                 c.Add(new NbtCompound("tag"));
             return c;
         }
 
         /// <summary>
-        /// Gets whether this item stack is empty.
+        ///     Gets whether this item stack is empty.
         /// </summary>
         [NbtIgnore]
-        public bool Empty
-        {
-            get { return ID == -1; }
-        }
+        public bool Empty => ID == -1;
 
         /// <summary>
-        /// Gets or sets the item ID for this item stack.
+        ///     Gets or sets the item ID for this item stack.
         /// </summary>
         public short ID
         {
-            get { return _Id; }
+            get => _Id;
             set
             {
                 _Id = value;
@@ -200,11 +198,11 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Gets or sets the item count for this item stack.
+        ///     Gets or sets the item count for this item stack.
         /// </summary>
         public sbyte Count
         {
-            get { return _Count; }
+            get => _Count;
             set
             {
                 _Count = value;
@@ -218,32 +216,26 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Gets or sets the metadata for this item stack.
+        ///     Gets or sets the metadata for this item stack.
         /// </summary>
-        public short Metadata
-        {
-            get { return _Metadata; }
-            set { _Metadata = value; }
-        }
+        public short Metadata { get; set; }
 
         private short _Id;
         private sbyte _Count;
-        private short _Metadata;
 
         /// <summary>
-        /// The NBT compound tag for this item stack, if any.
+        ///     The NBT compound tag for this item stack, if any.
         /// </summary>
         [IgnoreOnNull]
         public NbtCompound Nbt { get; set; }
 
         /// <summary>
-        /// The index (slot) of this item stack in an inventory.
+        ///     The index (slot) of this item stack in an inventory.
         /// </summary>
-        [NbtIgnore]
-        public int Index;
+        [NbtIgnore] public int Index;
 
         /// <summary>
-        /// Returns the string representation of this item stack.
+        ///     Returns the string representation of this item stack.
         /// </summary>
         /// <returns></returns>
         public override string ToString()
@@ -251,17 +243,17 @@ namespace TrueCraft.API
             if (Empty)
                 return "(Empty)";
 
-            StringBuilder resultBuilder = new StringBuilder("ID: " + ID);
+            var resultBuilder = new StringBuilder("ID: " + ID);
 
             if (Count != 1) resultBuilder.Append("; Count: " + Count);
             if (Metadata != 0) resultBuilder.Append("; Metadata: " + Metadata);
-            if (Nbt != null) resultBuilder.Append(Environment.NewLine + Nbt.ToString());
+            if (Nbt != null) resultBuilder.Append(Environment.NewLine + Nbt);
 
-            return "(" + resultBuilder.ToString() + ")";
+            return "(" + resultBuilder + ")";
         }
 
         /// <summary>
-        /// Returns a clone of this item stack.
+        ///     Returns a clone of this item stack.
         /// </summary>
         /// <returns></returns>
         public object Clone()
@@ -270,48 +262,43 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Gets an empty item stack.
+        ///     Gets an empty item stack.
         /// </summary>
         [NbtIgnore]
-        public static ItemStack EmptyStack
-        {
-            get
-            {
-                return new ItemStack(-1);
-            }
-        }
+        public static ItemStack EmptyStack => new ItemStack(-1);
 
         /// <summary>
-        /// Determines whether this item stack can merge with another.
+        ///     Determines whether this item stack can merge with another.
         /// </summary>
         /// <param name="other">The other item stack.</param>
         /// <returns></returns>
         public bool CanMerge(ItemStack other)
         {
-            if (this.Empty || other.Empty)
+            if (Empty || other.Empty)
                 return true;
-            return _Id == other._Id && _Metadata == other._Metadata && Equals(Nbt, other.Nbt);
+            return _Id == other._Id && Metadata == other.Metadata && Equals(Nbt, other.Nbt);
         }
 
         /// <summary>
-        /// Determines whether this item stack and another object are equal.
+        ///     Determines whether this item stack and another object are equal.
         /// </summary>
         /// <param name="obj">The other object.</param>
         /// <returns></returns>
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
-            return obj is ItemStack && Equals((ItemStack)obj);
+            return obj is ItemStack && Equals((ItemStack) obj);
         }
 
         /// <summary>
-        /// Determines whether this item stack and another are equal.
+        ///     Determines whether this item stack and another are equal.
         /// </summary>
         /// <param name="other">The other item stack.</param>
         /// <returns></returns>
         public bool Equals(ItemStack other)
         {
-            return _Id == other._Id && _Count == other._Count && _Metadata == other._Metadata && Index == other.Index && Equals(Nbt, other.Nbt);
+            return _Id == other._Id && _Count == other._Count && Metadata == other.Metadata && Index == other.Index &&
+                   Equals(Nbt, other.Nbt);
         }
     }
 }

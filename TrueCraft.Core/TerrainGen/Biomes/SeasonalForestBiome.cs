@@ -4,27 +4,15 @@ namespace TrueCraft.Core.TerrainGen.Biomes
 {
     public class SeasonalForestBiome : BiomeProvider
     {
-        public override byte ID
-        {
-            get { return (byte)Biome.SeasonalForest; }
-        }
+        public override byte ID => (byte) Biome.SeasonalForest;
 
-        public override double Temperature
-        {
-            get { return 0.7f; }
-        }
+        public override double Temperature => 0.7f;
 
-        public override double Rainfall
-        {
-            get { return 0.8f; }
-        }
+        public override double Rainfall => 0.8f;
 
         public override PlantSpecies[] Plants
         {
-            get
-            {
-                return new[] { PlantSpecies.Fern, PlantSpecies.TallGrass };
-            }
+            get { return new[] {PlantSpecies.Fern, PlantSpecies.TallGrass}; }
         }
     }
 }

@@ -3,7 +3,7 @@
 namespace TrueCraft.Core.Networking
 {
     /// <summary>
-    /// Queues all writes until Stream.Flush() is called. This is different than System.IO.BufferedStream.
+    ///     Queues all writes until Stream.Flush() is called. This is different than System.IO.BufferedStream.
     /// </summary>
     public class BufferedStream : Stream
     {
@@ -18,36 +18,30 @@ namespace TrueCraft.Core.Networking
         public MemoryStream PendingStream { get; set; }
 
         /// <summary>
-        /// Used by PacketReader to insert the ID and length into the stream before the packet contents.
+        ///     Used by PacketReader to insert the ID and length into the stream before the packet contents.
         /// </summary>
         internal bool WriteImmediately { get; set; }
 
-        public override bool CanRead { get { return BaseStream.CanRead; } }
+        public override bool CanRead => BaseStream.CanRead;
 
-        public override bool CanSeek { get { return BaseStream.CanSeek; } }
+        public override bool CanSeek => BaseStream.CanSeek;
 
-        public override bool CanWrite { get { return BaseStream.CanWrite; } }
+        public override bool CanWrite => BaseStream.CanWrite;
 
-        public override void Flush()
-        {
-            BaseStream.Write(PendingStream.GetBuffer(), 0, (int)PendingStream.Position);
-            PendingStream.Position = 0;
-        }
+        public long PendingWrites => PendingStream.Position;
 
-        public long PendingWrites
-        {
-            get { return PendingStream.Position; }
-        }
-
-        public override long Length
-        {
-            get { return BaseStream.Length; }
-        }
+        public override long Length => BaseStream.Length;
 
         public override long Position
         {
-            get { return BaseStream.Position; }
-            set { BaseStream.Position = value; }
+            get => BaseStream.Position;
+            set => BaseStream.Position = value;
+        }
+
+        public override void Flush()
+        {
+            BaseStream.Write(PendingStream.GetBuffer(), 0, (int) PendingStream.Position);
+            PendingStream.Position = 0;
         }
 
         public override int Read(byte[] buffer, int offset, int count)

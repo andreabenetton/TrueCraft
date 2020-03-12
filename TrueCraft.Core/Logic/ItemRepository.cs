@@ -1,61 +1,58 @@
 ﻿using System;
-using TrueCraft.API.Logic;
 using System.Collections.Generic;
 using System.Linq;
+using TrueCraft.API.Logic;
 
 namespace TrueCraft.Core.Logic
 {
     public class ItemRepository : IItemRepository
     {
+        private readonly List<IItemProvider> _itemProviders;
+
         public ItemRepository()
         {
-            ItemProviders = new List<IItemProvider>();
+            _itemProviders = new List<IItemProvider>();
         }
-
-        private readonly List<IItemProvider> ItemProviders = new List<IItemProvider>();
 
         public IItemProvider GetItemProvider(short id)
         {
             // TODO: Binary search
-            for (int i = 0; i < ItemProviders.Count; i++)
-            {
-                if (ItemProviders[i].ID == id)
-                    return ItemProviders[i];
-            }
+            foreach (var ip in _itemProviders)
+                if (ip.ID == id)
+                    return ip;
+
             return null;
         }
 
         public void RegisterItemProvider(IItemProvider provider)
         {
             int i;
-            for (i = ItemProviders.Count - 1; i >= 0; i--)
+            for (i = _itemProviders.Count - 1; i >= 0; i--)
             {
-                if (provider.ID == ItemProviders[i].ID)
+                if (provider.ID == _itemProviders[i].ID)
                 {
-                    ItemProviders[i] = provider; // Override
+                    _itemProviders[i] = provider; // Override
                     return;
                 }
-                if (ItemProviders[i].ID < provider.ID)
+
+                if (_itemProviders[i].ID < provider.ID)
                     break;
             }
-            ItemProviders.Insert(i + 1, provider);
+
+            _itemProviders.Insert(i + 1, provider);
         }
 
         public void DiscoverItemProviders()
         {
             var providerTypes = new List<Type>();
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                foreach (var type in assembly.GetTypes().Where(t =>
-                    typeof(IItemProvider).IsAssignableFrom(t) && !t.IsAbstract))
-                {
-                    providerTypes.Add(type);
-                }
-            }
+            foreach (var type in assembly.GetTypes().Where(t =>
+                typeof(IItemProvider).IsAssignableFrom(t) && !t.IsAbstract))
+                providerTypes.Add(type);
 
             providerTypes.ForEach(t =>
             {
-                var instance = (IItemProvider)Activator.CreateInstance(t);
+                var instance = (IItemProvider) Activator.CreateInstance(t);
                 RegisterItemProvider(instance);
             });
         }

@@ -8,21 +8,16 @@ namespace TrueCraft.Core.Logic.Blocks
     public class BricksBlock : BlockProvider, ICraftingRecipe
     {
         public static readonly byte BlockID = 0x2D;
-        
-        public override byte ID { get { return 0x2D; } }
-        
-        public override double BlastResistance { get { return 30; } }
 
-        public override double Hardness { get { return 2; } }
+        public override byte ID => 0x2D;
 
-        public override byte Luminance { get { return 0; } }
-        
-        public override string DisplayName { get { return "Bricks"; } }
+        public override double BlastResistance => 30;
 
-        public override Tuple<int, int> GetTextureMap(byte metadata)
-        {
-            return new Tuple<int, int>(7, 0);
-        }
+        public override double Hardness => 2;
+
+        public override byte Luminance => 0;
+
+        public override string DisplayName => "Bricks";
 
         public ItemStack[,] Pattern
         {
@@ -36,14 +31,13 @@ namespace TrueCraft.Core.Logic.Blocks
             }
         }
 
-        public ItemStack Output
-        {
-            get { return new ItemStack(BlockID); }
-        }
+        public ItemStack Output => new ItemStack(BlockID);
 
-        public bool SignificantMetadata
+        public bool SignificantMetadata => false;
+
+        public override Tuple<int, int> GetTextureMap(byte metadata)
         {
-            get { return false; }
+            return new Tuple<int, int>(7, 0);
         }
     }
 }

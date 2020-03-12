@@ -1,30 +1,30 @@
 ﻿using System;
 using System.Text;
 
-namespace TrueCraft.Nbt.Tags {
+namespace TrueCraft.Nbt.Tags
+{
     /// <summary> A tag containing a single signed 32-bit integer. </summary>
-    public sealed class NbtInt : NbtTag {
-        /// <summary> Type of this tag (Int). </summary>
-        public override NbtTagType TagType => NbtTagType.Int;
-
-        /// <summary> Value/payload of this tag (a single signed 32-bit integer). </summary>
-        public int Value { get; set; }
-
-
+    public sealed class NbtInt : NbtTag
+    {
         /// <summary> Creates an unnamed NbtInt tag with the default value of 0. </summary>
-        public NbtInt() {}
+        public NbtInt()
+        {
+        }
 
 
         /// <summary> Creates an unnamed NbtInt tag with the given value. </summary>
         /// <param name="value"> Value to assign to this tag. </param>
         public NbtInt(int value)
-            : this(null, value) {}
+            : this(null, value)
+        {
+        }
 
 
         /// <summary> Creates an NbtInt tag with the given name and value. </summary>
         /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
         /// <param name="value"> Value to assign to this tag. </param>
-        public NbtInt([CanBeNull] string tagName, int value = 0) {
+        public NbtInt([CanBeNull] string tagName, int value = 0)
+        {
             name = tagName;
             Value = value;
         }
@@ -32,30 +32,42 @@ namespace TrueCraft.Nbt.Tags {
 
         /// <summary> Creates a copy of given NbtInt tag. </summary>
         /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
-        /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
-        public NbtInt([NotNull] NbtInt other) {
+        /// <exception cref="ArgumentNullException"> <paramref name="other" /> is <c>null</c>. </exception>
+        public NbtInt([NotNull] NbtInt other)
+        {
             if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             Value = other.Value;
         }
 
+        /// <summary> Type of this tag (Int). </summary>
+        public override NbtTagType TagType => NbtTagType.Int;
 
-        internal override bool ReadTag(NbtBinaryReader readStream) {
-            if (readStream.Selector != null && !readStream.Selector(this)) {
+        /// <summary> Value/payload of this tag (a single signed 32-bit integer). </summary>
+        public int Value { get; set; }
+
+
+        internal override bool ReadTag(NbtBinaryReader readStream)
+        {
+            if (readStream.Selector != null && !readStream.Selector(this))
+            {
                 readStream.ReadInt32();
                 return false;
             }
+
             Value = readStream.ReadInt32();
             return true;
         }
 
 
-        internal override void SkipTag(NbtBinaryReader readStream) {
+        internal override void SkipTag(NbtBinaryReader readStream)
+        {
             readStream.ReadInt32();
         }
 
 
-        internal override void WriteTag(NbtBinaryWriter writeStream) {
+        internal override void WriteTag(NbtBinaryWriter writeStream)
+        {
             writeStream.Write(NbtTagType.Int);
             if (Name == null) throw new NbtFormatException("Name is null");
             writeStream.Write(Name);
@@ -63,25 +75,26 @@ namespace TrueCraft.Nbt.Tags {
         }
 
 
-        internal override void WriteData(NbtBinaryWriter writeStream) {
+        internal override void WriteData(NbtBinaryWriter writeStream)
+        {
             writeStream.Write(Value);
         }
 
 
         /// <inheritdoc />
-        public override object Clone() {
+        public override object Clone()
+        {
             return new NbtInt(this);
         }
 
 
-        internal override void PrettyPrint(StringBuilder sb, string indentString, int indentLevel) {
-            for (int i = 0; i < indentLevel; i++) {
-                sb.Append(indentString);
-            }
+        internal override void PrettyPrint(StringBuilder sb, string indentString, int indentLevel)
+        {
+            for (var i = 0; i < indentLevel; i++) sb.Append(indentString);
+
             sb.Append("TAG_Int");
-            if (!String.IsNullOrEmpty(Name)) {
-                sb.AppendFormat("(\"{0}\")", Name);
-            }
+            if (!string.IsNullOrEmpty(Name)) sb.AppendFormat("(\"{0}\")", Name);
+
             sb.Append(": ");
             sb.Append(Value);
         }

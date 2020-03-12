@@ -7,8 +7,8 @@ namespace TrueCraft.Core.Networking
 {
     public class ByteListMemoryStream : Stream
     {
-        private long position;
         private readonly List<byte> buffer;
+        private long position;
 
         public ByteListMemoryStream() : this(new List<byte>())
         {
@@ -18,6 +18,20 @@ namespace TrueCraft.Core.Networking
         {
             position = offset;
             this.buffer = buffer;
+        }
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => true;
+
+        public override bool CanWrite => true;
+
+        public override long Length => buffer.Count;
+
+        public override long Position
+        {
+            get => position;
+            set => position = value;
         }
 
         public override void Flush()
@@ -31,14 +45,14 @@ namespace TrueCraft.Core.Networking
             else if (origin == SeekOrigin.Current)
                 position += offset;
             else //End
-                position = (buffer.Count - 1) - offset;
+                position = buffer.Count - 1 - offset;
 
             return position;
         }
 
         public override void SetLength(long value)
         {
-            buffer.RemoveRange((int)value, buffer.Count - (int)value);
+            buffer.RemoveRange((int) value, buffer.Count - (int) value);
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -49,12 +63,12 @@ namespace TrueCraft.Core.Networking
             if (buffer.Length < count)
                 throw new ArgumentOutOfRangeException("count");
 
-            byte[] buf = this.buffer.Skip((int)position).Take(count).ToArray();
-            
+            var buf = this.buffer.Skip((int) position).Take(count).ToArray();
+
             Buffer.BlockCopy(buf, 0, buffer, offset, buf.Length);
 
             position += Math.Min(count, buf.Length);
-            
+
             return Math.Min(count, buf.Length);
         }
 
@@ -68,50 +82,6 @@ namespace TrueCraft.Core.Networking
 
             this.buffer.AddRange(buffer.Skip(offset).Take(count));
             position += count;
-        }
-
-        public override bool CanRead
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        public override bool CanSeek
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        public override bool CanWrite
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        public override long Length
-        {
-            get
-            {
-                return buffer.Count;
-            }
-        }
-
-        public override long Position
-        {
-            get
-            {
-                return position;
-            }
-            set
-            {
-                position = value;
-            }
         }
     }
 }

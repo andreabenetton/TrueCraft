@@ -1,5 +1,5 @@
-﻿using TrueCraft.Client.Input;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
+using TrueCraft.Client.Input;
 
 namespace TrueCraft.Client.Modules
 {

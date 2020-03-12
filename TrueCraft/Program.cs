@@ -10,7 +10,7 @@ using TrueCraft.Commands;
 using TrueCraft.API.World;
 using System;
 using TrueCraft.API;
-using TrueCraft.Profiling;
+using TrueCraft.Core.Profiling;
 
 namespace TrueCraft
 {

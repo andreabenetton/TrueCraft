@@ -1,5 +1,5 @@
-﻿using TrueCraft.Core.Logic.Blocks;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
+using TrueCraft.Core.Logic.Blocks;
 
 namespace TrueCraft.Client.Rendering.Blocks
 {
@@ -7,9 +7,9 @@ namespace TrueCraft.Client.Rendering.Blocks
     {
         static CobwebRenderer()
         {
-            BlockRenderer.RegisterRenderer(CobwebBlock.BlockID, new CobwebRenderer());
+            RegisterRenderer(CobwebBlock.BlockID, new CobwebRenderer());
         }
 
-        protected override Vector2 TextureMap { get { return new Vector2(11, 0); } }
+        protected override Vector2 TextureMap => new Vector2(11, 0);
     }
 }

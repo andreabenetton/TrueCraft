@@ -1,6 +1,6 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
 
 namespace TrueCraft.Core.Logic.Items
@@ -9,14 +9,9 @@ namespace TrueCraft.Core.Logic.Items
     {
         public static readonly short ItemID = 0x141;
 
-        public override short ID { get { return 0x141; } }
+        public override short ID => 0x141;
 
-        public override Tuple<int, int> GetIconTexture(byte metadata)
-        {
-            return new Tuple<int, int>(10, 1);
-        }
-
-        public override string DisplayName { get { return "Painting"; } }
+        public override string DisplayName => "Painting";
 
         public ItemStack[,] Pattern
         {
@@ -24,27 +19,23 @@ namespace TrueCraft.Core.Logic.Items
             {
                 return new[,]
                 {
-                    { new ItemStack(StickItem.ItemID), new ItemStack(StickItem.ItemID), new ItemStack(StickItem.ItemID) },
-                    { new ItemStack(StickItem.ItemID), new ItemStack(WoolBlock.BlockID), new ItemStack(StickItem.ItemID) },
-                    { new ItemStack(StickItem.ItemID), new ItemStack(StickItem.ItemID), new ItemStack(StickItem.ItemID) }
+                    {new ItemStack(StickItem.ItemID), new ItemStack(StickItem.ItemID), new ItemStack(StickItem.ItemID)},
+                    {
+                        new ItemStack(StickItem.ItemID), new ItemStack(WoolBlock.BlockID),
+                        new ItemStack(StickItem.ItemID)
+                    },
+                    {new ItemStack(StickItem.ItemID), new ItemStack(StickItem.ItemID), new ItemStack(StickItem.ItemID)}
                 };
             }
         }
 
-        public ItemStack Output
-        {
-            get
-            {
-                return new ItemStack(ItemID);
-            }
-        }
+        public ItemStack Output => new ItemStack(ItemID);
 
-        public bool SignificantMetadata
+        public bool SignificantMetadata => true;
+
+        public override Tuple<int, int> GetIconTexture(byte metadata)
         {
-            get
-            {
-                return true;
-            }
+            return new Tuple<int, int>(10, 1);
         }
     }
 }

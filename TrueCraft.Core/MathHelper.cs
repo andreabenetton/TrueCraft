@@ -7,27 +7,27 @@ namespace TrueCraft.Core
     public static class MathHelper
     {
         /// <summary>
-        /// A global <see cref="System.Random"/> instance.
+        ///     A global <see cref="System.Random" /> instance.
         /// </summary>
         public static Random Random = new Random();
 
         /// <summary>
-        /// Maps a float from 0...360 to 0...255
+        ///     Maps a float from 0...360 to 0...255
         /// </summary>
         /// <param name="value"></param>
         public static sbyte CreateRotationByte(float value)
         {
-            return (sbyte)(((value % 360) / 360) * 256);
+            return (sbyte) (value % 360 / 360 * 256);
         }
 
         public static float UnpackRotationByte(sbyte value)
         {
-            return (value / 256f) * 360f;
+            return value / 256f * 360f;
         }
 
         public static int CreateAbsoluteInt(double value)
         {
-            return (int)(value * 32);
+            return (int) (value * 32);
         }
 
         public static double ToRadians(double degrees)
@@ -58,16 +58,15 @@ namespace TrueCraft.Core
         {
             if (face == Coordinates3D.Down)
                 return BlockFace.NegativeY;
-            else if (face == Coordinates3D.Up)
+            if (face == Coordinates3D.Up)
                 return BlockFace.PositiveY;
-            else if (face == Coordinates3D.Backwards)
+            if (face == Coordinates3D.Backwards)
                 return BlockFace.NegativeZ;
-            else if (face == Coordinates3D.Forwards)
+            if (face == Coordinates3D.Forwards)
                 return BlockFace.PositiveZ;
-            else if (face == Coordinates3D.Left)
+            if (face == Coordinates3D.Left)
                 return BlockFace.NegativeX;
-            else
-                return BlockFace.PositiveX;
+            return BlockFace.PositiveX;
         }
 
         public static double Distance2D(double a1, double a2, double b1, double b2)
@@ -77,7 +76,7 @@ namespace TrueCraft.Core
 
         public static Direction DirectionByRotationFlat(float yaw, bool invert = false)
         {
-            byte direction = (byte)((int)Math.Floor((yaw * 4F) / 360F + 0.5D) & 3);
+            var direction = (byte) ((int) Math.Floor(yaw * 4F / 360F + 0.5D) & 3);
             if (invert)
                 switch (direction)
                 {
@@ -94,25 +93,26 @@ namespace TrueCraft.Core
                     case 2: return Direction.North;
                     case 3: return Direction.East;
                 }
+
             return 0;
         }
 
         public static Direction DirectionByRotation(Vector3 source, float yaw, Vector3 position, bool invert = false)
         {
             // TODO: Figure out some algorithm based on player's look yaw
-            double d = Math.Asin((source.Y - position.Y) / position.DistanceTo(source));
-            if (d > (Math.PI / 4)) return invert ? (Direction)1 : (Direction)0;
-            if (d < -(Math.PI / 4)) return invert ? (Direction)0 : (Direction)1;
+            var d = Math.Asin((source.Y - position.Y) / position.DistanceTo(source));
+            if (d > Math.PI / 4) return invert ? (Direction) 1 : 0;
+            if (d < -(Math.PI / 4)) return invert ? 0 : (Direction) 1;
             return DirectionByRotationFlat(yaw, invert);
         }
 
         /// <summary>
-        /// Gets a byte representing block direction based on the rotation
-        /// of the entity that placed it.
+        ///     Gets a byte representing block direction based on the rotation
+        ///     of the entity that placed it.
         /// </summary>
         public static Vector3 FowardVector(float yaw, bool invert = false)
         {
-            Direction value = (Direction)DirectionByRotationFlat(yaw, invert);
+            var value = DirectionByRotationFlat(yaw, invert);
             switch (value)
             {
                 case Direction.East:
@@ -130,7 +130,7 @@ namespace TrueCraft.Core
 
         public static Vector3 GetVectorTowards(Vector3 a, Vector3 b)
         {
-            double angle = Math.Asin((a.X - b.X) / Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Z - b.Z, 2)));
+            var angle = Math.Asin((a.X - b.X) / Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Z - b.Z, 2)));
             if (a.Z > b.Z) angle += Math.PI;
             return RotateY(Vector3.Forwards, angle);
         }
@@ -193,25 +193,26 @@ namespace TrueCraft.Core
         }
 
         /// <summary>
-        /// Returns a value indicating the most extreme value of the
-        /// provided Vector.
+        ///     Returns a value indicating the most extreme value of the
+        ///     provided Vector.
         /// </summary>
         public static unsafe CollisionPoint GetCollisionPoint(Vector3 velocity)
         {
             // NOTE: Does this really need to be so unsafe?
-            int index = 0;
+            var index = 0;
             void* vPtr = &velocity;
-            double* ptr = (double*)vPtr;
+            var ptr = (double*) vPtr;
             double max = 0;
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
-                double value = *(ptr + i);
+                var value = *(ptr + i);
                 if (max < Math.Abs(value))
                 {
                     index = i;
                     max = Math.Abs(value);
                 }
             }
+
             switch (index)
             {
                 case 0:

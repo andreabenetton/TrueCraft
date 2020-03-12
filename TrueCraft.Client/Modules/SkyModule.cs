@@ -1,19 +1,11 @@
-﻿using Microsoft.Xna.Framework;
-using System;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace TrueCraft.Client.Modules
 {
     public class SkyModule : IGraphicalModule
     {
-        // https://github.com/SirCmpwn/TrueCraft/wiki/Sky
-
-        private TrueCraftGame Game { get; set; }
-        private BasicEffect SkyPlaneEffect { get; set; }
-        private BasicEffect CelestialPlaneEffect { get; set; }
-        private VertexBuffer SkyPlane { get; set; }
-        private VertexBuffer CelestialPlane { get; set; }
-
         public SkyModule(TrueCraftGame game)
         {
             Game = game;
@@ -38,7 +30,7 @@ namespace TrueCraft.Client.Modules
             };
             SkyPlane = new VertexBuffer(Game.GraphicsDevice, VertexPositionColor.VertexDeclaration,
                 plane.Length, BufferUsage.WriteOnly);
-            SkyPlane.SetData<VertexPositionColor>(plane);
+            SkyPlane.SetData(plane);
             var celestialPlane = new[]
             {
                 new VertexPositionTexture(new Vector3(-60, 0, -60), new Vector2(0, 0)),
@@ -51,59 +43,25 @@ namespace TrueCraft.Client.Modules
             };
             CelestialPlane = new VertexBuffer(Game.GraphicsDevice, VertexPositionTexture.VertexDeclaration,
                 celestialPlane.Length, BufferUsage.WriteOnly);
-            CelestialPlane.SetData<VertexPositionTexture>(celestialPlane);
+            CelestialPlane.SetData(celestialPlane);
         }
+        // https://github.com/SirCmpwn/TrueCraft/wiki/Sky
+
+        private TrueCraftGame Game { get; }
+        private BasicEffect SkyPlaneEffect { get; }
+        private BasicEffect CelestialPlaneEffect { get; }
+        private VertexBuffer SkyPlane { get; }
+        private VertexBuffer CelestialPlane { get; }
 
         private float CelestialAngle
         {
             get
             {
-                float x = (Game.Client.World.Time % 24000f) / 24000f - 0.25f;
+                var x = Game.Client.World.Time % 24000f / 24000f - 0.25f;
                 if (x < 0) x = 0;
                 if (x > 1) x = 1;
-                return x + ((1 - ((float)Math.Cos(x * MathHelper.Pi) + 1) / 2) - x) / 3;
+                return x + (1 - ((float) Math.Cos(x * MathHelper.Pi) + 1) / 2 - x) / 3;
             }
-        }
-
-        public static Color HSL2RGB(float h, float sl, float l)
-        {
-            // Thanks http://www.java2s.com/Code/CSharp/2D-Graphics/HSLtoRGBconversion.htm
-            float v, r, g, b;
-            r = g = b = l;   // default to gray
-            v = (l <= 0.5f) ? (l * (1.0f + sl)) : (l + sl - l * sl);
-            if (v > 0)
-            {
-                var m = l + l - v;
-                var sv = (v - m) / v;
-                h *= 6.0f;
-                var sextant = (int)h;
-                var fract = h - sextant;
-                var vsf = v * sv * fract;
-                var mid1 = m + vsf;
-                var mid2 = v - vsf;
-                switch (sextant)
-                {
-                    case 0:
-                        r = v; g = mid1; b = m;
-                        break;
-                    case 1:
-                        r = mid2; g = v; b = m;
-                        break;
-                    case 2:
-                        r = m; g = v; b = mid1;
-                        break;
-                    case 3:
-                        r = m; g = mid2; b = v;
-                        break;
-                    case 4:
-                        r = mid1; g = m; b = v;
-                        break;
-                    case 5:
-                        r = v; g = m; b = mid2;
-                        break;
-                }
-            }
-            return new Color(r, g, b);
         }
 
         private Color BaseColor
@@ -121,7 +79,7 @@ namespace TrueCraft.Client.Modules
         {
             get
             {
-                var mod = (float)Math.Cos(CelestialAngle * MathHelper.TwoPi) * 2 + 0.5f;
+                var mod = (float) Math.Cos(CelestialAngle * MathHelper.TwoPi) * 2 + 0.5f;
                 if (mod < 0) mod = 0;
                 if (mod > 1) mod = 1;
                 return mod;
@@ -134,7 +92,7 @@ namespace TrueCraft.Client.Modules
         {
             get
             {
-                float y = (float)Math.Cos(CelestialAngle * MathHelper.TwoPi) * 2 + 0.5f;
+                var y = (float) Math.Cos(CelestialAngle * MathHelper.TwoPi) * 2 + 0.5f;
                 return new Color(0.7529412f * y * 0.94f + 0.06f,
                     0.8470588f * y * 0.94f + 0.06f, 1.0f * y * 0.91f + 0.09f);
             }
@@ -145,7 +103,7 @@ namespace TrueCraft.Client.Modules
             get
             {
                 const float blendFactor = 0.29f; // TODO: Compute based on view distance
-                Func<float, float, float> blend = (float source, float destination) =>
+                Func<float, float, float> blend = (source, destination) =>
                     destination + (source - destination) * blendFactor;
                 var fog = WorldFogColor.ToVector3();
                 var sky = WorldSkyColor.ToVector3();
@@ -162,7 +120,7 @@ namespace TrueCraft.Client.Modules
 
             var position = Game.Camera.Position;
             var yaw = Game.Camera.Yaw;
-            Game.Camera.Position = TrueCraft.API.Vector3.Zero;
+            Game.Camera.Position = API.Vector3.Zero;
             Game.Camera.Yaw = 0;
             Game.Camera.ApplyTo(SkyPlaneEffect);
             Game.Camera.Yaw = yaw;
@@ -171,9 +129,10 @@ namespace TrueCraft.Client.Modules
             // Sky
             SkyPlaneEffect.FogColor = AtmosphereColor.ToVector3();
             SkyPlaneEffect.World = Matrix.CreateRotationX(MathHelper.Pi)
-                * Matrix.CreateTranslation(0, 100, 0)
-                * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
-            SkyPlaneEffect.AmbientLightColor = WorldSkyColor.ToVector3(); foreach (var pass in SkyPlaneEffect.CurrentTechnique.Passes)
+                                   * Matrix.CreateTranslation(0, 100, 0)
+                                   * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
+            SkyPlaneEffect.AmbientLightColor = WorldSkyColor.ToVector3();
+            foreach (var pass in SkyPlaneEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 SkyPlaneEffect.GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 2);
@@ -186,22 +145,24 @@ namespace TrueCraft.Client.Modules
             Game.GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
             CelestialPlaneEffect.Texture = Game.TextureMapper.GetTexture("terrain/sun.png");
             CelestialPlaneEffect.World = Matrix.CreateRotationX(MathHelper.Pi)
-                * Matrix.CreateTranslation(0, 100, 0)
-                * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
+                                         * Matrix.CreateTranslation(0, 100, 0)
+                                         * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
             foreach (var pass in CelestialPlaneEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 CelestialPlaneEffect.GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 2);
             }
+
             // Moon
             CelestialPlaneEffect.Texture = Game.TextureMapper.GetTexture("terrain/moon.png");
             CelestialPlaneEffect.World = Matrix.CreateTranslation(0, -100, 0)
-                * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
+                                         * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
             foreach (var pass in CelestialPlaneEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 CelestialPlaneEffect.GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 2);
             }
+
             Game.GraphicsDevice.BlendState = backup;
             Game.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
@@ -209,8 +170,8 @@ namespace TrueCraft.Client.Modules
             Game.GraphicsDevice.SetVertexBuffer(SkyPlane);
             SkyPlaneEffect.World = Matrix.CreateTranslation(0, -16, 0);
             SkyPlaneEffect.AmbientLightColor = WorldSkyColor.ToVector3()
-                * new Vector3(0.2f, 0.2f, 0.6f)
-                + new Vector3(0.04f, 0.04f, 0.1f);
+                                               * new Vector3(0.2f, 0.2f, 0.6f)
+                                               + new Vector3(0.04f, 0.04f, 0.1f);
             foreach (var pass in SkyPlaneEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
@@ -220,6 +181,60 @@ namespace TrueCraft.Client.Modules
 
         public void Update(GameTime gameTime)
         {
+        }
+
+        public static Color HSL2RGB(float h, float sl, float l)
+        {
+            // Thanks http://www.java2s.com/Code/CSharp/2D-Graphics/HSLtoRGBconversion.htm
+            float v, r, g, b;
+            r = g = b = l; // default to gray
+            v = l <= 0.5f ? l * (1.0f + sl) : l + sl - l * sl;
+            if (v > 0)
+            {
+                var m = l + l - v;
+                var sv = (v - m) / v;
+                h *= 6.0f;
+                var sextant = (int) h;
+                var fract = h - sextant;
+                var vsf = v * sv * fract;
+                var mid1 = m + vsf;
+                var mid2 = v - vsf;
+                switch (sextant)
+                {
+                    case 0:
+                        r = v;
+                        g = mid1;
+                        b = m;
+                        break;
+                    case 1:
+                        r = mid2;
+                        g = v;
+                        b = m;
+                        break;
+                    case 2:
+                        r = m;
+                        g = v;
+                        b = mid1;
+                        break;
+                    case 3:
+                        r = m;
+                        g = mid2;
+                        b = v;
+                        break;
+                    case 4:
+                        r = mid1;
+                        g = m;
+                        b = v;
+                        break;
+                    case 5:
+                        r = v;
+                        g = m;
+                        b = mid2;
+                        break;
+                }
+            }
+
+            return new Color(r, g, b);
         }
     }
 }

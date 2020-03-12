@@ -5,8 +5,6 @@ namespace TrueCraft.Core.Entities
 {
     public class SlimeEntity : MobEntity
     {
-        public byte SlimeSize { get; set; }
-
         public SlimeEntity() : this(4)
         {
         }
@@ -15,6 +13,8 @@ namespace TrueCraft.Core.Entities
         {
             SlimeSize = size;
         }
+
+        public byte SlimeSize { get; set; }
 
         public override MetadataDictionary Metadata
         {
@@ -26,37 +26,12 @@ namespace TrueCraft.Core.Entities
             }
         }
 
-        public override Size Size
-        {
-            get
-            {
-                return new Size(0.6 * SlimeSize);
-            }
-        }
+        public override Size Size => new Size(0.6 * SlimeSize);
 
-        public override short MaxHealth
-        {
-            get
-            {
-                return (short)(Math.Pow(SlimeSize, 2));
-            }
-        }
+        public override short MaxHealth => (short) Math.Pow(SlimeSize, 2);
 
-        public override sbyte MobType
-        {
-            get
-            {
-                return 55;
-            }
-        }
+        public override sbyte MobType => 55;
 
-        public override bool Friendly
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public override bool Friendly => false;
     }
 }
-

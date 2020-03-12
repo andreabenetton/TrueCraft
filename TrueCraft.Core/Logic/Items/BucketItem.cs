@@ -1,8 +1,8 @@
 using System;
+using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
 using TrueCraft.API.World;
-using TrueCraft.API;
 using TrueCraft.Core.Logic.Blocks;
 
 namespace TrueCraft.Core.Logic.Items
@@ -11,18 +11,19 @@ namespace TrueCraft.Core.Logic.Items
     {
         public static readonly short ItemID = 0x145;
 
-        public override short ID { get { return 0x145; } }
+        public override short ID => 0x145;
+
+        public override string DisplayName => "Bucket";
+
+        protected virtual byte? RelevantBlockType => null;
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
             return new Tuple<int, int>(10, 4);
         }
 
-        public override string DisplayName { get { return "Bucket"; } }
-
-        protected virtual byte? RelevantBlockType { get { return null; } }
-
-        public override void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world, IRemoteClient user)
+        public override void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             coordinates += MathHelper.BlockFaceToCoordinates(face);
             if (item.ID == ItemID) // Empty bucket
@@ -60,9 +61,10 @@ namespace TrueCraft.Core.Logic.Items
                         world.SetMetadata(coordinates, 0); // Source block
                         user.Server.BlockUpdatesEnabled = true;
                         var liquidProvider = world.BlockRepository.GetBlockProvider(blockType);
-                        liquidProvider.BlockPlaced(new BlockDescriptor { Coordinates = coordinates }, face, world, user);
+                        liquidProvider.BlockPlaced(new BlockDescriptor {Coordinates = coordinates}, face, world, user);
                     }
-                    user.Inventory[user.SelectedSlot] = new ItemStack(BucketItem.ItemID);
+
+                    user.Inventory[user.SelectedSlot] = new ItemStack(ItemID);
                 }
             }
         }
@@ -70,54 +72,36 @@ namespace TrueCraft.Core.Logic.Items
 
     public class LavaBucketItem : BucketItem, IBurnableItem
     {
-        public static readonly new short ItemID = 0x147;
+        public new static readonly short ItemID = 0x147;
 
-        public override short ID { get { return 0x147; } }
+        public override short ID => 0x147;
 
-        public override string DisplayName { get { return "Lava Bucket"; } }
+        public override string DisplayName => "Lava Bucket";
 
-        public TimeSpan BurnTime { get { return TimeSpan.FromSeconds(1000); } }
+        protected override byte? RelevantBlockType => LavaBlock.BlockID;
 
-        protected override byte? RelevantBlockType
-        {
-            get
-            {
-                return LavaBlock.BlockID;
-            }
-        }
+        public TimeSpan BurnTime => TimeSpan.FromSeconds(1000);
     }
 
     public class MilkItem : BucketItem
     {
-        public static readonly new short ItemID = 0x14F;
+        public new static readonly short ItemID = 0x14F;
 
-        public override short ID { get { return 0x14F; } }
+        public override short ID => 0x14F;
 
-        public override string DisplayName { get { return "Milk"; } }
+        public override string DisplayName => "Milk";
 
-        protected override byte? RelevantBlockType
-        {
-            get
-            {
-                return null;
-            }
-        }
+        protected override byte? RelevantBlockType => null;
     }
 
     public class WaterBucketItem : BucketItem
     {
-        public static readonly new short ItemID = 0x146;
+        public new static readonly short ItemID = 0x146;
 
-        public override short ID { get { return 0x146; } }
+        public override short ID => 0x146;
 
-        public override string DisplayName { get { return "Water Bucket"; } }
+        public override string DisplayName => "Water Bucket";
 
-        protected override byte? RelevantBlockType
-        {
-            get
-            {
-                return WaterBlock.BlockID;
-            }
-        }
+        protected override byte? RelevantBlockType => WaterBlock.BlockID;
     }
 }

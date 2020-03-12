@@ -35,18 +35,15 @@ namespace TrueCraft.Core.Windows
 
         public override int MoveOrMergeItem(int index, ItemStack slot, IWindowArea from)
         {
-            for (int i = 0; i < Length; i++)
-            {
+            for (var i = 0; i < Length; i++)
                 if (IsValid(slot, i))
-                {
                     if (this[i].Empty)
                     {
                         this[i] = slot;
-                        from[index] = ItemStack.EmptyStack;
+                        @from[index] = ItemStack.EmptyStack;
                         return i;
                     }
-                }
-            }
+
             return -1;
         }
     }

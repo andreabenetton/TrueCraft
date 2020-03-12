@@ -7,74 +7,52 @@ namespace TrueCraft.Core.Entities
 {
     public class PlayerEntity : LivingEntity
     {
-        public PlayerEntity(string username) : base()
-        {
-            Username = username;
-        }
-
         public const double Width = 0.6;
         public const double Height = 1.62;
         public const double Depth = 0.6;
 
-        public override IPacket SpawnPacket
+        protected short _SelectedSlot;
+
+        protected Vector3 _SpawnPoint;
+
+        public PlayerEntity(string username)
         {
-            get
-            {
-                return new SpawnPlayerPacket(EntityID, Username,
-                    MathHelper.CreateAbsoluteInt(Position.X),
-                    MathHelper.CreateAbsoluteInt(Position.Y),
-                    MathHelper.CreateAbsoluteInt(Position.Z),
-                    MathHelper.CreateRotationByte(Yaw),
-                    MathHelper.CreateRotationByte(Pitch), 0 /* Note: current item is set through other means */);
-            }
+            Username = username;
         }
 
-        public override Size Size
-        {
-            get { return new Size(Width, Height, Depth); }
-        }
+        public override IPacket SpawnPacket =>
+            new SpawnPlayerPacket(EntityID, Username,
+                MathHelper.CreateAbsoluteInt(Position.X),
+                MathHelper.CreateAbsoluteInt(Position.Y),
+                MathHelper.CreateAbsoluteInt(Position.Z),
+                MathHelper.CreateRotationByte(Yaw),
+                MathHelper.CreateRotationByte(Pitch), 0 /* Note: current item is set through other means */);
 
-        public override short MaxHealth
-        {
-            get { return 20; }
-        }
+        public override Size Size => new Size(Width, Height, Depth);
+
+        public override short MaxHealth => 20;
 
         public string Username { get; set; }
         public bool IsSprinting { get; set; }
         public bool IsCrouching { get; set; }
         public double PositiveDeltaY { get; set; }
 
-        private Vector3 _OldPosition;
-        public Vector3 OldPosition
-        {
-            get
-            {
-                return _OldPosition;
-            }
-            private set
-            {
-                _OldPosition = value;
-            }
-        }
+        public Vector3 OldPosition { get; private set; }
 
         public override Vector3 Position
         {
-            get
-            {
-                return _Position;
-            }
+            get => _Position;
             set
             {
-                _OldPosition = _Position;
+                OldPosition = _Position;
                 _Position = value;
                 OnPropertyChanged("Position");
             }
         }
 
-        protected short _SelectedSlot;
         public short SelectedSlot
         {
-            get { return _SelectedSlot; }
+            get => _SelectedSlot;
             set
             {
                 _SelectedSlot = value;
@@ -84,10 +62,9 @@ namespace TrueCraft.Core.Entities
 
         public ItemStack ItemInMouse { get; set; }
 
-        protected Vector3 _SpawnPoint;
         public Vector3 SpawnPoint
         {
-            get { return _SpawnPoint; }
+            get => _SpawnPoint;
             set
             {
                 _SpawnPoint = value;
@@ -96,9 +73,10 @@ namespace TrueCraft.Core.Entities
         }
 
         public event EventHandler<EntityEventArgs> PickUpItem;
+
         public void OnPickUpItem(ItemEntity item)
         {
-            if (PickUpItem != null) PickUpItem(this, new EntityEventArgs(item));
+            PickUpItem?.Invoke(this, new EntityEventArgs(item));
         }
     }
 }

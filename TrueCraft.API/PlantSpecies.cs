@@ -1,43 +1,43 @@
 ﻿namespace TrueCraft.API
 {
     /// <summary>
-    /// Enumerates the different species of plants in TrueCraft.
+    ///     Enumerates the different species of plants in TrueCraft.
     /// </summary>
     public enum PlantSpecies
     {
         /// <summary>
-        /// Rose flower.
+        ///     Rose flower.
         /// </summary>
         Rose,
 
         /// <summary>
-        /// Dandelion flower.
+        ///     Dandelion flower.
         /// </summary>
         Dandelion,
 
         /// <summary>
-        /// Tall grass.
+        ///     Tall grass.
         /// </summary>
         TallGrass,
 
         /// <summary>
-        /// Fern.
+        ///     Fern.
         /// </summary>
         Fern,
 
         /// <summary>
-        /// Dead bush.
+        ///     Dead bush.
         /// </summary>
         Deadbush,
 
         /// <summary>
-        /// Cactus.
+        ///     Cactus.
         /// </summary>
         Cactus,
 
         /// <summary>
-        /// Sugarcane.
+        ///     Sugarcane.
         /// </summary>
-        SugarCane,
+        SugarCane
     }
 }

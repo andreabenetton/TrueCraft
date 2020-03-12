@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Spawns lightning at the given coordinates.
+    ///     Spawns lightning at the given coordinates.
     /// </summary>
     public struct LightningPacket : IPacket
     {
-        public byte ID { get { return 0x47; } }
+        public byte ID => 0x47;
 
         public int EntityID;
         public int X, Y, Z;

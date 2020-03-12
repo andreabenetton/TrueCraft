@@ -2,15 +2,20 @@
 {
     public abstract class LivingEntity : Entity
     {
+        protected short _Air;
+
+        protected float _HeadYaw;
+
+        protected short _Health;
+
         protected LivingEntity()
         {
             Health = MaxHealth;
         }
 
-        protected short _Air;
         public short Air
         {
-            get { return _Air; }
+            get => _Air;
             set
             {
                 _Air = value;
@@ -18,10 +23,9 @@
             }
         }
 
-        protected short _Health;
         public short Health
         {
-            get { return _Health; }
+            get => _Health;
             set
             {
                 _Health = value;
@@ -29,10 +33,9 @@
             }
         }
 
-        protected float _HeadYaw;
         public float HeadYaw
         {
-            get { return _HeadYaw; }
+            get => _HeadYaw;
             set
             {
                 _HeadYaw = value;
@@ -40,13 +43,7 @@
             }
         }
 
-        public override bool SendMetadataToClients
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool SendMetadataToClients => true;
 
         public abstract short MaxHealth { get; }
     }

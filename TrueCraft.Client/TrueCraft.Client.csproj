@@ -168,10 +168,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\TrueCraft.Nbt\TrueCraft.Nbt.csproj">
-      <Project>{4488498d-976d-4da3-bf72-109531af0488}</Project>
-      <Name>TrueCraft.Nbt</Name>
-    </ProjectReference>
     <ProjectReference Include="..\TrueCraft.API\TrueCraft.API.csproj">
       <Project>{FEE55B54-91B0-4325-A2C3-D576C0B7A81F}</Project>
       <Name>TrueCraft.API</Name>

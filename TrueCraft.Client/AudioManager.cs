@@ -1,30 +1,30 @@
 ﻿using System;
-using Microsoft.Xna.Framework.Audio;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using TrueCraft.Core;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using NVorbis;
+using TrueCraft.Core;
 
 namespace TrueCraft.Client
 {
     public class AudioManager
     {
-        private Dictionary<string, SoundEffect[]> AudioPacks { get; set; }
-
-        public float EffectVolume { get; set; }
-        public float MusicVolume { get; set; }
-
         public AudioManager()
         {
             AudioPacks = new Dictionary<string, SoundEffect[]>();
             EffectVolume = MusicVolume = 1;
         }
 
+        private Dictionary<string, SoundEffect[]> AudioPacks { get; }
+
+        public float EffectVolume { get; set; }
+        public float MusicVolume { get; set; }
+
         public void LoadDefaultPacks(ContentManager content)
         {
-            string[][] packs = new[]
+            string[][] packs =
             {
                 new[]
                 {
@@ -84,25 +84,26 @@ namespace TrueCraft.Client
         {
             using (var reader = new VorbisReader(stream, false))
             {
-                float[] _buffer = new float[reader.TotalSamples];
-                byte[] buffer = new byte[reader.TotalSamples * 2];
+                var _buffer = new float[reader.TotalSamples];
+                var buffer = new byte[reader.TotalSamples * 2];
                 reader.ReadSamples(_buffer, 0, _buffer.Length);
-                for (int i = 0; i < _buffer.Length; i++)
+                for (var i = 0; i < _buffer.Length; i++)
                 {
-                    short val = (short)Math.Max(Math.Min(short.MaxValue * _buffer[i], short.MaxValue), short.MinValue);
+                    var val = (short) Math.Max(Math.Min(short.MaxValue * _buffer[i], short.MaxValue), short.MinValue);
                     var decoded = BitConverter.GetBytes(val);
                     buffer[i * 2] = decoded[0];
                     buffer[i * 2 + 1] = decoded[1];
                 }
-                return new SoundEffect(buffer, reader.SampleRate, reader.Channels == 1 ? AudioChannels.Mono : AudioChannels.Stereo);
+
+                return new SoundEffect(buffer, reader.SampleRate,
+                    reader.Channels == 1 ? AudioChannels.Mono : AudioChannels.Stereo);
             }
         }
 
         public void LoadAudioPack(string pack, string[] filenames)
         {
             var effects = new SoundEffect[filenames.Length];
-            for (int i = 0; i < filenames.Length; i++)
-            {
+            for (var i = 0; i < filenames.Length; i++)
                 using (var f = File.OpenRead(Path.Combine("Content", "Audio", filenames[i])))
                 {
                     if (filenames[i].EndsWith(".wav"))
@@ -110,7 +111,7 @@ namespace TrueCraft.Client
                     else if (filenames[i].EndsWith(".ogg"))
                         effects[i] = LoadOgg(f);
                 }
-            }
+
             AudioPacks[pack] = effects;
         }
 

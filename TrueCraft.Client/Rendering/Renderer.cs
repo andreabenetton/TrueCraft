@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Threading;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace TrueCraft.Client.Rendering
 {
     /// <summary>
-    /// Abstract base class for renderers of meshes.
+    ///     Abstract base class for renderers of meshes.
     /// </summary>
     /// <typeparam name="T">The object to render into a mesh.</typeparam>
     public abstract class Renderer<T> : IDisposable
@@ -14,19 +14,35 @@ namespace TrueCraft.Client.Rendering
         private readonly object _syncLock =
             new object();
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public event EventHandler<RendererEventArgs<T>> MeshCompleted;
+        private volatile bool _isDisposed;
 
         private volatile bool _isRunning;
+        private readonly HashSet<T> _pending;
         private Thread[] _rendererThreads;
-        private volatile bool _isDisposed;
         protected ConcurrentQueue<T> Items, PriorityItems;
-        private HashSet<T> _pending;
 
         /// <summary>
-        /// Gets whether this renderer is running.
+        /// </summary>
+        protected Renderer()
+        {
+            lock (_syncLock)
+            {
+                _isRunning = false;
+                var threads = Environment.ProcessorCount - 2;
+                if (threads < 1)
+                    threads = 1;
+                _rendererThreads = new Thread[threads];
+                for (var i = 0; i < _rendererThreads.Length; i++)
+                    _rendererThreads[i] = new Thread(DoRendering) {IsBackground = true};
+                Items = new ConcurrentQueue<T>();
+                PriorityItems = new ConcurrentQueue<T>();
+                _pending = new HashSet<T>();
+                _isDisposed = false;
+            }
+        }
+
+        /// <summary>
+        ///     Gets whether this renderer is running.
         /// </summary>
         public bool IsRunning
         {
@@ -39,34 +55,28 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// Gets whether this renderer is disposed of.
+        ///     Gets whether this renderer is disposed of.
         /// </summary>
         public bool IsDisposed => _isDisposed;
 
         /// <summary>
-        /// 
+        ///     Disposes of this renderer.
         /// </summary>
-        protected Renderer()
+        public void Dispose()
         {
-            lock (_syncLock)
-            {
-                _isRunning = false;
-                var threads = Environment.ProcessorCount - 2;
-                if (threads < 1)
-                    threads = 1;
-                _rendererThreads = new Thread[threads];
-                for (int i = 0; i < _rendererThreads.Length; i++)
-                {
-                    _rendererThreads[i] = new Thread(DoRendering) { IsBackground = true };
-                }
-                Items = new ConcurrentQueue<T>(); PriorityItems = new ConcurrentQueue<T>();
-                _pending = new HashSet<T>();
-                _isDisposed = false;
-            }
+            if (_isDisposed)
+                return;
+
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
-        /// Starts this renderer.
+        /// </summary>
+        public event EventHandler<RendererEventArgs<T>> MeshCompleted;
+
+        /// <summary>
+        ///     Starts this renderer.
         /// </summary>
         public void Start()
         {
@@ -83,7 +93,6 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="obj"></param>
         private void DoRendering(object obj)
@@ -112,7 +121,6 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="item"></param>
         /// <param name="result"></param>
@@ -120,7 +128,7 @@ namespace TrueCraft.Client.Rendering
         protected abstract bool TryRender(T item, out Mesh result);
 
         /// <summary>
-        /// Stops this renderer.
+        ///     Stops this renderer.
         /// </summary>
         public void Stop()
         {
@@ -137,7 +145,7 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// Enqueues an item to this renderer for rendering.
+        ///     Enqueues an item to this renderer for rendering.
         /// </summary>
         /// <param name="item"></param>
         /// <param name="hasPriority"></param>
@@ -159,19 +167,7 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// Disposes of this renderer.
-        /// </summary>
-        public void Dispose()
-        {
-            if (_isDisposed)
-                return;
-
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Disposes of this renderer.
+        ///     Disposes of this renderer.
         /// </summary>
         /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing)
@@ -180,13 +176,14 @@ namespace TrueCraft.Client.Rendering
             lock (_syncLock)
             {
                 _rendererThreads = null;
-                Items = null; PriorityItems = null;
+                Items = null;
+                PriorityItems = null;
                 _isDisposed = true;
             }
         }
 
         /// <summary>
-        /// Finalizes this renderer.
+        ///     Finalizes this renderer.
         /// </summary>
         ~Renderer()
         {

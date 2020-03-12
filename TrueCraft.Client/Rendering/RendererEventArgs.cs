@@ -3,28 +3,11 @@
 namespace TrueCraft.Client.Rendering
 {
     /// <summary>
-    /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public sealed class RendererEventArgs<T> : EventArgs
     {
         /// <summary>
-        /// 
-        /// </summary>
-        public T Item { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Mesh Result { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public bool IsPriority { get; private set; }
-
-        /// <summary>
-        /// 
         /// </summary>
         /// <param name="item"></param>
         /// <param name="result"></param>
@@ -35,5 +18,17 @@ namespace TrueCraft.Client.Rendering
             Result = result;
             IsPriority = isPriority;
         }
+
+        /// <summary>
+        /// </summary>
+        public T Item { get; }
+
+        /// <summary>
+        /// </summary>
+        public Mesh Result { get; }
+
+        /// <summary>
+        /// </summary>
+        public bool IsPriority { get; }
     }
 }

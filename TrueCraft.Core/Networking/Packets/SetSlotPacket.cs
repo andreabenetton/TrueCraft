@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sets the contents of an item slot on an inventory window.
+    ///     Sets the contents of an item slot on an inventory window.
     /// </summary>
     public struct SetSlotPacket : IPacket
     {
-        public byte ID { get { return 0x67; } }
+        public byte ID => 0x67;
 
         public SetSlotPacket(sbyte windowID, short slotIndex, short itemID, sbyte count, short metadata)
         {

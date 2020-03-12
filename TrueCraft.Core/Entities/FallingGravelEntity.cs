@@ -8,6 +8,6 @@ namespace TrueCraft.Core.Entities
         {
         }
 
-        public override byte EntityType { get { return 71; } }
+        public override byte EntityType => 71;
     }
 }

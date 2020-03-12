@@ -4,62 +4,59 @@ using System.Runtime.InteropServices;
 namespace TrueCraft.API
 {
     /// <summary>
-    /// Represents the size of an object in 3D space.
+    ///     Represents the size of an object in 3D space.
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
     public struct Size : IEquatable<Size>
     {
         /// <summary>
-        /// The width component for the size.
+        ///     The width component for the size.
         /// </summary>
-        [FieldOffset(0)]
-        public double Width;
+        [FieldOffset(0)] public double Width;
 
         /// <summary>
-        /// The height component for the size.
+        ///     The height component for the size.
         /// </summary>
-        [FieldOffset(8)]
-        public double Height;
+        [FieldOffset(8)] public double Height;
 
         /// <summary>
-        /// The depth component for the size.
+        ///     The depth component for the size.
         /// </summary>
-        [FieldOffset(16)]
-        public double Depth;
+        [FieldOffset(16)] public double Depth;
 
         #region Constructors
 
         /// <summary>
-        /// Creates a new size from a specified value.
+        ///     Creates a new size from a specified value.
         /// </summary>
         /// <param name="d">The value of the components for the size.</param>
         public Size(double d)
         {
-            this.Width = this.Height = this.Depth = d;
+            Width = Height = Depth = d;
         }
 
         /// <summary>
-        /// Creates a new size from specified values.
+        ///     Creates a new size from specified values.
         /// </summary>
         /// <param name="width">The width component for the size.</param>
         /// <param name="height">The height component for the size.</param>
         /// <param name="depth">The depth component for the size.</param>
         public Size(double width, double height, double depth)
         {
-            this.Width = width;
-            this.Height = height;
-            this.Depth = depth;
+            Width = width;
+            Height = height;
+            Depth = depth;
         }
 
         /// <summary>
-        /// Creates a new size by copying another.
+        ///     Creates a new size by copying another.
         /// </summary>
         /// <param name="s">The size to copy.</param>
         public Size(Size s)
         {
-            this.Width = s.Width;
-            this.Height = s.Height;
-            this.Depth = s.Depth;
+            Width = s.Width;
+            Height = s.Height;
+            Depth = s.Depth;
         }
 
         #endregion
@@ -69,106 +66,106 @@ namespace TrueCraft.API
         public static Size operator /(Size a, double b)
         {
             return new Size(a.Width / b,
-                            a.Height / b,
-                            a.Depth / b);
+                a.Height / b,
+                a.Depth / b);
         }
 
         public static Size operator *(Size a, double b)
         {
             return new Size(a.Width * b,
-                            a.Height * b,
-                            a.Depth * b);
+                a.Height * b,
+                a.Depth * b);
         }
 
         public static Size operator %(Size a, double b)
         {
             return new Size(a.Width % b,
-                            a.Height % b,
-                            a.Depth % b);
+                a.Height % b,
+                a.Depth % b);
         }
 
         public static Size operator +(Size a, double b)
         {
             return new Size(a.Width + b,
-                            a.Height + b,
-                            a.Depth + b);
+                a.Height + b,
+                a.Depth + b);
         }
 
         public static Size operator -(Size a, double b)
         {
             return new Size(a.Width - b,
-                            a.Height - b,
-                            a.Depth - b);
+                a.Height - b,
+                a.Depth - b);
         }
 
         public static Size operator /(double a, Size b)
         {
             return new Size(a / b.Width,
-                            a / b.Height,
-                            a / b.Depth);
+                a / b.Height,
+                a / b.Depth);
         }
 
         public static Size operator *(double a, Size b)
         {
             return new Size(a * b.Width,
-                            a * b.Height,
-                            a * b.Depth);
+                a * b.Height,
+                a * b.Depth);
         }
 
         public static Size operator %(double a, Size b)
         {
             return new Size(a % b.Width,
-                            a % b.Height,
-                            a % b.Depth);
+                a % b.Height,
+                a % b.Depth);
         }
 
         public static Size operator +(double a, Size b)
         {
             return new Size(a + b.Width,
-                            a + b.Height,
-                            a + b.Depth);
+                a + b.Height,
+                a + b.Depth);
         }
 
         public static Size operator -(double a, Size b)
         {
             return new Size(a - b.Width,
-                            a - b.Height,
-                            a - b.Depth);
+                a - b.Height,
+                a - b.Depth);
         }
 
         public static Size operator /(Size a, Size b)
         {
             return new Size(a.Width / b.Width,
-                            a.Height / b.Height,
-                            a.Depth / b.Depth);
+                a.Height / b.Height,
+                a.Depth / b.Depth);
         }
 
         public static Size operator *(Size a, Size b)
         {
             return new Size(a.Width * b.Width,
-                            a.Height * b.Height,
-                            a.Depth * b.Depth);
+                a.Height * b.Height,
+                a.Depth * b.Depth);
         }
 
         public static Size operator %(Size a, Size b)
         {
             return new Size(a.Width % b.Width,
-                            a.Height % b.Height,
-                            a.Depth % b.Depth);
+                a.Height % b.Height,
+                a.Depth % b.Depth);
         }
 
         public static Size operator +(Size a, Size b)
         {
             return new Size(a.Width + b.Width,
-                            a.Height + b.Height,
-                            a.Depth + b.Depth);
+                a.Height + b.Height,
+                a.Depth + b.Depth);
         }
 
         public static Size operator -(Size a, Size b)
         {
             return new Size(a.Width - b.Width,
-                            a.Height - b.Height,
-                            a.Depth - b.Depth);
+                a.Height - b.Height,
+                a.Depth - b.Depth);
         }
 
         public static Size operator -(Size a)
@@ -184,15 +181,15 @@ namespace TrueCraft.API
         public static Size operator ++(Size a)
         {
             return new Size(a.Width++,
-                            a.Height++,
-                            a.Depth++);
+                a.Height++,
+                a.Depth++);
         }
 
         public static Size operator --(Size a)
         {
             return new Size(a.Width--,
-                            a.Height--,
-                            a.Depth--);
+                a.Height--,
+                a.Depth--);
         }
 
         public static bool operator ==(Size a, Size b)
@@ -248,8 +245,8 @@ namespace TrueCraft.API
         public static explicit operator Size(Tuple<double, double, double> t)
         {
             return new Size(t.Item1,
-                            t.Item2,
-                            t.Item3);
+                t.Item2,
+                t.Item3);
         }
 
         #endregion
@@ -257,7 +254,7 @@ namespace TrueCraft.API
         #region Math methods
 
         /// <summary>
-        /// Returns the component-wise minimum of two sizes.
+        ///     Returns the component-wise minimum of two sizes.
         /// </summary>
         /// <param name="a">The first size.</param>
         /// <param name="b">The second size.</param>
@@ -265,24 +262,24 @@ namespace TrueCraft.API
         public static Size Min(Size a, Size b)
         {
             return new Size(Math.Min(a.Width, b.Width),
-                            Math.Min(a.Height, b.Height),
-                            Math.Min(a.Depth, b.Depth));
+                Math.Min(a.Height, b.Height),
+                Math.Min(a.Depth, b.Depth));
         }
 
         /// <summary>
-        /// Returns the component-wise minimum of this and another size.
+        ///     Returns the component-wise minimum of this and another size.
         /// </summary>
         /// <param name="b">The other size.</param>
         /// <returns></returns>
         public Size Min(Size b)
         {
-            return new Size(Math.Min(this.Width, b.Width),
-                            Math.Min(this.Height, b.Height),
-                            Math.Min(this.Depth, b.Depth));
+            return new Size(Math.Min(Width, b.Width),
+                Math.Min(Height, b.Height),
+                Math.Min(Depth, b.Depth));
         }
 
         /// <summary>
-        /// Returns the component-wise maximum of two sizes.
+        ///     Returns the component-wise maximum of two sizes.
         /// </summary>
         /// <param name="a">The first size.</param>
         /// <param name="b">The second size.</param>
@@ -290,24 +287,24 @@ namespace TrueCraft.API
         public static Size Max(Size a, Size b)
         {
             return new Size(Math.Max(a.Width, b.Width),
-                            Math.Max(a.Height, b.Height),
-                            Math.Max(a.Depth, b.Depth));
+                Math.Max(a.Height, b.Height),
+                Math.Max(a.Depth, b.Depth));
         }
 
         /// <summary>
-        /// Returns the component-wise maximum of this and another size.
+        ///     Returns the component-wise maximum of this and another size.
         /// </summary>
         /// <param name="b">The other size.</param>
         /// <returns></returns>
         public Size Max(Size b)
         {
-            return new Size(Math.Max(this.Width, b.Width),
-                            Math.Max(this.Height, b.Height),
-                            Math.Max(this.Depth, b.Depth));
+            return new Size(Math.Max(Width, b.Width),
+                Math.Max(Height, b.Height),
+                Math.Max(Depth, b.Depth));
         }
 
         /// <summary>
-        /// Returns the negate of a size.
+        ///     Returns the negate of a size.
         /// </summary>
         /// <param name="a">The size to negate.</param>
         /// <returns></returns>
@@ -317,7 +314,7 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Returns the negate of this size.
+        ///     Returns the negate of this size.
         /// </summary>
         /// <returns></returns>
         public Size Negate()
@@ -326,133 +323,106 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Returns the component-wise absolute value of a size.
+        ///     Returns the component-wise absolute value of a size.
         /// </summary>
         /// <param name="a">The size.</param>
         /// <returns></returns>
         public static Size Abs(Size a)
         {
             return new Size(Math.Abs(a.Width),
-                            Math.Abs(a.Height),
-                            Math.Abs(a.Depth));
+                Math.Abs(a.Height),
+                Math.Abs(a.Depth));
         }
 
         /// <summary>
-        /// Returns the component-wise absolute value of this size.
+        ///     Returns the component-wise absolute value of this size.
         /// </summary>
         /// <returns></returns>
         public Size Abs()
         {
-            return new Size(Math.Abs(this.Width),
-                            Math.Abs(this.Height),
-                            Math.Abs(this.Depth));
+            return new Size(Math.Abs(Width),
+                Math.Abs(Height),
+                Math.Abs(Depth));
         }
 
         #endregion
 
         /// <summary>
-        /// Gets the volume of a cuboid with the same dimensions as this size.
+        ///     Gets the volume of a cuboid with the same dimensions as this size.
         /// </summary>
-        public double Volume
-        {
-            get
-            {
-                return Width * Height * Depth;
-            }
-        }
+        public double Volume => Width * Height * Depth;
 
         /// <summary>
-        /// Gets the surface area of a cuboid with the same dimensions as this size.
+        ///     Gets the surface area of a cuboid with the same dimensions as this size.
         /// </summary>
-        public double SurfaceArea
-        {
-            get
-            {
-                return 2 * (Width * Depth +
-                            Width * Height +
-                            Depth * Height);
-            }
-        }
+        public double SurfaceArea =>
+            2 * (Width * Depth +
+                 Width * Height +
+                 Depth * Height);
 
         /// <summary>
-        /// Gets the lateral surface area of a cuboid with the same dimensions as this size.
+        ///     Gets the lateral surface area of a cuboid with the same dimensions as this size.
         /// </summary>
-        public double LateralSurfaceArea
-        {
-            get
-            {
-                return 2 * (Width * Depth +
-                            Depth * Height);
-            }
-        }
+        public double LateralSurfaceArea =>
+            2 * (Width * Depth +
+                 Depth * Height);
 
         /// <summary>
-        /// Gets the length of a diagonal line passing through a cuboid with the same dimensions as this size.
+        ///     Gets the length of a diagonal line passing through a cuboid with the same dimensions as this size.
         /// </summary>
-        public double Diagonal
-        {
-            get
-            {
-                return Math.Sqrt(Width * Width +
-                                 Height * Height +
-                                 Depth * Depth);
-            }
-        }
+        public double Diagonal =>
+            Math.Sqrt(Width * Width +
+                      Height * Height +
+                      Depth * Depth);
 
         /// <summary>
-        /// Returns the average dimension for this size.
+        ///     Returns the average dimension for this size.
         /// </summary>
-        public double Average
-        {
-            get
-            {
-                return (Width + Height + Depth) / 3;
-            }
-        }
+        public double Average => (Width + Height + Depth) / 3;
 
         /// <summary>
-        /// Determines whether this size and another are equal.
+        ///     Determines whether this size and another are equal.
         /// </summary>
         /// <param name="other">The other size.</param>
         /// <returns></returns>
         public bool Equals(Size other)
         {
-            return this.Width == other.Width &&
-                   this.Height == other.Height &&
-                   this.Depth == other.Depth;
+            return Width == other.Width &&
+                   Height == other.Height &&
+                   Depth == other.Depth;
         }
 
         /// <summary>
-        /// Determines whether this and another object are equal.
+        ///     Determines whether this and another object are equal.
         /// </summary>
         /// <param name="obj">The other object.</param>
         /// <returns></returns>
         public override bool Equals(object obj)
         {
-            return obj is Size && Equals((Size)obj);
+            return obj is Size && Equals((Size) obj);
         }
 
         /// <summary>
-        /// Returns the hash code for this size.
+        ///     Returns the hash code for this size.
         /// </summary>
         /// <returns></returns>
         public override int GetHashCode()
         {
             unchecked
             {
-                int hash = 449;
+                var hash = 449;
                 hash = (hash * 457) ^ Width.GetHashCode();
                 hash = (hash * 457) ^ Height.GetHashCode();
                 hash = (hash * 457) ^ Depth.GetHashCode();
                 return hash;
             }
         }
-        
+
         /// <summary>
-        /// Returns a string representing the <see cref="Size"/> object in the format of &lt;Width,Height,Depth&gt;.
+        ///     Returns a string representing the <see cref="Size" /> object in the format of &lt;Width,Height,Depth&gt;.
         /// </summary>
         /// <returns>A string representation of the object</returns>
-        /// <inheritdoc cref="Object.ToString"/>
+        /// <inheritdoc cref="Object.ToString" />
         public override string ToString()
         {
             return string.Format("<{0},{1},{2}>", Width, Height, Depth);

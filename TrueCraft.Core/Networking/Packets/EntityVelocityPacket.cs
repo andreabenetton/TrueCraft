@@ -3,12 +3,12 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by servers to inform players of changes to the velocity of entities.
-    /// Not sure exactly how all of that works, but I know it's going to be a pain in the ass.
+    ///     Sent by servers to inform players of changes to the velocity of entities.
+    ///     Not sure exactly how all of that works, but I know it's going to be a pain in the ass.
     /// </summary>
     public struct EntityVelocityPacket : IPacket
     {
-        public byte ID { get { return 0x1C; } }
+        public byte ID => 0x1C;
 
         public int EntityID;
         public short XVelocity;

@@ -1,12 +1,12 @@
 ﻿using System;
-using Xwt;
-using System.Threading;
 using System.Net;
+using System.Threading;
 using TrueCraft.Core;
+using Xwt;
 
 namespace TrueCraft.Launcher
 {
-    class Program
+    internal class Program
     {
         public static LauncherWindow Window { get; set; }
 
@@ -45,6 +45,7 @@ namespace TrueCraft.Launcher
                     wc.DownloadString(string.Format(TrueCraftUser.AuthServer + "/session?name={0}&session={1}",
                         Window.User.Username, Window.User.SessionId));
                 }
+
                 Thread.Sleep(60 * 5 * 1000);
             }
         }

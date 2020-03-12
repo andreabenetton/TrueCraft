@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Used to teleport entities to arbitrary locations.
+    ///     Used to teleport entities to arbitrary locations.
     /// </summary>
     public struct EntityTeleportPacket : IPacket
     {
-        public byte ID { get { return 0x22; } }
+        public byte ID => 0x22;
 
         public int EntityID;
         public int X, Y, Z;
@@ -44,4 +44,3 @@ namespace TrueCraft.Core.Networking.Packets
         }
     }
 }
-

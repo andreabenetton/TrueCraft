@@ -7,9 +7,12 @@ namespace TrueCraft.API.Logic
         public byte ID;
         public byte Metadata;
         public byte BlockLight;
+
         public byte SkyLight;
+
         // Optional
         public Coordinates3D Coordinates;
+
         // Optional
         public IChunk Chunk;
     }

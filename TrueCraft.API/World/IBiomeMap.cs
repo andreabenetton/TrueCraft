@@ -9,8 +9,8 @@ namespace TrueCraft.API.World
 
         public BiomeCell(byte biomeID, Coordinates2D cellPoint)
         {
-            this.BiomeID = biomeID;
-            this.CellPoint = cellPoint;
+            BiomeID = biomeID;
+            CellPoint = cellPoint;
         }
     }
 

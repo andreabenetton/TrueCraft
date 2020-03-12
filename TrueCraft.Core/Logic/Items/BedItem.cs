@@ -1,8 +1,8 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
-using TrueCraft.API.World;
+using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
+using TrueCraft.API.World;
 using TrueCraft.Core.Logic.Blocks;
 
 namespace TrueCraft.Core.Logic.Items
@@ -11,23 +11,48 @@ namespace TrueCraft.Core.Logic.Items
     {
         public static readonly short ItemID = 0x163;
 
-        public override short ID { get { return 0x163; } }
+        public override short ID => 0x163;
+
+        public override sbyte MaximumStack => 1;
+
+        public override string DisplayName => "Bed";
+
+        public ItemStack[,] Pattern
+        {
+            get
+            {
+                return new[,]
+                {
+                    {
+                        new ItemStack(WoolBlock.BlockID),
+                        new ItemStack(WoolBlock.BlockID),
+                        new ItemStack(WoolBlock.BlockID)
+                    },
+                    {
+                        new ItemStack(WoodenPlanksBlock.BlockID),
+                        new ItemStack(WoodenPlanksBlock.BlockID),
+                        new ItemStack(WoodenPlanksBlock.BlockID)
+                    }
+                };
+            }
+        }
+
+        public ItemStack Output => new ItemStack(ItemID);
+
+        public bool SignificantMetadata => false;
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
             return new Tuple<int, int>(13, 2);
         }
 
-        public override sbyte MaximumStack { get { return 1; } }
-
-        public override string DisplayName { get { return "Bed"; } }
-
-        public override void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world, IRemoteClient user)
+        public override void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             coordinates += MathHelper.BlockFaceToCoordinates(face);
             var head = coordinates;
             var foot = coordinates;
-            BedBlock.BedDirection direction = BedBlock.BedDirection.North;
+            var direction = BedBlock.BedDirection.North;
             switch (MathHelper.DirectionByRotationFlat(user.Entity.Yaw))
             {
                 case Direction.North:
@@ -47,55 +72,21 @@ namespace TrueCraft.Core.Logic.Items
                     direction = BedBlock.BedDirection.West;
                     break;
             }
-            var bedProvider = (BedBlock)user.Server.BlockRepository.GetBlockProvider(BedBlock.BlockID);
-            if (!bedProvider.ValidBedPosition(new BlockDescriptor { Coordinates = head },
-                user.Server.BlockRepository, user.World, false, true) ||
-                !bedProvider.ValidBedPosition(new BlockDescriptor { Coordinates = foot },
-                user.Server.BlockRepository, user.World, false, true))
-            {
+
+            var bedProvider = (BedBlock) user.Server.BlockRepository.GetBlockProvider(BedBlock.BlockID);
+            if (!bedProvider.ValidBedPosition(new BlockDescriptor {Coordinates = head},
+                    user.Server.BlockRepository, user.World, false, true) ||
+                !bedProvider.ValidBedPosition(new BlockDescriptor {Coordinates = foot},
+                    user.Server.BlockRepository, user.World, false, true))
                 return;
-            }
             user.Server.BlockUpdatesEnabled = false;
             world.SetBlockData(head, new BlockDescriptor
-                { ID = BedBlock.BlockID, Metadata = (byte)((byte)direction | (byte)BedBlock.BedType.Head) });
+                {ID = BedBlock.BlockID, Metadata = (byte) ((byte) direction | (byte) BedBlock.BedType.Head)});
             world.SetBlockData(foot, new BlockDescriptor
-                { ID = BedBlock.BlockID, Metadata = (byte)((byte)direction | (byte)BedBlock.BedType.Foot) });
+                {ID = BedBlock.BlockID, Metadata = (byte) ((byte) direction | (byte) BedBlock.BedType.Foot)});
             user.Server.BlockUpdatesEnabled = true;
             item.Count--;
             user.Inventory[user.SelectedSlot] = item;
-        }
-
-        public ItemStack[,] Pattern
-        {
-            get
-            {
-                return new[,]
-                {
-                    {
-                        new ItemStack(WoolBlock.BlockID),
-                        new ItemStack(WoolBlock.BlockID),
-                        new ItemStack(WoolBlock.BlockID),
-                    },
-                    {
-                        new ItemStack(WoodenPlanksBlock.BlockID),
-                        new ItemStack(WoodenPlanksBlock.BlockID),
-                        new ItemStack(WoodenPlanksBlock.BlockID),
-                    }
-                };
-            }
-        }
-
-        public ItemStack Output
-        {
-            get
-            {
-                return new ItemStack(ItemID);
-            }
-        }
-
-        public bool SignificantMetadata
-        {
-            get { return false; }
         }
     }
 }

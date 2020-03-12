@@ -7,25 +7,19 @@ namespace TrueCraft.Core.Logic.Blocks
     {
         public static readonly byte BlockID = 0x5D;
 
-        public override byte ID { get { return 0x5D; } }
-        
-        public override double BlastResistance { get { return 0; } }
+        public override byte ID => 0x5D;
 
-        public override double Hardness { get { return 0; } }
+        public override double BlastResistance => 0;
 
-        public override byte Luminance { get { return 0; } }
+        public override double Hardness => 0;
 
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Redstone Repeater"; } }
+        public override byte Luminance => 0;
 
-        public override SoundEffectClass SoundEffect
-        {
-            get
-            {
-                return SoundEffectClass.Wood;
-            }
-        }
+        public override bool Opaque => false;
+
+        public override string DisplayName => "Redstone Repeater";
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Wood;
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
@@ -35,10 +29,10 @@ namespace TrueCraft.Core.Logic.Blocks
 
     public class ActiveRedstoneRepeaterBlock : RedstoneRepeaterBlock
     {
-        public static readonly new byte BlockID = 0x5E;
+        public new static readonly byte BlockID = 0x5E;
 
-        public override byte ID { get { return 0x5E; } }
+        public override byte ID => 0x5E;
 
-        public override string DisplayName { get { return "Redstone Repeater (active)"; } }
+        public override string DisplayName => "Redstone Repeater (active)";
     }
 }

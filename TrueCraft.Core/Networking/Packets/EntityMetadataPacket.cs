@@ -1,11 +1,11 @@
-﻿using TrueCraft.API.Networking;
-using TrueCraft.API;
+﻿using TrueCraft.API;
+using TrueCraft.API.Networking;
 
 namespace TrueCraft.Core.Networking.Packets
 {
     public struct EntityMetadataPacket : IPacket
     {
-        public byte ID { get { return 0x28; } }
+        public byte ID => 0x28;
 
         public int EntityID;
         public MetadataDictionary Metadata;

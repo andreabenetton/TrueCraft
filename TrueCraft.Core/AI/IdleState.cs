@@ -7,9 +7,6 @@ namespace TrueCraft.Core.AI
 {
     public class IdleState : IMobState
     {
-        private DateTime Expiry { get; set; }
-        private IMobState NextState { get; set; }
-        
         public IdleState(IMobState nextState, DateTime? expiry = null)
         {
             NextState = nextState;
@@ -18,6 +15,9 @@ namespace TrueCraft.Core.AI
             else
                 Expiry = DateTime.UtcNow.AddSeconds(MathHelper.Random.Next(5, 15));
         }
+
+        private DateTime Expiry { get; }
+        private IMobState NextState { get; }
 
         public void Update(IMobEntity entity, IEntityManager manager)
         {

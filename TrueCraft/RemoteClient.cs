@@ -22,7 +22,7 @@ using TrueCraft.API.Logging;
 using TrueCraft.API.Logic;
 using TrueCraft.Exceptions;
 using TrueCraft.Nbt.Tags;
-using TrueCraft.Profiling;
+using TrueCraft.Core.Profiling;
 
 namespace TrueCraft
 {

@@ -1,9 +1,9 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
-using TrueCraft.API.World;
-using TrueCraft.API.Server;
+using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
+using TrueCraft.API.Server;
+using TrueCraft.API.World;
 
 namespace TrueCraft.Core.Logic.Blocks
 {
@@ -12,46 +12,34 @@ namespace TrueCraft.Core.Logic.Blocks
         public static readonly int MinGrowthTime = 60 * 5;
         public static readonly int MaxGrowthTime = 60 * 10;
 
-        static GrassBlock()
-        {
-            GrowthCandidates = new Coordinates3D[3 * 3 * 5];
-            int i = 0;
-            for (int x = -1; x <= 1; x++)
-            {
-                for (int z = -1; z <= 1; z++)
-                {
-                    for (int y = -3; y <= 1; y++)
-                    {
-                        GrowthCandidates[i++] = new Coordinates3D(x, y, z);
-                    }
-                }
-            }
-        }
-
         private static readonly Coordinates3D[] GrowthCandidates;
 
         public static readonly int MaxDecayTime = 60 * 10;
         public static readonly int MinDecayTime = 60 * 2;
 
         public static readonly byte BlockID = 0x02;
-        
-        public override byte ID { get { return 0x02; } }
-        
-        public override double BlastResistance { get { return 3; } }
 
-        public override double Hardness { get { return 0.6; } }
-
-        public override byte Luminance { get { return 0; } }
-
-        public override string DisplayName { get { return "Grass"; } }
-
-        public override SoundEffectClass SoundEffect
+        static GrassBlock()
         {
-            get
-            {
-                return SoundEffectClass.Grass;
-            }
+            GrowthCandidates = new Coordinates3D[3 * 3 * 5];
+            var i = 0;
+            for (var x = -1; x <= 1; x++)
+            for (var z = -1; z <= 1; z++)
+            for (var y = -3; y <= 1; y++)
+                GrowthCandidates[i++] = new Coordinates3D(x, y, z);
         }
+
+        public override byte ID => 0x02;
+
+        public override double BlastResistance => 3;
+
+        public override double Hardness => 0.6;
+
+        public override byte Luminance => 0;
+
+        public override string DisplayName => "Grass";
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Grass;
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
         {
@@ -60,7 +48,7 @@ namespace TrueCraft.Core.Logic.Blocks
 
         protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
         {
-            return new[] { new ItemStack(DirtBlock.BlockID, 1) };
+            return new[] {new ItemStack(DirtBlock.BlockID, 1)};
         }
 
         private void ScheduledUpdate(IWorld world, Coordinates3D coords)
@@ -74,19 +62,18 @@ namespace TrueCraft.Core.Logic.Blocks
             }
         }
 
-        public override void BlockUpdate(BlockDescriptor descriptor, BlockDescriptor source, IMultiplayerServer server, IWorld world)
+        public override void BlockUpdate(BlockDescriptor descriptor, BlockDescriptor source, IMultiplayerServer server,
+            IWorld world)
         {
             if (source.Coordinates == descriptor.Coordinates + Coordinates3D.Up)
             {
                 var provider = world.BlockRepository.GetBlockProvider(source.ID);
                 if (provider.Opaque)
                 {
-                    var chunk = world.FindChunk(descriptor.Coordinates, generate: false);
+                    var chunk = world.FindChunk(descriptor.Coordinates, false);
                     server.Scheduler.ScheduleEvent("grass", chunk,
-                    TimeSpan.FromSeconds(MathHelper.Random.Next(MinDecayTime, MaxDecayTime)), s =>
-                    {
-                        ScheduledUpdate(world, descriptor.Coordinates);
-                    });
+                        TimeSpan.FromSeconds(MathHelper.Random.Next(MinDecayTime, MaxDecayTime)),
+                        s => { ScheduledUpdate(world, descriptor.Coordinates); });
                 }
             }
         }
@@ -113,8 +100,8 @@ namespace TrueCraft.Core.Logic.Blocks
                         continue;
                     IChunk chunk;
                     var _candidate = world.FindBlockPosition(candidate, out chunk);
-                    bool grow = true;
-                    for (int y = candidate.Y; y < chunk.GetHeight((byte)_candidate.X, (byte)_candidate.Z); y++)
+                    var grow = true;
+                    for (var y = candidate.Y; y < chunk.GetHeight((byte) _candidate.X, (byte) _candidate.Z); y++)
                     {
                         var b = world.GetBlockID(new Coordinates3D(candidate.X, y, candidate.Z));
                         var p = world.BlockRepository.GetBlockProvider(b);
@@ -124,13 +111,15 @@ namespace TrueCraft.Core.Logic.Blocks
                             break;
                         }
                     }
+
                     if (grow)
                     {
-                        world.SetBlockID(candidate, GrassBlock.BlockID);
+                        world.SetBlockID(candidate, BlockID);
                         server.Scheduler.ScheduleEvent("grass", chunk,
                             TimeSpan.FromSeconds(MathHelper.Random.Next(MinGrowthTime, MaxGrowthTime)),
                             s => TrySpread(candidate, world, server));
                     }
+
                     break;
                 }
             }

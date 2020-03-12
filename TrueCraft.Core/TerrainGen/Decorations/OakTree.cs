@@ -8,7 +8,7 @@ namespace TrueCraft.Core.TerrainGen.Decorations
 {
     public class OakTree : Decoration
     {
-        const int LeafRadius = 2;
+        private const int LeafRadius = 2;
 
         public override bool ValidLocation(Coordinates3D location)
         {
@@ -26,10 +26,10 @@ namespace TrueCraft.Core.TerrainGen.Decorations
                 return false;
 
             var random = new Random(world.Seed);
-            int height = random.Next(4, 5);
-            GenerateColumn(chunk, location, height, WoodBlock.BlockID, 0x0);
-            Coordinates3D LeafLocation = location + new Coordinates3D(0, height, 0);
-            GenerateVanillaLeaves(chunk, LeafLocation, LeafRadius, LeavesBlock.BlockID, 0x0);
+            var height = random.Next(4, 5);
+            GenerateColumn(chunk, location, height, WoodBlock.BlockID);
+            var LeafLocation = location + new Coordinates3D(0, height);
+            GenerateVanillaLeaves(chunk, LeafLocation, LeafRadius, LeavesBlock.BlockID);
             return true;
         }
     }

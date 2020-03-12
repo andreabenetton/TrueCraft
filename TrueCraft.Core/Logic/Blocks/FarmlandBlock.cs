@@ -1,9 +1,9 @@
 using System;
+using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
-using TrueCraft.API.World;
-using TrueCraft.API;
 using TrueCraft.API.Server;
+using TrueCraft.API.World;
 
 namespace TrueCraft.Core.Logic.Blocks
 {
@@ -21,32 +21,26 @@ namespace TrueCraft.Core.Logic.Blocks
         public static readonly int UpdateIntervalSeconds = 30;
 
         public static readonly byte BlockID = 0x3C;
-        
-        public override byte ID { get { return 0x3C; } }
-        
-        public override double BlastResistance { get { return 3; } }
 
-        public override double Hardness { get { return 0.6; } }
+        public override byte ID => 0x3C;
 
-        public override byte Luminance { get { return 0; } }
+        public override double BlastResistance => 3;
 
-        public override bool Opaque { get { return true; } }
+        public override double Hardness => 0.6;
 
-        public override byte LightOpacity { get { return 255; } }
-        
-        public override string DisplayName { get { return "Farmland"; } }
+        public override byte Luminance => 0;
 
-        public override SoundEffectClass SoundEffect
-        {
-            get
-            {
-                return SoundEffectClass.Gravel;
-            }
-        }
+        public override bool Opaque => true;
+
+        public override byte LightOpacity => 255;
+
+        public override string DisplayName => "Farmland";
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Gravel;
 
         protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
         {
-            return new[] { new ItemStack(DirtBlock.BlockID) };
+            return new[] {new ItemStack(DirtBlock.BlockID)};
         }
 
         public override Tuple<int, int> GetTextureMap(byte metadata)
@@ -58,22 +52,21 @@ namespace TrueCraft.Core.Logic.Blocks
         {
             var min = new Coordinates3D(-6 + coordinates.X, coordinates.Y, -6 + coordinates.Z);
             var max = new Coordinates3D(6 + coordinates.X, coordinates.Y + 1, 6 + coordinates.Z);
-            for (int x = min.X; x < max.X; x++)
+            for (var x = min.X; x < max.X; x++)
+            for (var y = min.Y;
+                y < max.Y;
+                y++) // TODO: This does not check one above the farmland block for some reason
+            for (var z = min.Z; z < max.Z; z++)
             {
-                for (int y = min.Y; y < max.Y; y++) // TODO: This does not check one above the farmland block for some reason
-                {
-                    for (int z = min.Z; z < max.Z; z++)
-                    {
-                        var id = world.GetBlockID(new Coordinates3D(x, y, z));
-                        if (id == WaterBlock.BlockID || id == StationaryWaterBlock.BlockID)
-                            return true;
-                    }
-                }
+                var id = world.GetBlockID(new Coordinates3D(x, y, z));
+                if (id == WaterBlock.BlockID || id == StationaryWaterBlock.BlockID)
+                    return true;
             }
+
             return false;
         }
 
-        void HydrationCheckEvent(IMultiplayerServer server, Coordinates3D coords, IWorld world)
+        private void HydrationCheckEvent(IMultiplayerServer server, Coordinates3D coords, IWorld world)
         {
             if (world.GetBlockID(coords) != BlockID)
                 return;
@@ -81,7 +74,9 @@ namespace TrueCraft.Core.Logic.Blocks
             {
                 var meta = world.GetMetadata(coords);
                 if (IsHydrated(coords, world) && meta != 15)
+                {
                     meta++;
+                }
                 else
                 {
                     meta--;
@@ -91,8 +86,10 @@ namespace TrueCraft.Core.Logic.Blocks
                         return;
                     }
                 }
+
                 world.SetMetadata(coords, meta);
             }
+
             var chunk = world.FindChunk(coords);
             server.Scheduler.ScheduleEvent("farmland", chunk,
                 TimeSpan.FromSeconds(UpdateIntervalSeconds),
@@ -101,10 +98,7 @@ namespace TrueCraft.Core.Logic.Blocks
 
         public override void BlockPlaced(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
         {
-            if (IsHydrated(descriptor.Coordinates, world))
-            {
-                world.SetMetadata(descriptor.Coordinates, 1);
-            }
+            if (IsHydrated(descriptor.Coordinates, world)) world.SetMetadata(descriptor.Coordinates, 1);
             var chunk = world.FindChunk(descriptor.Coordinates);
             user.Server.Scheduler.ScheduleEvent("farmland", chunk,
                 TimeSpan.FromSeconds(UpdateIntervalSeconds),

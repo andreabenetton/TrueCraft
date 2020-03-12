@@ -3,22 +3,24 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Used to indicate that a certain "action" has happened to a block.
-    /// In practice this controls note blocks and pistons.
+    ///     Used to indicate that a certain "action" has happened to a block.
+    ///     In practice this controls note blocks and pistons.
     /// </summary>
     public struct BlockActionPacket : IPacket
     {
-        public byte ID { get { return 0x36; } }
+        public byte ID => 0x36;
 
         public int X;
         public short Y;
         public int Z;
+
         /// <summary>
-        /// Used for instrument type or piston state.
+        ///     Used for instrument type or piston state.
         /// </summary>
         public sbyte State;
+
         /// <summary>
-        /// Used for piston direction or note block instrument.
+        ///     Used for piston direction or note block instrument.
         /// </summary>
         public sbyte Data;
 

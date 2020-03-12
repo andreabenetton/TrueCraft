@@ -17,6 +17,7 @@ namespace TrueCraft.Core
                     if (Directory.Exists(config))
                         return config;
                 }
+
                 var appdata = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "truecraft");
@@ -33,41 +34,18 @@ namespace TrueCraft.Core
                     Directory.CreateDirectory(config);
                     return config;
                 }
+
                 Directory.CreateDirectory(appdata);
                 return appdata;
             }
         }
 
-        public static string Worlds
-        {
-            get
-            {
-                return Path.Combine(Base, "worlds");
-            }
-        }
+        public static string Worlds => Path.Combine(Base, "worlds");
 
-        public static string Settings
-        {
-            get
-            {
-                return Path.Combine(Base, "settings.json");
-            }
-        }
+        public static string Settings => Path.Combine(Base, "settings.json");
 
-        public static string Screenshots
-        {
-            get
-            {
-                return Path.Combine(Base, "screenshots");
-            }
-        }
+        public static string Screenshots => Path.Combine(Base, "screenshots");
 
-        public static string TexturePacks
-        {
-            get
-            {
-                return Path.Combine(Base, "texturepacks");
-            }
-        }
+        public static string TexturePacks => Path.Combine(Base, "texturepacks");
     }
 }

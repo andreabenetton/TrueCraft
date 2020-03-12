@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using TrueCraft.API.World;
 using TrueCraft.API;
+using TrueCraft.API.World;
 using TrueCraft.Core.TerrainGen.Noise;
 
 namespace TrueCraft.Core.World
 {
     public class BiomeMap : IBiomeMap
     {
-        public IList<BiomeCell> BiomeCells { get; private set; }
-
-        Perlin TempNoise, RainNoise;
+        private readonly Perlin TempNoise;
+        private readonly Perlin RainNoise;
 
         public BiomeMap(int seed)
         {
@@ -30,6 +29,8 @@ namespace TrueCraft.Core.World
             RainNoise.Seed = seed;
         }
 
+        public IList<BiomeCell> BiomeCells { get; }
+
         public void AddCell(BiomeCell cell)
         {
             BiomeCells.Add(cell);
@@ -37,15 +38,15 @@ namespace TrueCraft.Core.World
 
         public byte GetBiome(Coordinates2D location)
         {
-            byte BiomeID = (ClosestCell(location) != null) ? ClosestCell(location).BiomeID : (byte)Biome.Plains;
+            var BiomeID = ClosestCell(location) != null ? ClosestCell(location).BiomeID : (byte) Biome.Plains;
             return BiomeID;
         }
 
         public byte GenerateBiome(int seed, IBiomeRepository biomes, Coordinates2D location, bool spawn)
         {
-            double temp = Math.Abs(TempNoise.Value2D(location.X, location.Z));
-            double rainfall = Math.Abs(RainNoise.Value2D(location.X, location.Z));
-            byte ID = biomes.GetBiome(temp, rainfall, spawn).ID;
+            var temp = Math.Abs(TempNoise.Value2D(location.X, location.Z));
+            var rainfall = Math.Abs(RainNoise.Value2D(location.X, location.Z));
+            var ID = biomes.GetBiome(temp, rainfall, spawn).ID;
             return ID;
         }
 
@@ -56,7 +57,7 @@ namespace TrueCraft.Core.World
         {
             BiomeCell cell = null;
             var distance = double.MaxValue;
-            foreach (BiomeCell C in BiomeCells)
+            foreach (var C in BiomeCells)
             {
                 var _distance = Distance(location, C.CellPoint);
                 if (_distance < distance)
@@ -65,6 +66,7 @@ namespace TrueCraft.Core.World
                     cell = C;
                 }
             }
+
             return cell;
         }
 
@@ -74,20 +76,18 @@ namespace TrueCraft.Core.World
         public double ClosestCellPoint(Coordinates2D location)
         {
             var distance = double.MaxValue;
-            foreach (BiomeCell C in BiomeCells)
+            foreach (var C in BiomeCells)
             {
                 var _distance = Distance(location, C.CellPoint);
-                if (_distance < distance)
-                {
-                    distance = _distance;
-                }
+                if (_distance < distance) distance = _distance;
             }
+
             return distance;
         }
 
         public double Distance(Coordinates2D a, Coordinates2D b)
         {
-            Coordinates2D diff = a - b;
+            var diff = a - b;
             return Math.Max(Math.Abs(diff.X), Math.Abs(diff.Z));
         }
     }

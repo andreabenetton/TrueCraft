@@ -21,26 +21,24 @@ namespace TrueCraft.Core.Networking
             Init(poolSize);
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+
+            GC.SuppressFinalize(this);
+        }
+
         private void Init(int size)
         {
-            for (int i = 0; i < size; i++)
-            {
-                argsPool.Add(CreateEventArgs());
-            }
+            for (var i = 0; i < size; i++) argsPool.Add(CreateEventArgs());
         }
 
         public SocketAsyncEventArgs Get()
         {
             SocketAsyncEventArgs args;
-            if (!argsPool.TryTake(out args))
-            {
-                args = CreateEventArgs();
-            }
+            if (!argsPool.TryTake(out args)) args = CreateEventArgs();
 
-            if (argsPool.Count > maxPoolSize)
-            {
-                Trim(argsPool.Count - maxPoolSize);
-            }
+            if (argsPool.Count > maxPoolSize) Trim(argsPool.Count - maxPoolSize);
 
             return args;
         }
@@ -53,7 +51,7 @@ namespace TrueCraft.Core.Networking
 
         protected SocketAsyncEventArgs CreateEventArgs()
         {
-            SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+            var args = new SocketAsyncEventArgs();
             bufferManager.SetBuffer(args);
 
             return args;
@@ -61,7 +59,7 @@ namespace TrueCraft.Core.Networking
 
         public void Trim(int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 SocketAsyncEventArgs args;
 
@@ -73,13 +71,6 @@ namespace TrueCraft.Core.Networking
             }
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-
-            GC.SuppressFinalize(this);
-        }
-
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
@@ -88,7 +79,7 @@ namespace TrueCraft.Core.Networking
 
                 while (argsPool.Count > 0)
                 {
-                    SocketAsyncEventArgs arg = argsPool.Take();
+                    var arg = argsPool.Take();
 
                     bufferManager.ClearBuffer(arg);
                     arg.Dispose();

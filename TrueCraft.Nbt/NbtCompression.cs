@@ -1,6 +1,8 @@
-﻿namespace TrueCraft.Nbt {
+﻿namespace TrueCraft.Nbt
+{
     /// <summary> Compression method used for loading/saving NBT files. </summary>
-    public enum NbtCompression {
+    public enum NbtCompression
+    {
         /// <summary> Automatically detect file compression. Not a valid format for saving. </summary>
         AutoDetect,
 

@@ -1,29 +1,29 @@
 ﻿using System.Collections.Generic;
-using TrueCraft.API.World;
 using TrueCraft.API;
-using TrueCraft.Core.World;
+using TrueCraft.API.World;
 using TrueCraft.Core.Logic.Blocks;
-using TrueCraft.Core.TerrainGen.Noise;
 using TrueCraft.Core.TerrainGen.Decorators;
+using TrueCraft.Core.TerrainGen.Noise;
+using TrueCraft.Core.World;
 
 namespace TrueCraft.Core.TerrainGen
 {
     /// <summary>
-    /// This terrain generator is still under heavy development. Use at your own risk.
+    ///     This terrain generator is still under heavy development. Use at your own risk.
     /// </summary>
     public class StandardGenerator : IChunkProvider
     {
-        BiomeRepository Biomes = new BiomeRepository();
-        Perlin HighNoise;
-        Perlin LowNoise;
-        Perlin BottomNoise;
-        Perlin CaveNoise;
-        ClampNoise HighClamp;
-        ClampNoise LowClamp;
-        ClampNoise BottomClamp;
-        ModifyNoise FinalNoise;
-        bool EnableCaves;
         private const int GroundLevel = 50;
+        private readonly BiomeRepository Biomes = new BiomeRepository();
+        private ClampNoise BottomClamp;
+        private Perlin BottomNoise;
+        private Perlin CaveNoise;
+        private readonly bool EnableCaves;
+        private ModifyNoise FinalNoise;
+        private ClampNoise HighClamp;
+        private Perlin HighNoise;
+        private ClampNoise LowClamp;
+        private Perlin LowNoise;
 
         public StandardGenerator()
         {
@@ -39,13 +39,17 @@ namespace TrueCraft.Core.TerrainGen
             ChunkDecorators.Add(new DungeonDecorator(GroundLevel));
         }
 
+        public Vector3 SpawnPoint { get; private set; }
+        public bool SingleBiome { get; private set; }
+        public byte GenerationBiome { get; private set; }
+
         public void Initialize(IWorld world)
         {
             HighNoise = new Perlin(world.Seed);
             LowNoise = new Perlin(world.Seed);
             BottomNoise = new Perlin(world.Seed);
             CaveNoise = new Perlin(world.Seed);
-            
+
             CaveNoise.Octaves = 3;
             CaveNoise.Amplitude = 0.05;
             CaveNoise.Persistance = 2;
@@ -82,20 +86,17 @@ namespace TrueCraft.Core.TerrainGen
             BottomClamp.MinValue = -20;
             BottomClamp.MaxValue = 5;
 
-            FinalNoise = new ModifyNoise(HighClamp, LowClamp, NoiseModifier.Add);
+            FinalNoise = new ModifyNoise(HighClamp, LowClamp);
         }
 
-        public IList<IChunkDecorator> ChunkDecorators { get; private set; }
-        public Vector3 SpawnPoint { get; private set; }
-        public bool SingleBiome { get; private set; }
-        public byte GenerationBiome { get; private set; }
+        public IList<IChunkDecorator> ChunkDecorators { get; }
 
         public IChunk GenerateChunk(IWorld world, Coordinates2D coordinates)
         {
             const int featurePointDistance = 400;
 
             // TODO: Create a terrain generator initializer function that gets passed the seed etc
-            int seed = world.Seed;
+            var seed = world.Seed;
             var worley = new CellNoise(seed);
             HighNoise.Seed = seed;
             LowNoise.Seed = seed;
@@ -103,86 +104,94 @@ namespace TrueCraft.Core.TerrainGen
 
             var chunk = new Chunk(coordinates);
 
-            for (int x = 0; x < 16; x++)
+            for (var x = 0; x < 16; x++)
+            for (var z = 0; z < 16; z++)
             {
-                for (int z = 0; z < 16; z++)
+                var blockX = MathHelper.ChunkToBlockX(x, coordinates.X);
+                var blockZ = MathHelper.ChunkToBlockZ(z, coordinates.Z);
+
+                const double lowClampRange = 5;
+                var lowClampMid = LowClamp.MaxValue - (LowClamp.MaxValue + LowClamp.MinValue) / 2;
+                var lowClampValue = LowClamp.Value2D(blockX, blockZ);
+
+                if (lowClampValue > lowClampMid - lowClampRange && lowClampValue < lowClampMid + lowClampRange)
                 {
-                    var blockX = MathHelper.ChunkToBlockX(x, coordinates.X);
-                    var blockZ = MathHelper.ChunkToBlockZ(z, coordinates.Z);
+                    var NewPrimary = new InvertNoise(HighClamp);
+                    FinalNoise.PrimaryNoise = NewPrimary;
+                }
+                else
+                {
+                    //reset it after modifying the values
+                    FinalNoise = new ModifyNoise(HighClamp, LowClamp);
+                }
 
-                    const double lowClampRange = 5;
-                    double lowClampMid = LowClamp.MaxValue - ((LowClamp.MaxValue + LowClamp.MinValue) / 2);
-                    double lowClampValue = LowClamp.Value2D(blockX, blockZ);
+                FinalNoise = new ModifyNoise(FinalNoise, BottomClamp, NoiseModifier.Subtract);
 
-                    if (lowClampValue > lowClampMid - lowClampRange && lowClampValue < lowClampMid + lowClampRange)
+                var cellValue = worley.Value2D(blockX, blockZ);
+                var location = new Coordinates2D(blockX, blockZ);
+                if (world.BiomeDiagram.BiomeCells.Count < 1
+                    || cellValue.Equals(1)
+                    && world.BiomeDiagram.ClosestCellPoint(location) >= featurePointDistance)
+                {
+                    var id = SingleBiome
+                        ? GenerationBiome
+                        : world.BiomeDiagram.GenerateBiome(seed, Biomes, location,
+                            IsSpawnCoordinate(location.X, location.Z));
+                    var cell = new BiomeCell(id, location);
+                    world.BiomeDiagram.AddCell(cell);
+                }
+
+                var biomeId = GetBiome(world, location);
+                var biome = Biomes.GetBiome(biomeId);
+                chunk.Biomes[x * Chunk.Width + z] = biomeId;
+
+                var height = GetHeight(blockX, blockZ);
+                var surfaceHeight = height - biome.SurfaceDepth;
+                chunk.HeightMap[x * Chunk.Width + z] = height;
+
+                // TODO: Do not overwrite blocks if they are already set from adjacent chunks
+                for (var y = 0; y <= height; y++)
+                {
+                    double cave = 0;
+                    if (!EnableCaves)
+                        cave = double.MaxValue;
+                    else
+                        cave = CaveNoise.Value3D((blockX + x) / 2, y / 2, (blockZ + z) / 2);
+                    var threshold = 0.05;
+                    if (y < 4)
                     {
-                        InvertNoise NewPrimary = new InvertNoise(HighClamp);
-                        FinalNoise.PrimaryNoise = NewPrimary;
+                        threshold = double.MaxValue;
                     }
                     else
                     {
-                        //reset it after modifying the values
-                        FinalNoise = new ModifyNoise(HighClamp, LowClamp, NoiseModifier.Add);
-                    }
-                    FinalNoise = new ModifyNoise(FinalNoise, BottomClamp, NoiseModifier.Subtract);
-
-                    var cellValue = worley.Value2D(blockX, blockZ);
-                    var location = new Coordinates2D(blockX, blockZ);
-                    if (world.BiomeDiagram.BiomeCells.Count < 1
-                        || cellValue.Equals(1)
-                        && world.BiomeDiagram.ClosestCellPoint(location) >= featurePointDistance)
-                    {
-                        byte id = (SingleBiome) ? GenerationBiome
-                            : world.BiomeDiagram.GenerateBiome(seed, Biomes, location,
-                                IsSpawnCoordinate(location.X, location.Z));
-                        var cell = new BiomeCell(id, location);
-                        world.BiomeDiagram.AddCell(cell);
+                        if (y > height - 8)
+                            threshold = 8;
                     }
 
-                    var biomeId = GetBiome(world, location);
-                    var biome = Biomes.GetBiome(biomeId);
-                    chunk.Biomes[x * Chunk.Width + z] = biomeId;
-
-                    var height = GetHeight(blockX, blockZ);
-                    var surfaceHeight = height - biome.SurfaceDepth;
-                    chunk.HeightMap[x * Chunk.Width + z] = height;
-
-                    // TODO: Do not overwrite blocks if they are already set from adjacent chunks
-                    for (int y = 0; y <= height; y++)
+                    if (cave < threshold)
                     {
-                        double cave = 0;
-                        if (!EnableCaves)
-                            cave = double.MaxValue;
-                        else
-                            cave = CaveNoise.Value3D((blockX + x) / 2, y / 2, (blockZ + z) / 2);
-                        double threshold = 0.05;
-                        if (y < 4)
-                            threshold = double.MaxValue;
-                        else
+                        if (y == 0)
                         {
-                            if (y > height - 8)
-                                threshold = 8;
+                            chunk.SetBlockID(new Coordinates3D(x, y, z), BedrockBlock.BlockID);
                         }
-                        if (cave < threshold)
+                        else
                         {
-                            if (y == 0)
-                                chunk.SetBlockID(new Coordinates3D(x, y, z), BedrockBlock.BlockID);
+                            if (y.Equals(height) || y < height && y > surfaceHeight)
+                            {
+                                chunk.SetBlockID(new Coordinates3D(x, y, z), biome.SurfaceBlock);
+                            }
                             else
                             {
-                                if (y.Equals(height) || y < height && y > surfaceHeight)
-                                    chunk.SetBlockID(new Coordinates3D(x, y, z), biome.SurfaceBlock);
+                                if (y > surfaceHeight - biome.FillerDepth)
+                                    chunk.SetBlockID(new Coordinates3D(x, y, z), biome.FillerBlock);
                                 else
-                                {
-                                    if (y > surfaceHeight - biome.FillerDepth)
-                                        chunk.SetBlockID(new Coordinates3D(x, y, z), biome.FillerBlock);
-                                    else
-                                        chunk.SetBlockID(new Coordinates3D(x, y, z), StoneBlock.BlockID);
-                                }
+                                    chunk.SetBlockID(new Coordinates3D(x, y, z), StoneBlock.BlockID);
                             }
                         }
                     }
                 }
             }
+
             foreach (var decorator in ChunkDecorators)
                 decorator.Decorate(world, chunk, Biomes);
             chunk.TerrainPopulated = true;
@@ -194,33 +203,33 @@ namespace TrueCraft.Core.TerrainGen
         {
             var chunk = GenerateChunk(world, Coordinates2D.Zero);
             var spawnPointHeight = chunk.HeightMap[0];
-            return new Coordinates3D(0, spawnPointHeight + 1, 0);
+            return new Coordinates3D(0, spawnPointHeight + 1);
         }
 
-        byte GetBiome(IWorld world, Coordinates2D location)
+        private byte GetBiome(IWorld world, Coordinates2D location)
         {
             if (SingleBiome)
                 return GenerationBiome;
             return world.BiomeDiagram.GetBiome(location);
         }
 
-        bool IsSpawnCoordinate(int x, int z)
+        private bool IsSpawnCoordinate(int x, int z)
         {
             return x > -1000 && x < 1000 || z > -1000 && z < 1000;
         }
 
-        int GetHeight(int x, int z)
+        private int GetHeight(int x, int z)
         {
             var value = FinalNoise.Value2D(x, z) + GroundLevel;
             var coords = new Coordinates2D(x, z);
-            double distance = IsSpawnCoordinate(x, z) ? coords.Distance : 1000;
+            var distance = IsSpawnCoordinate(x, z) ? coords.Distance : 1000;
             if (distance < 1000) // Avoids deep water within 1km sq of spawn
                 value += (1 - distance / 1000f) * 18;
             if (value < 0)
                 value = GroundLevel;
             if (value > Chunk.Height)
                 value = Chunk.Height - 1;
-            return (int)value;
+            return (int) value;
         }
     }
 }

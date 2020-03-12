@@ -6,19 +6,11 @@ namespace TrueCraft.Core
 {
     public static class RuntimeInfo
     {
-        public static bool Is32Bit { get; private set; }
-        public static bool Is64Bit { get; private set; }
-        public static bool IsMono { get; private set; }
-        public static bool IsWindows { get; private set; }
-        public static bool IsUnix { get; private set; }
-        public static bool IsLinux { get; private set; }
-        public static bool IsMacOSX { get; private set; }
-
         static RuntimeInfo()
         {
             IsMono = Type.GetType("Mono.Runtime") != null;
-            int p = (int)Environment.OSVersion.Platform;
-            IsUnix = (p == 4) || (p == 6) || (p == 128);
+            var p = (int) Environment.OSVersion.Platform;
+            IsUnix = p == 4 || p == 6 || p == 128;
             IsWindows = Path.DirectorySeparatorChar == '\\';
 
             Is32Bit = IntPtr.Size == 4;
@@ -26,12 +18,12 @@ namespace TrueCraft.Core
 
             if (IsUnix)
             {
-                Process uname = new Process();
+                var uname = new Process();
                 uname.StartInfo.FileName = "uname";
                 uname.StartInfo.UseShellExecute = false;
                 uname.StartInfo.RedirectStandardOutput = true;
                 uname.Start();
-                string output = uname.StandardOutput.ReadToEnd();
+                var output = uname.StandardOutput.ReadToEnd();
                 uname.WaitForExit();
 
                 output = output.ToUpper().Replace("\n", "").Trim();
@@ -45,6 +37,13 @@ namespace TrueCraft.Core
                 IsLinux = false;
             }
         }
+
+        public static bool Is32Bit { get; }
+        public static bool Is64Bit { get; }
+        public static bool IsMono { get; }
+        public static bool IsWindows { get; }
+        public static bool IsUnix { get; }
+        public static bool IsLinux { get; }
+        public static bool IsMacOSX { get; }
     }
 }
-

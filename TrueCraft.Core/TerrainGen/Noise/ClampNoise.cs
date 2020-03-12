@@ -4,17 +4,17 @@ namespace TrueCraft.Core.TerrainGen.Noise
 {
     public class ClampNoise : NoiseGen
     {
-        public INoise Noise { get; set; }
-        public double MinValue { get; set; }
-        public double MaxValue { get; set; }
-
         public ClampNoise(INoise noise)
         {
             Noise = noise;
             MinValue = 0;
             MaxValue = 1;
         }
-    
+
+        public INoise Noise { get; set; }
+        public double MinValue { get; set; }
+        public double MaxValue { get; set; }
+
         public override double Value2D(double x, double y)
         {
             var NoiseValue = Noise.Value2D(x, y);

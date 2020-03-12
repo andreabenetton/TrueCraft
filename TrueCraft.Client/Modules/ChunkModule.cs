@@ -1,31 +1,32 @@
 ﻿using System;
-using TrueCraft.Client.Rendering;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.API;
-using TrueCraft.Client.Events;
 using TrueCraft.API.World;
+using TrueCraft.Client.Events;
+using TrueCraft.Client.Rendering;
 using TrueCraft.Core.Lighting;
 using TrueCraft.Core.World;
+using BoundingBox = TrueCraft.API.BoundingBox;
+using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace TrueCraft.Client.Modules
 {
     public class ChunkModule : IGraphicalModule
     {
-        public TrueCraftGame Game { get; set; }
-        public ChunkRenderer ChunkRenderer { get; set; }
-        public int ChunksRendered { get; set; }
+        private static readonly Coordinates2D[] AdjacentCoordinates =
+        {
+            Coordinates2D.North, Coordinates2D.South,
+            Coordinates2D.East, Coordinates2D.West
+        };
 
-        private HashSet<Coordinates2D> ActiveMeshes { get; set; }
-        private List<ChunkMesh> ChunkMeshes { get; set; }
-        private ConcurrentBag<Mesh> IncomingChunks { get; set; }
-        private WorldLighting WorldLighting { get; set; }
-
-        private BasicEffect OpaqueEffect { get; set; }
-        private AlphaTestEffect TransparentEffect { get; set; }
+        private static readonly BlendState ColorWriteDisable = new BlendState
+        {
+            ColorWriteChannels = ColorWriteChannels.None
+        };
 
         public ChunkModule(TrueCraftGame game)
         {
@@ -65,76 +66,17 @@ namespace TrueCraft.Client.Modules
             ActiveMeshes = new HashSet<Coordinates2D>();
         }
 
-        void Game_Client_BlockChanged(object sender, BlockChangeEventArgs e)
-        {
-            WorldLighting.EnqueueOperation(new API.BoundingBox(
-                e.Position, e.Position + Coordinates3D.One), false);
-            WorldLighting.EnqueueOperation(new API.BoundingBox(
-                e.Position, e.Position + Coordinates3D.One), true);
-            var posA = e.Position;
-            posA.Y = 0;
-            var posB = e.Position;
-            posB.Y = World.Height;
-            posB.X++;
-            posB.Z++;
-            WorldLighting.EnqueueOperation(new API.BoundingBox(posA, posB), true);
-            WorldLighting.EnqueueOperation(new API.BoundingBox(posA, posB), false);
-            for (int i = 0; i < 100; i++)
-            {
-                if (!WorldLighting.TryLightNext())
-                    break;
-            }
+        public TrueCraftGame Game { get; set; }
+        public ChunkRenderer ChunkRenderer { get; set; }
+        public int ChunksRendered { get; set; }
 
-        }
+        private HashSet<Coordinates2D> ActiveMeshes { get; }
+        private List<ChunkMesh> ChunkMeshes { get; }
+        private ConcurrentBag<Mesh> IncomingChunks { get; }
+        private WorldLighting WorldLighting { get; }
 
-        private void Game_Client_ChunkModified(object sender, ChunkEventArgs e)
-        {
-            ChunkRenderer.Enqueue(e.Chunk, true);
-        }
-
-        private static readonly Coordinates2D[] AdjacentCoordinates =
-            {
-                Coordinates2D.North, Coordinates2D.South,
-                Coordinates2D.East, Coordinates2D.West
-            };
-
-        private void Game_Client_ChunkLoaded(object sender, ChunkEventArgs e)
-        {
-            ChunkRenderer.Enqueue(e.Chunk);
-            foreach (var coordinates in AdjacentCoordinates)
-            {
-                ReadOnlyChunk adjacent = Game.Client.World.GetChunk(
-                    coordinates + e.Chunk.Coordinates);
-                if (adjacent != null)
-                    ChunkRenderer.Enqueue(adjacent);
-            }
-        }
-
-        void MeshCompleted(object sender, RendererEventArgs<ReadOnlyChunk> e)
-        {
-            IncomingChunks.Add(e.Result);
-        }
-
-        void UnloadChunk(ReadOnlyChunk chunk)
-        {
-            Game.Invoke(() =>
-            {
-                ActiveMeshes.Remove(chunk.Coordinates);
-                ChunkMeshes.RemoveAll(m => m.Chunk.Coordinates == chunk.Coordinates);
-            });
-        }
-
-        void HandleClientPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            switch (e.PropertyName)
-            {
-                case "Position":
-                    var sorter = new ChunkRenderer.ChunkSorter(new Coordinates3D(
-                        (int)Game.Client.Position.X, 0, (int)Game.Client.Position.Z));
-                    Game.Invoke(() => ChunkMeshes.Sort(sorter));
-                    break;
-            }
-        }
+        private BasicEffect OpaqueEffect { get; }
+        private AlphaTestEffect TransparentEffect { get; }
 
         public void Update(GameTime gameTime)
         {
@@ -145,7 +87,7 @@ namespace TrueCraft.Client.Modules
                 var chunkMesh = mesh as ChunkMesh;
                 if (chunkMesh != null && ActiveMeshes.Contains(chunkMesh.Chunk.Coordinates))
                 {
-                    int existing = ChunkMeshes.FindIndex(m => m.Chunk.Coordinates == chunkMesh.Chunk.Coordinates);
+                    var existing = ChunkMeshes.FindIndex(m => m.Chunk.Coordinates == chunkMesh.Chunk.Coordinates);
                     ChunkMeshes[existing] = chunkMesh;
                 }
                 else
@@ -157,28 +99,25 @@ namespace TrueCraft.Client.Modules
                     }
                 }
             }
+
             if (any)
                 Game.FlushMainThreadActions();
             WorldLighting.TryLightNext();
         }
-
-        private static readonly BlendState ColorWriteDisable = new BlendState
-        {
-            ColorWriteChannels = ColorWriteChannels.None
-        };
 
         public void Draw(GameTime gameTime)
         {
             OpaqueEffect.FogColor = Game.SkyModule.WorldFogColor.ToVector3();
             Game.Camera.ApplyTo(OpaqueEffect);
             Game.Camera.ApplyTo(TransparentEffect);
-            OpaqueEffect.AmbientLightColor = TransparentEffect.DiffuseColor = Color.White.ToVector3() 
-                * new Microsoft.Xna.Framework.Vector3(0.25f + Game.SkyModule.BrightnessModifier);
+            OpaqueEffect.AmbientLightColor = TransparentEffect.DiffuseColor = Color.White.ToVector3()
+                                                                              * new Vector3(
+                                                                                  0.25f + Game.SkyModule
+                                                                                      .BrightnessModifier);
 
-            int chunks = 0;
+            var chunks = 0;
             Game.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             foreach (var chunkMesh in ChunkMeshes)
-            {
                 if (Game.Camera.Frustum.Intersects(chunkMesh.BoundingBox))
                 {
                     chunks++;
@@ -186,23 +125,80 @@ namespace TrueCraft.Client.Modules
                     if (!chunkMesh.IsReady || chunkMesh.Submeshes != 2)
                         Console.WriteLine("Warning: rendered chunk that was not ready");
                 }
-            }
 
             Game.GraphicsDevice.BlendState = ColorWriteDisable;
             foreach (var chunkMesh in ChunkMeshes)
-            {
                 if (Game.Camera.Frustum.Intersects(chunkMesh.BoundingBox))
                     chunkMesh.Draw(TransparentEffect, 1);
-            }
 
             Game.GraphicsDevice.BlendState = BlendState.NonPremultiplied;
             foreach (var chunkMesh in ChunkMeshes)
-            {
                 if (Game.Camera.Frustum.Intersects(chunkMesh.BoundingBox))
                     chunkMesh.Draw(TransparentEffect, 1);
-            }
 
             ChunksRendered = chunks;
+        }
+
+        private void Game_Client_BlockChanged(object sender, BlockChangeEventArgs e)
+        {
+            WorldLighting.EnqueueOperation(new BoundingBox(
+                e.Position, e.Position + Coordinates3D.One), false);
+            WorldLighting.EnqueueOperation(new BoundingBox(
+                e.Position, e.Position + Coordinates3D.One), true);
+            var posA = e.Position;
+            posA.Y = 0;
+            var posB = e.Position;
+            posB.Y = World.Height;
+            posB.X++;
+            posB.Z++;
+            WorldLighting.EnqueueOperation(new BoundingBox(posA, posB), true);
+            WorldLighting.EnqueueOperation(new BoundingBox(posA, posB), false);
+            for (var i = 0; i < 100; i++)
+                if (!WorldLighting.TryLightNext())
+                    break;
+        }
+
+        private void Game_Client_ChunkModified(object sender, ChunkEventArgs e)
+        {
+            ChunkRenderer.Enqueue(e.Chunk, true);
+        }
+
+        private void Game_Client_ChunkLoaded(object sender, ChunkEventArgs e)
+        {
+            ChunkRenderer.Enqueue(e.Chunk);
+            foreach (var coordinates in AdjacentCoordinates)
+            {
+                var adjacent = Game.Client.World.GetChunk(
+                    coordinates + e.Chunk.Coordinates);
+                if (adjacent != null)
+                    ChunkRenderer.Enqueue(adjacent);
+            }
+        }
+
+        private void MeshCompleted(object sender, RendererEventArgs<ReadOnlyChunk> e)
+        {
+            IncomingChunks.Add(e.Result);
+        }
+
+        private void UnloadChunk(ReadOnlyChunk chunk)
+        {
+            Game.Invoke(() =>
+            {
+                ActiveMeshes.Remove(chunk.Coordinates);
+                ChunkMeshes.RemoveAll(m => m.Chunk.Coordinates == chunk.Coordinates);
+            });
+        }
+
+        private void HandleClientPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case "Position":
+                    var sorter = new ChunkRenderer.ChunkSorter(new Coordinates3D(
+                        (int) Game.Client.Position.X, 0, (int) Game.Client.Position.Z));
+                    Game.Invoke(() => ChunkMeshes.Sort(sorter));
+                    break;
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 using System;
-using TrueCraft.API.Logic;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
 
 namespace TrueCraft.Core.Logic.Items
@@ -28,7 +28,9 @@ namespace TrueCraft.Core.Logic.Items
 
         public static readonly short ItemID = 0x15F;
 
-        public override short ID { get { return 0x15F; } }
+        public override short ID => 0x15F;
+
+        public override string DisplayName => "Dye";
 
         public override Tuple<int, int> GetIconTexture(byte metadata)
         {
@@ -36,21 +38,16 @@ namespace TrueCraft.Core.Logic.Items
             return new Tuple<int, int>(14, 4);
         }
 
-        public override string DisplayName { get { return "Dye"; } }
-
         public class BoneMealRecipe : ICraftingRecipe
         {
             public ItemStack[,] Pattern
             {
-                get
-                {
-                    return new[,] { { new ItemStack(BoneItem.ItemID) } };
-                }
+                get { return new[,] {{new ItemStack(BoneItem.ItemID)}}; }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.BoneMeal); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.BoneMeal);
 
-            public bool SignificantMetadata { get { return false; } }
+            public bool SignificantMetadata => false;
         }
 
         public class LightGrayDyeRecipe : ICraftingRecipe
@@ -62,17 +59,17 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.InkSac),
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.BoneMeal),
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.BoneMeal),
+                            new ItemStack(ItemID, 1, (short) DyeType.InkSac),
+                            new ItemStack(ItemID, 1, (short) DyeType.BoneMeal),
+                            new ItemStack(ItemID, 1, (short) DyeType.BoneMeal)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.LightGrayDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.LightGrayDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class GrayDyeRecipe : ICraftingRecipe
@@ -84,17 +81,17 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.InkSac),
+                            new ItemStack(ItemID, 1, (short) DyeType.InkSac),
                             ItemStack.EmptyStack,
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.BoneMeal),
+                            new ItemStack(ItemID, 1, (short) DyeType.BoneMeal)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.GrayDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.GrayDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class RoseRedRecipe : ICraftingRecipe
@@ -106,15 +103,15 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(RoseBlock.BlockID),
+                            new ItemStack(RoseBlock.BlockID)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.RoseRed); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.RoseRed);
 
-            public bool SignificantMetadata { get { return false; } }
+            public bool SignificantMetadata => false;
         }
 
         public class OrangeDyeRecipe : ICraftingRecipe
@@ -126,16 +123,16 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.DandelionYellow),
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.RoseRed),
+                            new ItemStack(ItemID, 1, (short) DyeType.DandelionYellow),
+                            new ItemStack(ItemID, 1, (short) DyeType.RoseRed)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.RoseRed); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.RoseRed);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class DandelionYellowRecipe : ICraftingRecipe
@@ -153,9 +150,9 @@ namespace TrueCraft.Core.Logic.Items
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.DandelionYellow); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.DandelionYellow);
 
-            public bool SignificantMetadata { get { return false; } }
+            public bool SignificantMetadata => false;
         }
 
         public class LimeDyeRecipe : ICraftingRecipe
@@ -167,17 +164,17 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.CactusGreen),
+                            new ItemStack(ItemID, 1, (short) DyeType.CactusGreen),
                             ItemStack.EmptyStack,
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.BoneMeal),
+                            new ItemStack(ItemID, 1, (short) DyeType.BoneMeal)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.LimeDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.LimeDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class LightBlueDyeRecipe : ICraftingRecipe
@@ -189,17 +186,17 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.LapisLazuli),
+                            new ItemStack(ItemID, 1, (short) DyeType.LapisLazuli),
                             ItemStack.EmptyStack,
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.BoneMeal),
+                            new ItemStack(ItemID, 1, (short) DyeType.BoneMeal)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.LightBlueDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.LightBlueDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class CyanDyeRecipe : ICraftingRecipe
@@ -211,17 +208,17 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.LapisLazuli),
+                            new ItemStack(ItemID, 1, (short) DyeType.LapisLazuli),
                             ItemStack.EmptyStack,
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.CactusGreen),
+                            new ItemStack(ItemID, 1, (short) DyeType.CactusGreen)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.CyanDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.CyanDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class PurpleDyeRecipe : ICraftingRecipe
@@ -233,17 +230,17 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.LapisLazuli),
+                            new ItemStack(ItemID, 1, (short) DyeType.LapisLazuli),
                             ItemStack.EmptyStack,
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.RoseRed),
+                            new ItemStack(ItemID, 1, (short) DyeType.RoseRed)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.PurpleDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.PurpleDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class MagentaDyeRecipe1 : ICraftingRecipe
@@ -255,16 +252,16 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.PurpleDye),
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.PinkDye),
+                            new ItemStack(ItemID, 1, (short) DyeType.PurpleDye),
+                            new ItemStack(ItemID, 1, (short) DyeType.PinkDye)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.MagentaDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.MagentaDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class MagentaDyeRecipe2 : ICraftingRecipe
@@ -276,17 +273,17 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.LapisLazuli),
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.BoneMeal),
-                            new ItemStack(DyeItem.ItemID, 2, (short)DyeItem.DyeType.RoseRed),
+                            new ItemStack(ItemID, 1, (short) DyeType.LapisLazuli),
+                            new ItemStack(ItemID, 1, (short) DyeType.BoneMeal),
+                            new ItemStack(ItemID, 2, (short) DyeType.RoseRed)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.MagentaDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.MagentaDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class MagentaDyeRecipe3 : ICraftingRecipe
@@ -298,17 +295,17 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.LapisLazuli),
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.PinkDye),
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.RoseRed),
+                            new ItemStack(ItemID, 1, (short) DyeType.LapisLazuli),
+                            new ItemStack(ItemID, 1, (short) DyeType.PinkDye),
+                            new ItemStack(ItemID, 1, (short) DyeType.RoseRed)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.MagentaDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.MagentaDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
 
         public class PinkDyeRecipe : ICraftingRecipe
@@ -320,16 +317,16 @@ namespace TrueCraft.Core.Logic.Items
                     return new[,]
                     {
                         {
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.BoneMeal),
-                            new ItemStack(DyeItem.ItemID, 1, (short)DyeItem.DyeType.RoseRed),
+                            new ItemStack(ItemID, 1, (short) DyeType.BoneMeal),
+                            new ItemStack(ItemID, 1, (short) DyeType.RoseRed)
                         }
                     };
                 }
             }
 
-            public ItemStack Output { get { return new ItemStack(ItemID, 1, (short)DyeItem.DyeType.PinkDye); } }
+            public ItemStack Output => new ItemStack(ItemID, 1, (short) DyeType.PinkDye);
 
-            public bool SignificantMetadata { get { return true; } }
+            public bool SignificantMetadata => true;
         }
     }
 }

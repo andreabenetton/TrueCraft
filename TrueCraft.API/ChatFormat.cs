@@ -4,42 +4,42 @@ using System.Text;
 namespace TrueCraft.API
 {
     /// <summary>
-    /// Provides constants and functions for working with chat formatting.
+    ///     Provides constants and functions for working with chat formatting.
     /// </summary>
     public static class ChatFormat
     {
         /// <summary>
-        /// The following text should be obfuscated.
+        ///     The following text should be obfuscated.
         /// </summary>
         public const string Obfuscated = "§k";
 
         /// <summary>
-        /// The following text should be bold.
+        ///     The following text should be bold.
         /// </summary>
         public const string Bold = "§l";
 
         /// <summary>
-        /// The following text should be striked-through.
+        ///     The following text should be striked-through.
         /// </summary>
         public const string Strikethrough = "§m";
 
         /// <summary>
-        /// The following text should be underlined.
+        ///     The following text should be underlined.
         /// </summary>
         public const string Underline = "§n";
 
         /// <summary>
-        /// The following text should be italicized.
+        ///     The following text should be italicized.
         /// </summary>
         public const string Italic = "§o";
 
         /// <summary>
-        /// The following text should be reset to normal.
+        ///     The following text should be reset to normal.
         /// </summary>
         public const string Reset = "§r";
 
         /// <summary>
-        /// Returns whether the specified chat code is a valid formatting one.
+        ///     Returns whether the specified chat code is a valid formatting one.
         /// </summary>
         /// <param name="code"></param>
         /// <returns></returns>
@@ -50,16 +50,16 @@ namespace TrueCraft.API
 
             var comparison = StringComparison.InvariantCultureIgnoreCase;
             return
-                code.Equals(ChatFormat.Obfuscated, comparison) ||
-                code.Equals(ChatFormat.Bold, comparison) ||
-                code.Equals(ChatFormat.Strikethrough, comparison) ||
-                code.Equals(ChatFormat.Underline, comparison) ||
-                code.Equals(ChatFormat.Italic, comparison) ||
-                code.Equals(ChatFormat.Reset, comparison);
+                code.Equals(Obfuscated, comparison) ||
+                code.Equals(Bold, comparison) ||
+                code.Equals(Strikethrough, comparison) ||
+                code.Equals(Underline, comparison) ||
+                code.Equals(Italic, comparison) ||
+                code.Equals(Reset, comparison);
         }
 
         /// <summary>
-        /// Removes any format codes from a chat string.
+        ///     Removes any format codes from a chat string.
         /// </summary>
         /// <param name="text"></param>
         /// <returns></returns>
@@ -69,7 +69,7 @@ namespace TrueCraft.API
                 return string.Empty;
 
             var builder = new StringBuilder(text.Length);
-            for (int i = 0; i < text.Length; i++)
+            for (var i = 0; i < text.Length; i++)
             {
                 if (text[i] == '§')
                 {
@@ -77,11 +77,12 @@ namespace TrueCraft.API
                     var code = new string('§', text[i]);
                     if (IsValid(code))
                         continue;
-                    else
-                        builder.Append(code);
+                    builder.Append(code);
                 }
+
                 builder.Append(text[i]);
             }
+
             return builder.ToString();
         }
     }

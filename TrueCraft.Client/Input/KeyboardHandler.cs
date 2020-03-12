@@ -6,27 +6,12 @@ using Microsoft.Xna.Framework.Input;
 namespace TrueCraft.Client.Input
 {
     /// <summary>
-    /// Encapsulates keyboard input in an event-driven manner.
+    ///     Encapsulates keyboard input in an event-driven manner.
     /// </summary>
     public sealed class KeyboardHandler : GameComponent
     {
         /// <summary>
-        /// Raised when a key for this keyboard component is pressed.
-        /// </summary>
-        public event EventHandler<KeyboardKeyEventArgs> KeyDown;
-
-        /// <summary>
-        /// Raised when a key for this keyboard component is released.
-        /// </summary>
-        public event EventHandler<KeyboardKeyEventArgs> KeyUp;
-
-        /// <summary>
-        /// Gets the state for this keyboard component.
-        /// </summary>
-        public KeyboardState State { get; private set; }
-
-        /// <summary>
-        /// Creates a new keyboard component.
+        ///     Creates a new keyboard component.
         /// </summary>
         /// <param name="game">The parent game for the component.</param>
         public KeyboardHandler(Game game)
@@ -35,7 +20,22 @@ namespace TrueCraft.Client.Input
         }
 
         /// <summary>
-        /// Initializes this keyboard component.
+        ///     Gets the state for this keyboard component.
+        /// </summary>
+        public KeyboardState State { get; private set; }
+
+        /// <summary>
+        ///     Raised when a key for this keyboard component is pressed.
+        /// </summary>
+        public event EventHandler<KeyboardKeyEventArgs> KeyDown;
+
+        /// <summary>
+        ///     Raised when a key for this keyboard component is released.
+        /// </summary>
+        public event EventHandler<KeyboardKeyEventArgs> KeyUp;
+
+        /// <summary>
+        ///     Initializes this keyboard component.
         /// </summary>
         public override void Initialize()
         {
@@ -45,7 +45,7 @@ namespace TrueCraft.Client.Input
         }
 
         /// <summary>
-        /// Updates this keyboard component.
+        ///     Updates this keyboard component.
         /// </summary>
         /// <param name="gameTime">The game time for the update.</param>
         public override void Update(GameTime gameTime)
@@ -58,7 +58,7 @@ namespace TrueCraft.Client.Input
         }
 
         /// <summary>
-        /// Processes a change between two states.
+        ///     Processes a change between two states.
         /// </summary>
         /// <param name="newState">The new state.</param>
         /// <param name="oldState">The old state.</param>
@@ -85,7 +85,7 @@ namespace TrueCraft.Client.Input
         }
 
         /// <summary>
-        /// Called when this keyboard component is being disposed of.
+        ///     Called when this keyboard component is being disposed of.
         /// </summary>
         /// <param name="disposing">Whether Dispose() called this method.</param>
         protected override void Dispose(bool disposing)

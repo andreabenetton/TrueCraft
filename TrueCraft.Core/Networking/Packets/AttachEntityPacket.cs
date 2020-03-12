@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Used to attach entities to other entities, i.e. players to minecarts
+    ///     Used to attach entities to other entities, i.e. players to minecarts
     /// </summary>
     public struct AttachEntityPacket : IPacket
     {
-        public byte ID { get { return 0x27; } }
+        public byte ID => 0x27;
 
         public int EntityID;
         public int VehicleID;

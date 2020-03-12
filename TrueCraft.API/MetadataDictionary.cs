@@ -1,13 +1,24 @@
 using System.Collections.Generic;
+using System.Text;
 using TrueCraft.API.Networking;
 
 namespace TrueCraft.API
 {
     /// <summary>
-    /// Used to send metadata with entities
+    ///     Used to send metadata with entities
     /// </summary>
     public class MetadataDictionary
     {
+        private static readonly CreateEntryInstance[] EntryTypes =
+        {
+            () => new MetadataByte(), // 0
+            () => new MetadataShort(), // 1
+            () => new MetadataInt(), // 2
+            () => new MetadataFloat(), // 3
+            () => new MetadataString(), // 4
+            () => new MetadataSlot() // 5
+        };
+
         private readonly Dictionary<byte, MetadataEntry> entries;
 
         public MetadataDictionary()
@@ -15,15 +26,12 @@ namespace TrueCraft.API
             entries = new Dictionary<byte, MetadataEntry>();
         }
 
-        public int Count
-        {
-            get { return entries.Count; }
-        }
+        public int Count => entries.Count;
 
         public MetadataEntry this[byte index]
         {
-            get { return entries[index]; }
-            set { entries[index] = value; }
+            get => entries[index];
+            set => entries[index] = value;
         }
 
         public static MetadataDictionary FromStream(IMinecraftStream stream)
@@ -31,11 +39,11 @@ namespace TrueCraft.API
             var value = new MetadataDictionary();
             while (true)
             {
-                byte key = stream.ReadUInt8();
+                var key = stream.ReadUInt8();
                 if (key == 127) break;
 
-                byte type = (byte)((key & 0xE0) >> 5);
-                byte index = (byte)(key & 0x1F);
+                var type = (byte) ((key & 0xE0) >> 5);
+                var index = (byte) (key & 0x1F);
 
                 var entry = EntryTypes[type]();
                 entry.FromStream(stream);
@@ -43,6 +51,7 @@ namespace TrueCraft.API
 
                 value[index] = entry;
             }
+
             return value;
         }
 
@@ -53,30 +62,18 @@ namespace TrueCraft.API
             stream.WriteUInt8(0x7F);
         }
 
-        delegate MetadataEntry CreateEntryInstance();
-
-        private static readonly CreateEntryInstance[] EntryTypes = new CreateEntryInstance[]
-            {
-                () => new MetadataByte(), // 0
-                () => new MetadataShort(), // 1
-                () => new MetadataInt(), // 2
-                () => new MetadataFloat(), // 3
-                () => new MetadataString(), // 4
-                () => new MetadataSlot(), // 5
-            };
-
         public override string ToString()
         {
-            System.Text.StringBuilder sb = null;
+            StringBuilder sb = null;
 
             foreach (var entry in entries.Values)
             {
                 if (sb != null)
                     sb.Append(", ");
                 else
-                    sb = new System.Text.StringBuilder();
+                    sb = new StringBuilder();
 
-                sb.Append(entry.ToString());
+                sb.Append(entry);
             }
 
             if (sb != null)
@@ -84,5 +81,7 @@ namespace TrueCraft.API
 
             return string.Empty;
         }
+
+        private delegate MetadataEntry CreateEntryInstance();
     }
 }

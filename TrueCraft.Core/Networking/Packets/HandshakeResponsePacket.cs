@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent from servers to continue with a connection. A kick is sent instead if the connection is refused.
+    ///     Sent from servers to continue with a connection. A kick is sent instead if the connection is refused.
     /// </summary>
     public struct HandshakeResponsePacket : IPacket
     {
-        public byte ID { get { return 0x02; } }
+        public byte ID => 0x02;
 
         public HandshakeResponsePacket(string connectionHash)
         {
@@ -15,7 +15,7 @@ namespace TrueCraft.Core.Networking.Packets
         }
 
         /// <summary>
-        /// Set to "-" for offline mode servers. Online mode beta servers are obsolete.
+        ///     Set to "-" for offline mode servers. Online mode beta servers are obsolete.
         /// </summary>
         public string ConnectionHash;
 

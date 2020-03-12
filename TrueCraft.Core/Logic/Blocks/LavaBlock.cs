@@ -2,6 +2,8 @@ namespace TrueCraft.Core.Logic.Blocks
 {
     public class LavaBlock : FluidBlock
     {
+        public static readonly byte BlockID = 0x0A;
+
         public LavaBlock() : this(false)
         {
         }
@@ -14,42 +16,40 @@ namespace TrueCraft.Core.Logic.Blocks
                 _MaximumFluidDepletion = 3;
         }
 
-        public static readonly byte BlockID = 0x0A;
+        public override byte ID => 0x0A;
 
-        public override byte ID { get { return 0x0A; } }
+        public override double BlastResistance => 0;
 
-        public override double BlastResistance { get { return 0; } }
+        public override double Hardness => 100;
 
-        public override double Hardness { get { return 100; } }
+        public override byte Luminance => 15;
 
-        public override byte Luminance { get { return 15; } }
+        public override bool Opaque => false;
 
-        public override bool Opaque { get { return false; } }
+        public override byte LightOpacity => 255;
 
-        public override byte LightOpacity { get { return 255; } }
+        public override string DisplayName => "Lava";
 
-        public override string DisplayName { get { return "Lava"; } }
+        protected override bool AllowSourceCreation => false;
 
-        protected override bool AllowSourceCreation { get { return false; } }
+        protected override double SecondsBetweenUpdates => 2;
 
-        protected override double SecondsBetweenUpdates { get { return 2; } }
+        private byte _MaximumFluidDepletion { get; }
+        protected override byte MaximumFluidDepletion => _MaximumFluidDepletion;
 
-        private byte _MaximumFluidDepletion { get; set; }
-        protected override byte MaximumFluidDepletion { get { return _MaximumFluidDepletion; } }
+        protected override byte FlowingID => BlockID;
 
-        protected override byte FlowingID { get { return BlockID; } }
-
-        protected override byte StillID { get { return StationaryLavaBlock.BlockID; } }
+        protected override byte StillID => StationaryLavaBlock.BlockID;
     }
 
     public class StationaryLavaBlock : LavaBlock
     {
-        public static readonly new byte BlockID = 0x0B;
-        
-        public override byte ID { get { return 0x0B; } }
-        
-        public override double BlastResistance { get { return 500; } }
+        public new static readonly byte BlockID = 0x0B;
 
-        public override string DisplayName { get { return "Lava (stationary)"; } }
+        public override byte ID => 0x0B;
+
+        public override double BlastResistance => 500;
+
+        public override string DisplayName => "Lava (stationary)";
     }
 }

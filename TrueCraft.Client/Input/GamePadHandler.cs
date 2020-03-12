@@ -1,22 +1,22 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using System.Linq;
 
 namespace TrueCraft.Client.Input
 {
     public class GamePadHandler : GameComponent
     {
+        public GamePadHandler(Game game) : base(game)
+        {
+            PlayerIndex = PlayerIndex.One;
+        }
+
         public GamePadState State { get; set; }
         public PlayerIndex PlayerIndex { get; set; }
 
         public event EventHandler<GamePadButtonEventArgs> ButtonDown;
         public event EventHandler<GamePadButtonEventArgs> ButtonUp;
-
-        public GamePadHandler(Game game) : base(game)
-        {
-            PlayerIndex = PlayerIndex.One;
-        }
 
         public override void Initialize()
         {
@@ -41,24 +41,18 @@ namespace TrueCraft.Client.Input
             if (newState.Buttons != oldState.Buttons)
             {
                 var newButtons = Enum.GetValues(typeof(Buttons))
-                   .Cast<Buttons>()
-                   .Where(newState.IsButtonDown);
+                    .Cast<Buttons>()
+                    .Where(newState.IsButtonDown);
                 var oldButtons = Enum.GetValues(typeof(Buttons))
-                   .Cast<Buttons>()
-                   .Where(oldState.IsButtonDown);
+                    .Cast<Buttons>()
+                    .Where(oldState.IsButtonDown);
 
                 var pressed = newButtons.Except(oldButtons).ToArray();
                 var unpressed = oldButtons.Except(newButtons).ToArray();
 
-                foreach (var button in pressed)
-                {
-                    ButtonDown?.Invoke(this, new GamePadButtonEventArgs { Button = button });
-                }
+                foreach (var button in pressed) ButtonDown?.Invoke(this, new GamePadButtonEventArgs {Button = button});
 
-                foreach (var button in unpressed)
-                {
-                    ButtonUp?.Invoke(this, new GamePadButtonEventArgs { Button = button });
-                }
+                foreach (var button in unpressed) ButtonUp?.Invoke(this, new GamePadButtonEventArgs {Button = button});
             }
         }
     }

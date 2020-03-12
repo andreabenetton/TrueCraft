@@ -5,13 +5,12 @@ namespace TrueCraft.Core.Networking
 {
     public class BufferManager
     {
+        private readonly Stack<int> availableBuffers;
         private readonly object bufferLocker = new object();
 
         private readonly List<byte[]> buffers;
 
         private readonly int bufferSize;
-
-        private readonly Stack<int> availableBuffers;
 
         public BufferManager(int bufferSize)
         {
@@ -24,7 +23,7 @@ namespace TrueCraft.Core.Networking
         {
             if (availableBuffers.Count > 0)
             {
-                int index = availableBuffers.Pop();
+                var index = availableBuffers.Pop();
 
                 byte[] buffer;
                 lock (bufferLocker)
@@ -36,7 +35,7 @@ namespace TrueCraft.Core.Networking
             }
             else
             {
-                byte[] buffer = new byte[bufferSize];
+                var buffer = new byte[bufferSize];
 
                 lock (bufferLocker)
                 {

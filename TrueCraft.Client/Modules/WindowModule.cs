@@ -1,33 +1,20 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using TrueCraft.Client.Rendering;
-using TrueCraft.API.Logic;
-using TrueCraft.Client.Input;
 using Microsoft.Xna.Framework.Input;
-using TrueCraft.Core.Networking.Packets;
-using TrueCraft.API.Windows;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
+using TrueCraft.API.Windows;
+using TrueCraft.Client.Input;
+using TrueCraft.Client.Rendering;
+using TrueCraft.Core.Networking.Packets;
 using TrueCraft.Core.Windows;
 
 namespace TrueCraft.Client.Modules
 {
     public class WindowModule : InputModule, IGraphicalModule
     {
-        private TrueCraftGame Game { get; set; }
-        private SpriteBatch SpriteBatch { get; set; }
-        private Texture2D Inventory { get; set; }
-        private Texture2D Crafting { get; set; }
-        private Texture2D Items { get; set; }
-        private FontRenderer Font { get; set; }
-        private short SelectedSlot { get; set; }
-        private ItemStack HeldItem { get; set; }
-
-        private enum RenderStage
-        {
-            Sprites,
-            Models,
-            Text
-        }
+        private static readonly Rectangle InventoryWindowRect = new Rectangle(0, 0, 176, 166);
+        private static readonly Rectangle CraftingWindowRect = new Rectangle(0, 0, 176, 166);
 
         public WindowModule(TrueCraftGame game, FontRenderer font)
         {
@@ -41,8 +28,14 @@ namespace TrueCraft.Client.Modules
             HeldItem = ItemStack.EmptyStack;
         }
 
-        private static readonly Rectangle InventoryWindowRect = new Rectangle(0, 0, 176, 166);
-        private static readonly Rectangle CraftingWindowRect = new Rectangle(0, 0, 176, 166);
+        private TrueCraftGame Game { get; }
+        private SpriteBatch SpriteBatch { get; }
+        private Texture2D Inventory { get; }
+        private Texture2D Crafting { get; }
+        private Texture2D Items { get; }
+        private FontRenderer Font { get; }
+        private short SelectedSlot { get; set; }
+        private ItemStack HeldItem { get; set; }
 
         public void Draw(GameTime gameTime)
         {
@@ -52,39 +45,40 @@ namespace TrueCraft.Client.Modules
                 SelectedSlot = -999;
 
                 IItemProvider provider = null;
-                var scale = new Point((int)(16 * Game.ScaleFactor * 2));
+                var scale = new Point((int) (16 * Game.ScaleFactor * 2));
                 var mouse = Mouse.GetState().Position.ToVector2().ToPoint()
-                            - new Point((int)(8 * Game.ScaleFactor * 2));
+                            - new Point((int) (8 * Game.ScaleFactor * 2));
                 var rect = new Rectangle(mouse, scale);
                 if (!HeldItem.Empty)
                     provider = Game.ItemRepository.GetItemProvider(HeldItem.ID);
 
                 SpriteBatch.Begin(samplerState: SamplerState.PointClamp, blendState: BlendState.NonPremultiplied);
                 SpriteBatch.Draw(Game.White1x1, new Rectangle(0, 0,
-                    Game.GraphicsDevice.Viewport.Width, Game.GraphicsDevice.Viewport.Height), new Color(Color.Black, 180));
+                        Game.GraphicsDevice.Viewport.Width, Game.GraphicsDevice.Viewport.Height),
+                    new Color(Color.Black, 180));
                 switch (Game.Client.CurrentWindow.Type)
                 {
                     case -1:
                         SpriteBatch.Draw(Inventory, new Vector2(
-                            Game.GraphicsDevice.Viewport.Width / 2 - Scale(InventoryWindowRect.Width / 2),
-                            Game.GraphicsDevice.Viewport.Height / 2 - Scale(InventoryWindowRect.Height / 2)),
-                            InventoryWindowRect, Color.White, 0, Vector2.Zero, Game.ScaleFactor * 2, SpriteEffects.None, 1);
+                                Game.GraphicsDevice.Viewport.Width / 2 - Scale(InventoryWindowRect.Width / 2),
+                                Game.GraphicsDevice.Viewport.Height / 2 - Scale(InventoryWindowRect.Height / 2)),
+                            InventoryWindowRect, Color.White, 0, Vector2.Zero, Game.ScaleFactor * 2, SpriteEffects.None,
+                            1);
                         DrawInventoryWindow(RenderStage.Sprites);
                         break;
                     case 1: // Crafting bench
                         SpriteBatch.Draw(Crafting, new Vector2(
-                            Game.GraphicsDevice.Viewport.Width / 2 - Scale(CraftingWindowRect.Width / 2),
-                            Game.GraphicsDevice.Viewport.Height / 2 - Scale(CraftingWindowRect.Height / 2)),
-                            CraftingWindowRect, Color.White, 0, Vector2.Zero, Game.ScaleFactor * 2, SpriteEffects.None, 1);
+                                Game.GraphicsDevice.Viewport.Width / 2 - Scale(CraftingWindowRect.Width / 2),
+                                Game.GraphicsDevice.Viewport.Height / 2 - Scale(CraftingWindowRect.Height / 2)),
+                            CraftingWindowRect, Color.White, 0, Vector2.Zero, Game.ScaleFactor * 2, SpriteEffects.None,
+                            1);
                         DrawCraftingWindow(RenderStage.Sprites);
                         break;
                 }
 
-                if (provider?.GetIconTexture((byte)HeldItem.Metadata) != null)
-                {
+                if (provider?.GetIconTexture((byte) HeldItem.Metadata) != null)
                     IconRenderer.RenderItemIcon(SpriteBatch, Items, provider,
-                        (byte)HeldItem.Metadata, rect, Color.White);
-                }
+                        (byte) HeldItem.Metadata, rect, Color.White);
                 SpriteBatch.End();
                 switch (Game.Client.CurrentWindow.Type)
                 {
@@ -95,13 +89,10 @@ namespace TrueCraft.Client.Modules
                         DrawCraftingWindow(RenderStage.Models);
                         break;
                 }
+
                 if (provider != null)
-                {
-                    if (provider.GetIconTexture((byte)HeldItem.Metadata) == null && provider is IBlockProvider)
-                    {
-                        IconRenderer.RenderBlockIcon(Game, provider as IBlockProvider, (byte)HeldItem.Metadata, rect);
-                    }
-                }
+                    if (provider.GetIconTexture((byte) HeldItem.Metadata) == null && provider is IBlockProvider)
+                        IconRenderer.RenderBlockIcon(Game, provider as IBlockProvider, (byte) HeldItem.Metadata, rect);
                 SpriteBatch.Begin(samplerState: SamplerState.PointClamp, blendState: BlendState.NonPremultiplied);
                 switch (Game.Client.CurrentWindow.Type)
                 {
@@ -112,17 +103,17 @@ namespace TrueCraft.Client.Modules
                         DrawCraftingWindow(RenderStage.Text);
                         break;
                 }
+
                 if (provider != null)
-                {
                     if (HeldItem.Count > 1)
                     {
-                        int offset = 10;
+                        var offset = 10;
                         if (HeldItem.Count >= 10)
                             offset -= 6;
-                        mouse += new Point((int)Scale(offset), (int)Scale(5));
+                        mouse += new Point((int) Scale(offset), (int) Scale(5));
                         Font.DrawText(SpriteBatch, mouse.X, mouse.Y, HeldItem.Count.ToString(), Game.ScaleFactor);
                     }
-                }
+
                 if (SelectedSlot >= 0)
                 {
                     var item = Game.Client.CurrentWindow[SelectedSlot];
@@ -133,13 +124,20 @@ namespace TrueCraft.Client.Modules
                         mouse = Mouse.GetState().Position.ToVector2().ToPoint();
                         mouse += new Point(10, 10);
                         SpriteBatch.Draw(Game.White1x1, new Rectangle(mouse,
-                            new Point(size.X + 10, size.Y + 15)),
+                                new Point(size.X + 10, size.Y + 15)),
                             new Color(Color.Black, 200));
                         Font.DrawText(SpriteBatch, mouse.X + 5, mouse.Y, p.DisplayName);
                     }
                 }
+
                 SpriteBatch.End();
             }
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            Game.IsMouseVisible = Game.Client.CurrentWindow != null;
+            base.Update(gameTime);
         }
 
         public override bool MouseMove(GameTime gameTime, MouseMoveEventArgs e)
@@ -169,11 +167,12 @@ namespace TrueCraft.Client.Modules
             else
             {
                 var backup = Game.Client.CurrentWindow.GetSlots();
-                var staging = (ItemStack)HeldItem.Clone();
+                var staging = (ItemStack) HeldItem.Clone();
                 Window.HandleClickPacket(packet, Game.Client.CurrentWindow, ref staging);
                 HeldItem = staging;
                 Game.Client.CurrentWindow.SetSlots(backup);
             }
+
             Game.Client.QueuePacket(packet);
             return true;
         }
@@ -195,8 +194,10 @@ namespace TrueCraft.Client.Modules
                     Mouse.SetPosition(Game.GraphicsDevice.Viewport.Width / 2, Game.GraphicsDevice.Viewport.Height / 2);
                     Game.ControlModule.IgnoreNextUpdate = true;
                 }
+
                 return true;
             }
+
             return base.KeyDown(gameTime, e);
         }
 
@@ -210,7 +211,7 @@ namespace TrueCraft.Client.Modules
 
         private void DrawCraftingWindow(RenderStage stage)
         {
-            var window = (CraftingBenchWindow)Game.Client.CurrentWindow;
+            var window = (CraftingBenchWindow) Game.Client.CurrentWindow;
             DrawWindowArea(window.CraftingGrid, 29, 16, CraftingWindowRect, stage);
             DrawWindowArea(window.MainInventory, 8, 84, CraftingWindowRect, stage);
             DrawWindowArea(window.Hotbar, 8, 142, CraftingWindowRect, stage);
@@ -219,15 +220,15 @@ namespace TrueCraft.Client.Modules
         private void DrawWindowArea(IWindowArea area, int _x, int _y, Rectangle frame, RenderStage stage)
         {
             var mouse = Mouse.GetState().Position.ToVector2();
-            var scale = new Point((int)(16 * Game.ScaleFactor * 2));
-            var origin = new Point((int)(
-                Game.GraphicsDevice.Viewport.Width / 2 - Scale(frame.Width / 2) + Scale(_x)),
-                (int)(Game.GraphicsDevice.Viewport.Height / 2 - Scale(frame.Height / 2) + Scale(_y)));
-            for (int i = 0; i < area.Length; i++)
+            var scale = new Point((int) (16 * Game.ScaleFactor * 2));
+            var origin = new Point((int) (
+                    Game.GraphicsDevice.Viewport.Width / 2 - Scale(frame.Width / 2) + Scale(_x)),
+                (int) (Game.GraphicsDevice.Viewport.Height / 2 - Scale(frame.Height / 2) + Scale(_y)));
+            for (var i = 0; i < area.Length; i++)
             {
                 var item = area[i];
-                int x = (int)((i % area.Width) * Scale(18));
-                int y = (int)((i / area.Width) * Scale(18));
+                var x = (int) (i % area.Width * Scale(18));
+                var y = (int) (i / area.Width * Scale(18));
                 if (area is CraftingWindowArea)
                 {
                     // yes I know this is a crappy hack, bite me
@@ -235,59 +236,62 @@ namespace TrueCraft.Client.Modules
                     {
                         if (area.Width == 2)
                         {
-                            x = (int)Scale(144 - _x);
-                            y = (int)Scale(36 - _y);
+                            x = (int) Scale(144 - _x);
+                            y = (int) Scale(36 - _y);
                         }
                         else
                         {
-                            x = (int)Scale(124 - _x);
-                            y = (int)Scale(35 - _y);
+                            x = (int) Scale(124 - _x);
+                            y = (int) Scale(35 - _y);
                         }
                     }
                     else
                     {
                         i--;
-                        x = (int)((i % area.Width) * Scale(18));
-                        y = (int)((i / area.Width) * Scale(18));
+                        x = (int) (i % area.Width * Scale(18));
+                        y = (int) (i / area.Width * Scale(18));
                         i++;
                     }
                 }
+
                 var position = origin + new Point(x, y);
                 var rect = new Rectangle(position, scale);
                 if (stage == RenderStage.Sprites && rect.Contains(mouse))
                 {
-                    SelectedSlot = (short)(area.StartIndex + i);
+                    SelectedSlot = (short) (area.StartIndex + i);
                     SpriteBatch.Draw(Game.White1x1, rect, new Color(Color.White, 150));
                 }
+
                 if (item.Empty)
                     continue;
                 var provider = Game.ItemRepository.GetItemProvider(item.ID);
-                var texture = provider.GetIconTexture((byte)item.Metadata);
+                var texture = provider.GetIconTexture((byte) item.Metadata);
                 if (texture != null && stage == RenderStage.Sprites)
                     IconRenderer.RenderItemIcon(SpriteBatch, Items, provider,
-                        (byte)item.Metadata, rect, Color.White);
+                        (byte) item.Metadata, rect, Color.White);
                 if (texture == null && stage == RenderStage.Models && provider is IBlockProvider)
-                    IconRenderer.RenderBlockIcon(Game, provider as IBlockProvider, (byte)item.Metadata, rect);
+                    IconRenderer.RenderBlockIcon(Game, provider as IBlockProvider, (byte) item.Metadata, rect);
                 if (stage == RenderStage.Text && item.Count > 1)
                 {
-                    int offset = 10;
+                    var offset = 10;
                     if (item.Count >= 10)
                         offset -= 6;
-                    position += new Point((int)Scale(offset), (int)Scale(5));
+                    position += new Point((int) Scale(offset), (int) Scale(5));
                     Font.DrawText(SpriteBatch, position.X, position.Y, item.Count.ToString(), Game.ScaleFactor);
                 }
             }
         }
 
-        public override void Update(GameTime gameTime)
-        {
-            Game.IsMouseVisible = Game.Client.CurrentWindow != null;
-            base.Update(gameTime);
-        }
-
         private float Scale(float value)
         {
             return value * Game.ScaleFactor * 2;
+        }
+
+        private enum RenderStage
+        {
+            Sprites,
+            Models,
+            Text
         }
     }
 }

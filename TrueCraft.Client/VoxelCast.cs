@@ -5,8 +5,8 @@ using TrueCraft.API.Logic;
 namespace TrueCraft.Client
 {
     /// <summary>
-    /// Efficient ray caster that can cast a ray into a voxel map
-    /// and return the voxel that it intersects with.
+    ///     Efficient ray caster that can cast a ray into a voxel map
+    ///     and return the voxel that it intersects with.
     /// </summary>
     public static class VoxelCast
     {
@@ -20,34 +20,31 @@ namespace TrueCraft.Client
             double min = negmax * 2;
             var pick = -Coordinates3D.One;
             var face = BlockFace.PositiveY;
-            for (int x = -posmax; x <= posmax; x++)
+            for (var x = -posmax; x <= posmax; x++)
+            for (var y = -negmax; y <= posmax; y++)
+            for (var z = -posmax; z <= posmax; z++)
             {
-                for (int y = -negmax; y <= posmax; y++)
+                var coords = (Coordinates3D) (new Vector3(x, y, z) + ray.Position).Round();
+                if (!world.IsValidPosition(coords))
+                    continue;
+                var id = world.GetBlockID(coords);
+                if (id != 0)
                 {
-                    for (int z = -posmax; z <= posmax; z++)
+                    var provider = repository.GetBlockProvider(id);
+                    var box = provider.InteractiveBoundingBox;
+                    if (box != null)
                     {
-                        var coords = (Coordinates3D)(new Vector3(x, y, z) + ray.Position).Round();
-                        if (!world.IsValidPosition(coords))
-                            continue;
-                        var id = world.GetBlockID(coords);
-                        if (id != 0)
+                        var distance = ray.Intersects(box.Value.OffsetBy(coords), out var _face);
+                        if (distance != null && distance.Value < min)
                         {
-                            var provider = repository.GetBlockProvider(id);
-                            var box = provider.InteractiveBoundingBox;
-                            if (box != null)
-                            {
-                                var distance = ray.Intersects(box.Value.OffsetBy(coords), out var _face);
-                                if (distance != null && distance.Value < min)
-                                {
-                                    min = distance.Value;
-                                    pick = coords;
-                                    face = _face;
-                                }
-                            }
+                            min = distance.Value;
+                            pick = coords;
+                            face = _face;
                         }
                     }
                 }
             }
+
             if (pick == -Coordinates3D.One)
                 return null;
             return new Tuple<Coordinates3D, BlockFace>(pick, face);

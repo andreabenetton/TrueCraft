@@ -1,5 +1,5 @@
-﻿using TrueCraft.API.Server;
-using TrueCraft.API.Entities;
+﻿using TrueCraft.API.Entities;
+using TrueCraft.API.Server;
 
 namespace TrueCraft.API.AI
 {

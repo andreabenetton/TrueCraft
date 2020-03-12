@@ -6,18 +6,18 @@ namespace TrueCraft.Core.Logic.Blocks
     public class ButtonBlock : BlockProvider, ICraftingRecipe
     {
         public static readonly byte BlockID = 0x4D;
-        
-        public override byte ID { get { return 0x4D; } }
-        
-        public override double BlastResistance { get { return 2.5; } }
 
-        public override double Hardness { get { return 0.5; } }
+        public override byte ID => 0x4D;
 
-        public override byte Luminance { get { return 0; } }
+        public override double BlastResistance => 2.5;
 
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Button"; } }
+        public override double Hardness => 0.5;
+
+        public override byte Luminance => 0;
+
+        public override bool Opaque => false;
+
+        public override string DisplayName => "Button";
 
         public ItemStack[,] Pattern
         {
@@ -31,14 +31,8 @@ namespace TrueCraft.Core.Logic.Blocks
             }
         }
 
-        public ItemStack Output
-        {
-            get { return new ItemStack(BlockID); }
-        }
+        public ItemStack Output => new ItemStack(BlockID);
 
-        public bool SignificantMetadata
-        {
-            get { return false; }
-        }
+        public bool SignificantMetadata => false;
     }
 }

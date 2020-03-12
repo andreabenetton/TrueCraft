@@ -5,15 +5,7 @@ namespace TrueCraft.API
 {
     public class MetadataString : MetadataEntry
     {
-        public override byte Identifier { get { return 4; } }
-        public override string FriendlyName { get { return "string"; } }
-
         public string Value;
-
-        public static implicit operator MetadataString(string value)
-        {
-            return new MetadataString(value);
-        }
 
         public MetadataString()
         {
@@ -26,6 +18,14 @@ namespace TrueCraft.API
             while (value.Length < 16)
                 value = value + "\0";
             Value = value;
+        }
+
+        public override byte Identifier => 4;
+        public override string FriendlyName => "string";
+
+        public static implicit operator MetadataString(string value)
+        {
+            return new MetadataString(value);
         }
 
         public override void FromStream(IMinecraftStream stream)

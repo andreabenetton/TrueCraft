@@ -1,11 +1,13 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace TrueCraft.Profiling
+namespace TrueCraft.Core.Profiling
 {
     public static class Profiler
     {
+        private static readonly object Lock = new object();
+
         static Profiler()
         {
             Stopwatch = new Stopwatch();
@@ -15,18 +17,11 @@ namespace TrueCraft.Profiling
             Stopwatch.Start();
         }
 
-        private static Stopwatch Stopwatch { get; set; }
-        private static List<string> EnabledBuckets { get; set; }
-        private static Stack<ActiveTimer> ActiveTimers { get; set; }
-        private static object Lock = new object();
+        private static Stopwatch Stopwatch { get; }
+        private static List<string> EnabledBuckets { get; }
+        private static Stack<ActiveTimer> ActiveTimers { get; }
 
         public static bool LogLag { get; set; }
-
-        private struct ActiveTimer
-        {
-            public long Started, Finished;
-            public string Bucket;
-        }
 
         [Conditional("DEBUG")]
         public static void EnableBucket(string bucket)
@@ -63,16 +58,15 @@ namespace TrueCraft.Profiling
                 {
                     var timer = ActiveTimers.Pop();
                     timer.Finished = Stopwatch.ElapsedTicks;
-                    double elapsed = (timer.Finished - timer.Started) / 10000.0;
-                    for (int i = 0; i < EnabledBuckets.Count; i++)
-                    {
-                        if (Match(EnabledBuckets[i], timer.Bucket))
+                    var elapsed = (timer.Finished - timer.Started) / 10000.0;
+                    foreach (var bucket in EnabledBuckets)
+                        if (Match(bucket, timer.Bucket))
                         {
                             Console.WriteLine("[@{0:0.00}s] {1} took {2}ms",
                                 Stopwatch.ElapsedMilliseconds / 1000.0, timer.Bucket, elapsed);
                             break;
                         }
-                    }
+
                     if (LogLag && lag != -1 && elapsed > lag)
                         Console.WriteLine("{0} is lagging by {1}ms", timer.Bucket, elapsed);
                 }
@@ -83,12 +77,13 @@ namespace TrueCraft.Profiling
         {
             if (value == null)
                 value = string.Empty;
-            int i = 0;
-            int j = 0;
+            var i = 0;
+            var j = 0;
             for (; j < value.Length && i < mask.Length; j++)
-            {
                 if (mask[i] == '?')
+                {
                     i++;
+                }
                 else if (mask[i] == '*')
                 {
                     i++;
@@ -104,9 +99,14 @@ namespace TrueCraft.Profiling
                         return false;
                     i++;
                 }
-            }
+
             return i == mask.Length && j == value.Length;
         }
 
+        private struct ActiveTimer
+        {
+            public long Started, Finished;
+            public string Bucket;
+        }
     }
 }

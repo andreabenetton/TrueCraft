@@ -5,16 +5,16 @@ namespace TrueCraft.Core.TerrainGen.Noise
 {
     public class ModifyNoise : NoiseGen
     {
+        public ModifyNoise(INoise primaryNoise, INoise secondaryNoise, NoiseModifier modifier = NoiseModifier.Add)
+        {
+            PrimaryNoise = primaryNoise;
+            SecondaryNoise = secondaryNoise;
+            Modifier = modifier;
+        }
+
         public INoise PrimaryNoise { get; set; }
         public INoise SecondaryNoise { get; set; }
         public NoiseModifier Modifier { get; set; }
-
-        public ModifyNoise(INoise primaryNoise, INoise secondaryNoise, NoiseModifier modifier = NoiseModifier.Add)
-        {
-            this.PrimaryNoise = primaryNoise;
-            this.SecondaryNoise = secondaryNoise;
-            this.Modifier = modifier;
-        }
 
         public override double Value2D(double x, double y)
         {

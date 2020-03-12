@@ -1,41 +1,23 @@
 ﻿using System;
-using Xwt;
-using TrueCraft.Launcher.Singleplayer;
-using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Linq;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using TrueCraft.Core;
+using TrueCraft.Launcher.Singleplayer;
+using Xwt;
 
 namespace TrueCraft.Launcher.Views
 {
     public class SingleplayerView : VBox
     {
-        public LauncherWindow Window { get; set; }
-        public Label SingleplayerLabel { get; set; }
-        public ListView WorldListView { get; set; }
-        public Button CreateWorldButton { get; set; }
-        public Button DeleteWorldButton { get; set; }
-        public Button PlayButton { get; set; }
-        public Button BackButton { get; set; }
-        public VBox CreateWorldBox { get; set; }
-        public TextEntry NewWorldName { get; set; }
-        public TextEntry NewWorldSeed { get; set; }
-        public Button NewWorldCommit { get; set; }
-        public Button NewWorldCancel { get; set; }
-        public ListStore WorldListStore { get; set; }
-        public Label ProgressLabel { get; set; }
-        public ProgressBar ProgressBar { get; set; }
-        public SingleplayerServer Server { get; set; }
-        public DataField<string> NameField { get; set; }
-
         public SingleplayerView(LauncherWindow window)
         {
             Worlds.Local = new Worlds();
             Worlds.Local.Load();
 
             Window = window;
-            this.MinWidth = 250;
+            MinWidth = 250;
 
             SingleplayerLabel = new Label("Singleplayer")
             {
@@ -48,46 +30,41 @@ namespace TrueCraft.Launcher.Views
                 SelectionMode = SelectionMode.Single
             };
             CreateWorldButton = new Button("New world");
-            DeleteWorldButton = new Button("Delete") { Sensitive = false };
-            PlayButton = new Button("Play") { Sensitive = false };
+            DeleteWorldButton = new Button("Delete") {Sensitive = false};
+            PlayButton = new Button("Play") {Sensitive = false};
             BackButton = new Button("Back");
-            CreateWorldBox = new VBox() { Visible = false };
-            NewWorldName = new TextEntry() { PlaceholderText = "Name" };
-            NewWorldSeed = new TextEntry() { PlaceholderText = "Seed (optional)" };
-            NewWorldCommit = new Button("Create") { Sensitive = false };
+            CreateWorldBox = new VBox {Visible = false};
+            NewWorldName = new TextEntry {PlaceholderText = "Name"};
+            NewWorldSeed = new TextEntry {PlaceholderText = "Seed (optional)"};
+            NewWorldCommit = new Button("Create") {Sensitive = false};
             NewWorldCancel = new Button("Cancel");
             NameField = new DataField<string>();
             WorldListStore = new ListStore(NameField);
             WorldListView.DataSource = WorldListStore;
             WorldListView.HeadersVisible = false;
-            WorldListView.Columns.Add(new ListViewColumn("Name", new TextCellView { TextField = NameField, Editable = false }));
-            ProgressLabel = new Label("Loading world...") { Visible = false };
-            ProgressBar = new ProgressBar() { Visible = false, Indeterminate = true, Fraction = 0 };
+            WorldListView.Columns.Add(new ListViewColumn("Name",
+                new TextCellView {TextField = NameField, Editable = false}));
+            ProgressLabel = new Label("Loading world...") {Visible = false};
+            ProgressBar = new ProgressBar {Visible = false, Indeterminate = true, Fraction = 0};
 
             BackButton.Clicked += (sender, e) =>
             {
                 Window.InteractionBox.Remove(this);
                 Window.InteractionBox.PackEnd(Window.MainMenuView);
             };
-            CreateWorldButton.Clicked += (sender, e) =>
-            {
-                CreateWorldBox.Visible = true;
-            };
-            NewWorldCancel.Clicked += (sender, e) =>
-            {
-                CreateWorldBox.Visible = false;
-            };
+            CreateWorldButton.Clicked += (sender, e) => { CreateWorldBox.Visible = true; };
+            NewWorldCancel.Clicked += (sender, e) => { CreateWorldBox.Visible = false; };
             NewWorldName.Changed += (sender, e) =>
             {
                 NewWorldCommit.Sensitive = !string.IsNullOrEmpty(NewWorldName.Text);
             };
             NewWorldCommit.Clicked += NewWorldCommit_Clicked;
-            WorldListView.SelectionChanged += (sender, e) => 
+            WorldListView.SelectionChanged += (sender, e) =>
             {
                 PlayButton.Sensitive = DeleteWorldButton.Sensitive = WorldListView.SelectedRow != -1;
             };
             PlayButton.Clicked += PlayButton_Clicked;
-            DeleteWorldButton.Clicked += (sender, e) => 
+            DeleteWorldButton.Clicked += (sender, e) =>
             {
                 var world = Worlds.Local.Saves[WorldListView.SelectedRow];
                 WorldListStore.RemoveRow(WorldListView.SelectedRow);
@@ -114,15 +91,33 @@ namespace TrueCraft.Launcher.Views
             newWorldHbox.PackStart(NewWorldCancel, true);
             CreateWorldBox.PackStart(newWorldHbox);
 
-            this.PackStart(SingleplayerLabel);
-            this.PackStart(WorldListView);
-            this.PackStart(createDeleteHbox);
-            this.PackStart(PlayButton);
-            this.PackStart(CreateWorldBox);
-            this.PackStart(ProgressLabel);
-            this.PackStart(ProgressBar);
-            this.PackEnd(BackButton);
+            PackStart(SingleplayerLabel);
+            PackStart(WorldListView);
+            PackStart(createDeleteHbox);
+            PackStart(PlayButton);
+            PackStart(CreateWorldBox);
+            PackStart(ProgressLabel);
+            PackStart(ProgressBar);
+            PackEnd(BackButton);
         }
+
+        public LauncherWindow Window { get; set; }
+        public Label SingleplayerLabel { get; set; }
+        public ListView WorldListView { get; set; }
+        public Button CreateWorldButton { get; set; }
+        public Button DeleteWorldButton { get; set; }
+        public Button PlayButton { get; set; }
+        public Button BackButton { get; set; }
+        public VBox CreateWorldBox { get; set; }
+        public TextEntry NewWorldName { get; set; }
+        public TextEntry NewWorldSeed { get; set; }
+        public Button NewWorldCommit { get; set; }
+        public Button NewWorldCancel { get; set; }
+        public ListStore WorldListStore { get; set; }
+        public Label ProgressLabel { get; set; }
+        public ProgressBar ProgressBar { get; set; }
+        public SingleplayerServer Server { get; set; }
+        public DataField<string> NameField { get; set; }
 
         public void PlayButton_Clicked(object sender, EventArgs e)
         {
@@ -142,8 +137,9 @@ namespace TrueCraft.Launcher.Views
                 Server.Start();
                 Application.Invoke(() =>
                 {
-                    PlayButton.Sensitive = BackButton.Sensitive = CreateWorldButton.Sensitive = WorldListView.Sensitive = true;
-                    var launchParams = string.Format("{0} {1} {2}", Server.Server.EndPoint, Window.User.Username, Window.User.SessionId);
+                    PlayButton.Sensitive = BackButton.Sensitive =
+                        CreateWorldButton.Sensitive = WorldListView.Sensitive = true;
+                    var launchParams = $"{Server.Server.EndPoint} {Window.User.Username} {Window.User.SessionId}";
                     var process = new Process();
                     if (RuntimeInfo.IsMono)
                         process.StartInfo = new ProcessStartInfo("mono", "TrueCraft.Client.exe " + launchParams);
@@ -165,7 +161,6 @@ namespace TrueCraft.Launcher.Views
             }).ContinueWith(task =>
             {
                 if (task.IsFaulted)
-                {
                     Application.Invoke(() =>
                     {
                         MessageDialog.ShowError("Error loading world", "It's possible that this world is corrupted.");
@@ -173,11 +168,10 @@ namespace TrueCraft.Launcher.Views
                         PlayButton.Sensitive = BackButton.Sensitive = CreateWorldButton.Sensitive =
                             WorldListView.Sensitive = true;
                     });
-                }
             });
         }
 
-        void NewWorldCommit_Clicked(object sender, EventArgs e)
+        private void NewWorldCommit_Clicked(object sender, EventArgs e)
         {
             var world = Worlds.Local.CreateNewWorld(NewWorldName.Text, NewWorldSeed.Text);
             CreateWorldBox.Visible = false;

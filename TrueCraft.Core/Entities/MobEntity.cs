@@ -1,55 +1,47 @@
 ﻿using System;
-using TrueCraft.API.Networking;
-using TrueCraft.Core.Networking.Packets;
-using TrueCraft.API.Entities;
 using TrueCraft.API;
-using TrueCraft.API.Server;
 using TrueCraft.API.AI;
+using TrueCraft.API.Entities;
+using TrueCraft.API.Networking;
+using TrueCraft.API.Server;
 using TrueCraft.Core.AI;
-using TrueCraft.API.Physics;
+using TrueCraft.Core.Networking.Packets;
 
 namespace TrueCraft.Core.Entities
 {
-    public abstract class MobEntity : LivingEntity, IAABBEntity, IMobEntity
+    public abstract class MobEntity : LivingEntity, IMobEntity
     {
         protected MobEntity()
         {
-            Speed = 4;
             CurrentState = new WanderState();
-        }
-
-        public event EventHandler PathComplete;
-
-        public override IPacket SpawnPacket
-        {
-            get
-            {
-                return new SpawnMobPacket(EntityID, MobType,
-                    MathHelper.CreateAbsoluteInt(Position.X),
-                    MathHelper.CreateAbsoluteInt(Position.Y),
-                    MathHelper.CreateAbsoluteInt(Position.Z),
-                    MathHelper.CreateRotationByte(Yaw),
-                    MathHelper.CreateRotationByte(Pitch),
-                    Metadata);
-            }
         }
 
         public abstract sbyte MobType { get; }
 
-        public virtual bool Friendly { get { return true; } }
+        public virtual bool Friendly => true;
+
+        /// <summary>
+        ///     Mob's current speed in m/s.
+        /// </summary>
+        public virtual double Speed { get; set; } = 4;
+
+        public event EventHandler PathComplete;
+
+        public override IPacket SpawnPacket =>
+            new SpawnMobPacket(EntityID, MobType,
+                MathHelper.CreateAbsoluteInt(Position.X),
+                MathHelper.CreateAbsoluteInt(Position.Y),
+                MathHelper.CreateAbsoluteInt(Position.Z),
+                MathHelper.CreateRotationByte(Yaw),
+                MathHelper.CreateRotationByte(Pitch),
+                Metadata);
 
         public virtual void TerrainCollision(Vector3 collisionPoint, Vector3 collisionDirection)
         {
             // This space intentionally left blank
         }
 
-        public BoundingBox BoundingBox
-        {
-            get
-            {
-                return new BoundingBox(Position, Position + Size);
-            }
-        }
+        public BoundingBox BoundingBox => new BoundingBox(Position, Position + Size);
 
         public virtual bool BeginUpdate()
         {
@@ -63,43 +55,21 @@ namespace TrueCraft.Core.Entities
             Position = newPosition;
         }
 
-        public float AccelerationDueToGravity
-        {
-            get
-            {
-                return 1.6f;
-            }
-        }
+        public float AccelerationDueToGravity => 1.6f;
 
-        public float Drag
-        {
-            get
-            {
-                return 0.40f;
-            }
-        }
+        public float Drag => 0.40f;
 
-        public float TerminalVelocity
-        {
-            get
-            {
-                return 78.4f;
-            }
-        }
+        public float TerminalVelocity => 78.4f;
 
         public PathResult CurrentPath { get; set; }
-
-        /// <summary>
-        /// Mob's current speed in m/s.
-        /// </summary>
-        public virtual double Speed { get; set; }
 
         public IMobState CurrentState { get; set; }
 
         public void Face(Vector3 target)
         {
             var diff = target - Position;
-            Yaw = (float)MathHelper.RadiansToDegrees(-(Math.Atan2(diff.X, diff.Z) - Math.PI) + Math.PI); // "Flip" over the 180 mark
+            Yaw = (float) MathHelper.RadiansToDegrees(-(Math.Atan2(diff.X, diff.Z) - Math.PI) +
+                                                      Math.PI); // "Flip" over the 180 mark
         }
 
         public bool AdvancePath(TimeSpan time, bool faceRoute = true)
@@ -108,12 +78,13 @@ namespace TrueCraft.Core.Entities
             if (CurrentPath != null)
             {
                 // Advance along path
-                var target = (Vector3)CurrentPath.Waypoints[CurrentPath.Index];
+                var target = (Vector3) CurrentPath.Waypoints[CurrentPath.Index];
                 target += new Vector3(Size.Width / 2, 0, Size.Depth / 2); // Center it
                 target.Y = Position.Y; // TODO: Find better way of doing this
                 if (faceRoute)
                     Face(target);
-                var lookAt = Vector3.Forwards.Transform(Matrix.CreateRotationY(MathHelper.ToRadians(-(Yaw - 180) + 180)));
+                var lookAt =
+                    Vector3.Forwards.Transform(Matrix.CreateRotationY(MathHelper.ToRadians(-(Yaw - 180) + 180)));
                 lookAt *= modifier;
                 Velocity = new Vector3(lookAt.X, Velocity.Y, lookAt.Z);
                 if (Position.DistanceTo(target) < Velocity.Distance)
@@ -124,12 +95,12 @@ namespace TrueCraft.Core.Entities
                     if (CurrentPath.Index >= CurrentPath.Waypoints.Count)
                     {
                         CurrentPath = null;
-                        if (PathComplete != null)
-                            PathComplete(this, null);
+                        PathComplete?.Invoke(this, null);
                         return true;
                     }
                 }
             }
+
             return false;
         }
 
@@ -143,4 +114,3 @@ namespace TrueCraft.Core.Entities
         }
     }
 }
-

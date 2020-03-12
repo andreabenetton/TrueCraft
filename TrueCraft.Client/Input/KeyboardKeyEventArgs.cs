@@ -3,22 +3,12 @@
 namespace TrueCraft.Client.Input
 {
     /// <summary>
-    /// Provides the event data for keyboard key events.
+    ///     Provides the event data for keyboard key events.
     /// </summary>
     public class KeyboardKeyEventArgs : KeyboardEventArgs
     {
         /// <summary>
-        /// Gets the key for the event.
-        /// </summary>
-        public Keys Key { get; private set; }
-
-        /// <summary>
-        /// Gets whether the key was pressed or released.
-        /// </summary>
-        public bool IsPressed { get; private set; }
-
-        /// <summary>
-        /// Creates new keyboard key event data.
+        ///     Creates new keyboard key event data.
         /// </summary>
         /// <param name="key">The key for the event.</param>
         /// <param name="isPressed">Whether the key was pressed or released.</param>
@@ -27,5 +17,15 @@ namespace TrueCraft.Client.Input
             Key = key;
             IsPressed = isPressed;
         }
+
+        /// <summary>
+        ///     Gets the key for the event.
+        /// </summary>
+        public Keys Key { get; }
+
+        /// <summary>
+        ///     Gets whether the key was pressed or released.
+        /// </summary>
+        public bool IsPressed { get; }
     }
 }

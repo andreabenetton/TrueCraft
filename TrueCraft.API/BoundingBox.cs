@@ -4,28 +4,28 @@ using System.Collections.Generic;
 namespace TrueCraft.API
 {
     /// <summary>
-    /// Enumerates the different types of containment between two bounding boxes.
+    ///     Enumerates the different types of containment between two bounding boxes.
     /// </summary>
     public enum ContainmentType
     {
         /// <summary>
-        /// The two bounding boxes are disjoint.
+        ///     The two bounding boxes are disjoint.
         /// </summary>
         Disjoint,
 
         /// <summary>
-        /// One bounding box contains the other.
+        ///     One bounding box contains the other.
         /// </summary>
         Contains,
 
         /// <summary>
-        /// The two bounding boxes intersect.
+        ///     The two bounding boxes intersect.
         /// </summary>
         Intersects
     }
 
     /// <summary>
-    /// Represents an axis-aligned bounding box.
+    ///     Represents an axis-aligned bounding box.
     /// </summary>
     // Mostly taken from the MonoXna project, which is licensed under the MIT license
     public struct BoundingBox : IEquatable<BoundingBox>
@@ -33,19 +33,19 @@ namespace TrueCraft.API
         #region Public Fields
 
         /// <summary>
-        /// The minimum vector for the bounding box.
+        ///     The minimum vector for the bounding box.
         /// </summary>
         public Vector3 Min;
 
         /// <summary>
-        /// The maximum vector for the bounding box.
+        ///     The maximum vector for the bounding box.
         /// </summary>
         public Vector3 Max;
 
         /// <summary>
-        /// The number of corners a bounding box has.
+        ///     The number of corners a bounding box has.
         /// </summary>
-        public const int CornerCount = 8;
+        public const int CORNER_COUNT = 8;
 
         #endregion Public Fields
 
@@ -53,24 +53,24 @@ namespace TrueCraft.API
         #region Public Constructors
 
         /// <summary>
-        /// Creates a new bounding box from specified values
+        ///     Creates a new bounding box from specified values
         /// </summary>
         /// <param name="min">The minimum vector for the bounding box.</param>
         /// <param name="max">The number of corners a bounding box has.</param>
         public BoundingBox(Vector3 min, Vector3 max)
         {
-            this.Min = min;
-            this.Max = max;
+            Min = min;
+            Max = max;
         }
 
         /// <summary>
-        /// Creates a new bounding box by copying another.
+        ///     Creates a new bounding box by copying another.
         /// </summary>
         /// <param name="b">The bounding box to clone.</param>
         public BoundingBox(BoundingBox b)
         {
-            this.Min = new Vector3(b.Min);
-            this.Max = new Vector3(b.Max);
+            Min = new Vector3(b.Min);
+            Max = new Vector3(b.Max);
         }
 
         #endregion Public Constructors
@@ -79,7 +79,7 @@ namespace TrueCraft.API
         #region Public Methods
 
         /// <summary>
-        /// Determines the type of containment between this and another bounding box.
+        ///     Determines the type of containment between this and another bounding box.
         /// </summary>
         /// <param name="box">The other bounding box.</param>
         /// <returns></returns>
@@ -107,19 +107,19 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Determines whether the specified vector is contained within this bounding box.
+        ///     Determines whether the specified vector is contained within this bounding box.
         /// </summary>
         /// <param name="vec">The vector.</param>
         /// <returns></returns>
         public bool Contains(Vector3 vec)
         {
             return Min.X <= vec.X && vec.X <= Max.X &&
-                Min.Y <= vec.Y && vec.Y <= Max.Y &&
-                Min.Z <= vec.Z && vec.Z <= Max.Z;
+                   Min.Y <= vec.Y && vec.Y <= Max.Y &&
+                   Min.Z <= vec.Z && vec.Z <= Max.Z;
         }
 
         /// <summary>
-        /// Creates and returns a new bounding box from an enumeration of corner points.
+        ///     Creates and returns a new bounding box from an enumeration of corner points.
         /// </summary>
         /// <param name="points">The enumeration of corner points.</param>
         /// <returns></returns>
@@ -128,15 +128,16 @@ namespace TrueCraft.API
             if (points == null)
                 throw new ArgumentNullException();
 
-            bool empty = true;
-            Vector3 vector2 = new Vector3(float.MaxValue);
-            Vector3 vector1 = new Vector3(float.MinValue);
-            foreach (Vector3 vector3 in points)
+            var empty = true;
+            var vector2 = new Vector3(float.MaxValue);
+            var vector1 = new Vector3(float.MinValue);
+            foreach (var vector3 in points)
             {
                 vector2 = Vector3.Min(vector2, vector3);
                 vector1 = Vector3.Max(vector1, vector3);
                 empty = false;
             }
+
             if (empty)
                 throw new ArgumentException();
 
@@ -144,69 +145,69 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Offsets this BoundingBox. Does not modify this object, but returns a new one
+        ///     Offsets this BoundingBox. Does not modify this object, but returns a new one
         /// </summary>
         /// <returns>
-        /// The offset bounding box.
+        ///     The offset bounding box.
         /// </returns>
-        /// <param name='Offset'>
-        /// The offset.
+        /// <param name='offset'>
+        ///     The offset.
         /// </param>
-        public BoundingBox OffsetBy(Vector3 Offset)
+        public BoundingBox OffsetBy(Vector3 offset)
         {
-            return new BoundingBox(Min + Offset, Max + Offset);
+            return new BoundingBox(Min + offset, Max + offset);
         }
 
         /// <summary>
-        /// Returns an array of vectors containing the corners of this bounding box.
+        ///     Returns an array of vectors containing the corners of this bounding box.
         /// </summary>
         /// <returns></returns>
         public Vector3[] GetCorners()
         {
-            return new Vector3[]
-                       {
-                           new Vector3(this.Min.X, this.Max.Y, this.Max.Z),
-                           new Vector3(this.Max.X, this.Max.Y, this.Max.Z),
-                           new Vector3(this.Max.X, this.Min.Y, this.Max.Z),
-                           new Vector3(this.Min.X, this.Min.Y, this.Max.Z),
-                           new Vector3(this.Min.X, this.Max.Y, this.Min.Z),
-                           new Vector3(this.Max.X, this.Max.Y, this.Min.Z),
-                           new Vector3(this.Max.X, this.Min.Y, this.Min.Z),
-                           new Vector3(this.Min.X, this.Min.Y, this.Min.Z)
-                       };
+            return new[]
+            {
+                new Vector3(Min.X, Max.Y, Max.Z),
+                new Vector3(Max.X, Max.Y, Max.Z),
+                new Vector3(Max.X, Min.Y, Max.Z),
+                new Vector3(Min.X, Min.Y, Max.Z),
+                new Vector3(Min.X, Max.Y, Min.Z),
+                new Vector3(Max.X, Max.Y, Min.Z),
+                new Vector3(Max.X, Min.Y, Min.Z),
+                new Vector3(Min.X, Min.Y, Min.Z)
+            };
         }
 
         /// <summary>
-        /// Determines whether this and another bounding box are equal.
+        ///     Determines whether this and another bounding box are equal.
         /// </summary>
         /// <param name="other">The other bounding box.</param>
         /// <returns></returns>
         public bool Equals(BoundingBox other)
         {
-            return (this.Min == other.Min) && (this.Max == other.Max);
+            return Min == other.Min && Max == other.Max;
         }
 
         /// <summary>
-        /// Determines whether this and another object are equal.
+        ///     Determines whether this and another object are equal.
         /// </summary>
         /// <param name="obj">The other object.</param>
         /// <returns></returns>
         public override bool Equals(object obj)
         {
-            return (obj is BoundingBox) && this.Equals((BoundingBox)obj);
+            return obj is BoundingBox && Equals((BoundingBox) obj);
         }
 
         /// <summary>
-        /// Returns the hash code for this bounding box.
+        ///     Returns the hash code for this bounding box.
         /// </summary>
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return this.Min.GetHashCode() + this.Max.GetHashCode();
+            return Min.GetHashCode() + Max.GetHashCode();
         }
 
         /// <summary>
-        /// Determines whether this bounding box intersects another.
+        ///     Determines whether this bounding box intersects another.
         /// </summary>
         /// <param name="box">The other bounding box.</param>
         /// <returns></returns>
@@ -218,21 +219,21 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Determines whether this bounding box intersects another.
+        ///     Determines whether this bounding box intersects another.
         /// </summary>
         /// <param name="box">The other bounding box.</param>
         /// <param name="result">Set to whether the two bounding boxes intersect.</param>
         public void Intersects(ref BoundingBox box, out bool result)
         {
-            if ((this.Max.X > box.Min.X) && (this.Min.X < box.Max.X))
+            if (Max.X > box.Min.X && Min.X < box.Max.X)
             {
-                if ((this.Max.Y < box.Min.Y) || (this.Min.Y > box.Max.Y))
+                if (Max.Y < box.Min.Y || Min.Y > box.Max.Y)
                 {
                     result = false;
                     return;
                 }
 
-                result = (this.Max.Z > box.Min.Z) && (this.Min.Z < box.Max.Z);
+                result = Max.Z > box.Min.Z && Min.Z < box.Max.Z;
                 return;
             }
 
@@ -250,57 +251,36 @@ namespace TrueCraft.API
         }
 
         /// <summary>
-        /// Returns a string representation of this bounding box.
+        ///     Returns a string representation of this bounding box.
         /// </summary>
         /// <returns></returns>
         public override string ToString()
         {
-            return string.Format("{{Min:{0} Max:{1}}}", this.Min.ToString(), this.Max.ToString());
+            return $"{{Min:{Min.ToString()} Max:{Max.ToString()}}}";
         }
 
         #endregion
 
         /// <summary>
-        /// Gets the height of this bounding box.
+        ///     Gets the height of this bounding box.
         /// </summary>
-        public double Height
-        {
-            get { return Max.Y - Min.Y; }
-        }
+        public double Height => Max.Y - Min.Y;
 
         /// <summary>
-        /// Gets the width of this bounding box.
+        ///     Gets the width of this bounding box.
         /// </summary>
-        public double Width
-        {
-            get { return Max.X - Min.X; }
-        }
+        public double Width => Max.X - Min.X;
 
         /// <summary>
-        /// Gets the depth of this bounding box.
+        ///     Gets the depth of this bounding box.
         /// </summary>
-        public double Depth
-        {
-            get { return Max.Z - Min.Z; }
-        }
+        public double Depth => Max.Z - Min.Z;
 
         /// <summary>
-        /// Gets the center of this bounding box.
+        ///     Gets the center of this bounding box.
         /// </summary>
-        public Vector3 Center
-        {
-            get
-            {
-                return (this.Min + this.Max) / 2;
-            }
-        }
+        public Vector3 Center => (Min + Max) / 2;
 
-        public double Volume
-        {
-            get
-            {
-                return Width * Height * Depth;
-            }
-        }
+        public double Volume => Width * Height * Depth;
     }
 }

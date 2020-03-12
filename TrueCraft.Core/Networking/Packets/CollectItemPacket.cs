@@ -3,11 +3,11 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by servers to show the animation of an item entity being collected by a player.
+    ///     Sent by servers to show the animation of an item entity being collected by a player.
     /// </summary>
     public struct CollectItemPacket : IPacket
     {
-        public byte ID { get { return 0x16; } }
+        public byte ID => 0x16;
 
         public int CollectedItemID;
         public int CollectorID;

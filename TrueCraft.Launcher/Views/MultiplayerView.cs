@@ -1,56 +1,39 @@
 ﻿using System;
-using Xwt;
 using System.Diagnostics;
-using Xwt.Drawing;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 using TrueCraft.Core;
+using Xwt;
+using Xwt.Drawing;
 
 namespace TrueCraft.Launcher.Views
 {
     public class MultiplayerView : VBox
     {
-        public LauncherWindow Window { get; set; }
-
-        public Label MultiplayerLabel { get; set; }
-        public TextEntry ServerIPEntry { get; set; }
-        public Button ConnectButton { get; set; }
-        public Button BackButton { get; set; }
-        public Button AddServerButton { get; set; }
-        public Button RemoveServerButton { get; set; }
-        public ListView ServerListView { get; set; }
-        public VBox ServerCreationBox { get; set; }
-        public Label NewServerLabel { get; set; }
-        public TextEntry NewServerName { get; set; }
-        public TextEntry NewServerAddress { get; set; }
-        public Button CommitAddNewServer { get; set; }
-        public Button CancelAddNewServer { get; set; }
-        public ListStore ServerListStore { get; set; }
-
         public MultiplayerView(LauncherWindow window)
         {
             Window = window;
-            this.MinWidth = 250;
+            MinWidth = 250;
 
             MultiplayerLabel = new Label("Multiplayer")
             {
                 Font = Font.WithSize(16),
                 TextAlignment = Alignment.Center
             };
-            ServerIPEntry = new TextEntry()
+            ServerIPEntry = new TextEntry
             {
                 PlaceholderText = "Server IP",
                 Text = UserSettings.Local.LastIP
             };
             ConnectButton = new Button("Connect");
             BackButton = new Button("Back");
-            ServerListView = new ListView() { MinHeight = 200, SelectionMode = SelectionMode.Single };
+            ServerListView = new ListView {MinHeight = 200, SelectionMode = SelectionMode.Single};
             AddServerButton = new Button("Add server");
-            RemoveServerButton = new Button("Remove") { Sensitive = false };
-            ServerCreationBox = new VBox() { Visible = false };
-            NewServerLabel = new Label("Add new server:") { TextAlignment = Alignment.Center };
-            NewServerName = new TextEntry() { PlaceholderText = "Name" };
-            NewServerAddress = new TextEntry() { PlaceholderText = "Address" };
+            RemoveServerButton = new Button("Remove") {Sensitive = false};
+            ServerCreationBox = new VBox {Visible = false};
+            NewServerLabel = new Label("Add new server:") {TextAlignment = Alignment.Center};
+            NewServerName = new TextEntry {PlaceholderText = "Name"};
+            NewServerAddress = new TextEntry {PlaceholderText = "Address"};
             CommitAddNewServer = new Button("Add server");
             CancelAddNewServer = new Button("Cancel");
 
@@ -60,11 +43,11 @@ namespace TrueCraft.Launcher.Views
             ServerListStore = new ListStore(iconField, nameField, playersField);
             ServerListView.DataSource = ServerListStore;
             ServerListView.HeadersVisible = false;
-            ServerListView.Columns.Add(new ListViewColumn("Icon", new ImageCellView { ImageField = iconField }));
-            ServerListView.Columns.Add(new ListViewColumn("Name", new TextCellView { TextField = nameField }));
-            ServerListView.Columns.Add(new ListViewColumn("Players", new TextCellView { TextField = playersField }));
+            ServerListView.Columns.Add(new ListViewColumn("Icon", new ImageCellView {ImageField = iconField}));
+            ServerListView.Columns.Add(new ListViewColumn("Name", new TextCellView {TextField = nameField}));
+            ServerListView.Columns.Add(new ListViewColumn("Players", new TextCellView {TextField = playersField}));
 
-            ServerIPEntry.KeyReleased += (sender, e) => 
+            ServerIPEntry.KeyReleased += (sender, e) =>
             {
                 if (e.Key == Key.Return || e.Key == Key.NumPadEnter)
                     ConnectButton_Clicked(sender, e);
@@ -75,12 +58,12 @@ namespace TrueCraft.Launcher.Views
                 Window.InteractionBox.PackEnd(Window.MainMenuView);
             };
             ConnectButton.Clicked += ConnectButton_Clicked;
-            ServerListView.SelectionChanged += (sender, e) => 
+            ServerListView.SelectionChanged += (sender, e) =>
             {
                 RemoveServerButton.Sensitive = ServerListView.SelectedRow != -1;
                 ServerIPEntry.Sensitive = ServerListView.SelectedRow == -1;
             };
-            AddServerButton.Clicked += (sender, e) => 
+            AddServerButton.Clicked += (sender, e) =>
             {
                 AddServerButton.Sensitive = false;
                 RemoveServerButton.Sensitive = false;
@@ -89,7 +72,7 @@ namespace TrueCraft.Launcher.Views
                 ServerIPEntry.Sensitive = false;
                 ServerCreationBox.Visible = true;
             };
-            CancelAddNewServer.Clicked += (sender, e) => 
+            CancelAddNewServer.Clicked += (sender, e) =>
             {
                 AddServerButton.Sensitive = true;
                 RemoveServerButton.Sensitive = true;
@@ -98,7 +81,7 @@ namespace TrueCraft.Launcher.Views
                 ServerIPEntry.Sensitive = true;
                 ServerCreationBox.Visible = false;
             };
-            RemoveServerButton.Clicked += (sender, e) => 
+            RemoveServerButton.Clicked += (sender, e) =>
             {
                 var server = UserSettings.Local.FavoriteServers[ServerListView.SelectedRow];
                 ServerListStore.RemoveRow(ServerListView.SelectedRow);
@@ -106,7 +89,7 @@ namespace TrueCraft.Launcher.Views
                     s => s.Name != server.Name && s.Address != server.Address).ToArray();
                 UserSettings.Local.Save();
             };
-            CommitAddNewServer.Clicked += (sender, e) => 
+            CommitAddNewServer.Clicked += (sender, e) =>
             {
                 var server = new FavoriteServer
                 {
@@ -114,11 +97,16 @@ namespace TrueCraft.Launcher.Views
                     Address = NewServerAddress.Text
                 };
                 var row = ServerListStore.AddRow();
-                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("TrueCraft.Launcher.Content.default-server-icon.png"))
+                using (var stream = Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("TrueCraft.Launcher.Content.default-server-icon.png"))
+                {
                     ServerListStore.SetValue(row, iconField, Image.FromStream(stream));
+                }
+
                 ServerListStore.SetValue(row, nameField, server.Name);
                 ServerListStore.SetValue(row, playersField, "TODO/50");
-                UserSettings.Local.FavoriteServers = UserSettings.Local.FavoriteServers.Concat(new[] { server }).ToArray();
+                UserSettings.Local.FavoriteServers =
+                    UserSettings.Local.FavoriteServers.Concat(new[] {server}).ToArray();
                 UserSettings.Local.Save();
                 AddServerButton.Sensitive = true;
                 RemoveServerButton.Sensitive = true;
@@ -131,8 +119,12 @@ namespace TrueCraft.Launcher.Views
             foreach (var server in UserSettings.Local.FavoriteServers)
             {
                 var row = ServerListStore.AddRow();
-                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("TrueCraft.Launcher.Content.default-server-icon.png"))
+                using (var stream = Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("TrueCraft.Launcher.Content.default-server-icon.png"))
+                {
                     ServerListStore.SetValue(row, iconField, Image.FromStream(stream));
+                }
+
                 ServerListStore.SetValue(row, nameField, server.Name);
                 ServerListStore.SetValue(row, playersField, "TODO/50");
             }
@@ -152,21 +144,38 @@ namespace TrueCraft.Launcher.Views
             ServerCreationBox.PackStart(NewServerAddress);
             ServerCreationBox.PackStart(commitHBox);
 
-            this.PackEnd(BackButton);
-            this.PackEnd(ConnectButton);
-            this.PackStart(MultiplayerLabel);
-            this.PackStart(ServerIPEntry);
-            this.PackStart(ServerListView);
-            this.PackStart(addServerHBox);
-            this.PackStart(ServerCreationBox);
+            PackEnd(BackButton);
+            PackEnd(ConnectButton);
+            PackStart(MultiplayerLabel);
+            PackStart(ServerIPEntry);
+            PackStart(ServerListView);
+            PackStart(addServerHBox);
+            PackStart(ServerCreationBox);
         }
 
-        void ConnectButton_Clicked(object sender, EventArgs e)
+        public LauncherWindow Window { get; set; }
+
+        public Label MultiplayerLabel { get; set; }
+        public TextEntry ServerIPEntry { get; set; }
+        public Button ConnectButton { get; set; }
+        public Button BackButton { get; set; }
+        public Button AddServerButton { get; set; }
+        public Button RemoveServerButton { get; set; }
+        public ListView ServerListView { get; set; }
+        public VBox ServerCreationBox { get; set; }
+        public Label NewServerLabel { get; set; }
+        public TextEntry NewServerName { get; set; }
+        public TextEntry NewServerAddress { get; set; }
+        public Button CommitAddNewServer { get; set; }
+        public Button CancelAddNewServer { get; set; }
+        public ListStore ServerListStore { get; set; }
+
+        private void ConnectButton_Clicked(object sender, EventArgs e)
         {
             var ip = ServerIPEntry.Text;
             if (ServerListView.SelectedRow != -1)
                 ip = UserSettings.Local.FavoriteServers[ServerListView.SelectedRow].Address;
-            string trueCraftLaunchParams = $"{ip} {Window.User.Username} {Window.User.SessionId}";
+            var trueCraftLaunchParams = $"{ip} {Window.User.Username} {Window.User.SessionId}";
             var process = new Process();
             if (RuntimeInfo.IsMono)
                 process.StartInfo = new ProcessStartInfo("mono", "TrueCraft.Client.exe " + trueCraftLaunchParams);
@@ -181,7 +190,7 @@ namespace TrueCraft.Launcher.Views
             Window.Hide();
         }
 
-        void ClientExited()
+        private void ClientExited()
         {
             Window.Show();
             Window.ShowInTaskbar = true;

@@ -1,7 +1,7 @@
-﻿using TrueCraft.API.Networking;
-using TrueCraft.Core.Networking.Packets;
+﻿using TrueCraft.API;
+using TrueCraft.API.Networking;
 using TrueCraft.API.Windows;
-using TrueCraft.API;
+using TrueCraft.Core.Networking.Packets;
 using TrueCraft.Core.Windows;
 
 namespace TrueCraft.Client.Handlers
@@ -10,7 +10,7 @@ namespace TrueCraft.Client.Handlers
     {
         public static void HandleWindowItems(IPacket packet, MultiplayerClient client)
         {
-            var windowItemsPacket = (WindowItemsPacket)packet;
+            var windowItemsPacket = (WindowItemsPacket) packet;
             if (windowItemsPacket.WindowID == 0)
                 client.Inventory.SetSlots(windowItemsPacket.Items);
             else
@@ -19,7 +19,7 @@ namespace TrueCraft.Client.Handlers
 
         public static void HandleSetSlot(IPacket packet, MultiplayerClient client)
         {
-            var setSlotPacket = (SetSlotPacket)packet;
+            var setSlotPacket = (SetSlotPacket) packet;
             IWindow window = null;
             if (setSlotPacket.WindowID == 0)
                 window = client.Inventory;
@@ -29,14 +29,15 @@ namespace TrueCraft.Client.Handlers
             {
                 if (setSlotPacket.SlotIndex >= 0 && setSlotPacket.SlotIndex < window.Length)
                 {
-                    window[setSlotPacket.SlotIndex] = new ItemStack(setSlotPacket.ItemID, setSlotPacket.Count, setSlotPacket.Metadata);
+                    window[setSlotPacket.SlotIndex] = new ItemStack(setSlotPacket.ItemID, setSlotPacket.Count,
+                        setSlotPacket.Metadata);
                 }
             }
         }
 
         public static void HandleOpenWindowPacket(IPacket packet, MultiplayerClient client)
         {
-            var openWindowPacket = (OpenWindowPacket)packet;
+            var openWindowPacket = (OpenWindowPacket) packet;
             IWindow window = null;
             switch (openWindowPacket.Type)
             {
@@ -44,6 +45,7 @@ namespace TrueCraft.Client.Handlers
                     window = new CraftingBenchWindow(client.CraftingRepository, client.Inventory);
                     break;
             }
+
             window.ID = openWindowPacket.WindowID;
             client.CurrentWindow = window;
         }

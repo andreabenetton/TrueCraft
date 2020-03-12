@@ -18,6 +18,27 @@ namespace TrueCraft.Core.TerrainGen.Noise
         private const double NORM_CONSTANT_2D = 47;
         private const double NORM_CONSTANT_3D = 103;
         private const double NORM_CONSTANT_4D = 30;
+
+        private static readonly short[] Gradients2D =
+        {
+            5, 2, 2, 5,
+            -5, 2, -2, 5,
+            5, -2, 2, -5,
+            -5, -2, -2, -5
+        };
+
+        private static readonly short[] Gradients3D =
+        {
+            -11, 4, 4, -4, 11, 4, -4, 4, 11,
+            11, 4, 4, 4, 11, 4, 4, 4, 11,
+            -11, -4, 4, -4, -11, 4, -4, -4, 11,
+            11, -4, 4, 4, -11, 4, 4, -4, 11,
+            -11, 4, -4, -4, 11, -4, -4, 4, -11,
+            11, 4, -4, 4, 11, -4, 4, 4, -11,
+            -11, -4, -4, -4, -11, -4, -4, -4, -11,
+            11, -4, -4, 4, -11, -4, 4, -4, -11
+        };
+
         private short[] Perm;
         private short[] PermGradIndex3D;
 
@@ -29,10 +50,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
         {
             this.Perm = Perm;
             PermGradIndex3D = new short[256];
-            for (int I = 0; I < 256; I++)
-            {
-                PermGradIndex3D[I] = (short)((Perm[I] % (Gradients3D.Length / 3)) * 3);
-            }
+            for (var I = 0; I < 256; I++) PermGradIndex3D[I] = (short) (Perm[I] % (Gradients3D.Length / 3) * 3);
         }
 
         public OpenSimplex(long Seed)
@@ -44,20 +62,20 @@ namespace TrueCraft.Core.TerrainGen.Noise
         {
             Perm = new short[256];
             PermGradIndex3D = new short[256];
-            short[] Source = new short[256];
+            var Source = new short[256];
             for (short I = 0; I < 256; I++)
                 Source[I] = I;
             Seed = Seed * 6364136223846793005L + 1442695040888963407L;
             Seed = Seed * 6364136223846793005L + 1442695040888963407L;
             Seed = Seed * 6364136223846793005L + 1442695040888963407L;
-            for (int I = 255; I >= 0; I--)
+            for (var I = 255; I >= 0; I--)
             {
                 Seed = Seed * 6364136223846793005L + 1442695040888963407L;
-                int R = (int)((Seed + 31) % (I + 1));
+                var R = (int) ((Seed + 31) % (I + 1));
                 if (R < 0)
-                    R += (I + 1);
+                    R += I + 1;
                 Perm[I] = Source[R];
-                PermGradIndex3D[I] = (short)((Perm[I] % (Gradients3D.Length / 3)) * 3);
+                PermGradIndex3D[I] = (short) (Perm[I] % (Gradients3D.Length / 3) * 3);
                 Source[R] = Source[I];
             }
         }
@@ -65,29 +83,29 @@ namespace TrueCraft.Core.TerrainGen.Noise
         public override double Value2D(double X, double Y)
         {
             //Place input coordinates onto grid.
-            double StretchOffset = (X + Y) * STRETCH_CONSTANT_2D;
-            double xs = X + StretchOffset;
-            double ys = Y + StretchOffset;
+            var StretchOffset = (X + Y) * STRETCH_CONSTANT_2D;
+            var xs = X + StretchOffset;
+            var ys = Y + StretchOffset;
 
             //Floor to get grid coordinates of rhombus (stretched square) super-cell origin.
-            int xsb = Floor(xs);
-            int ysb = Floor(ys);
+            var xsb = Floor(xs);
+            var ysb = Floor(ys);
 
             //Skew out to get actual coordinates of rhombus origin. We'll need these later.
-            double SquishOffset = (xsb + ysb) * SQUISH_CONSTANT_2D;
-            double xb = xsb + SquishOffset;
-            double yb = ysb + SquishOffset;
+            var SquishOffset = (xsb + ysb) * SQUISH_CONSTANT_2D;
+            var xb = xsb + SquishOffset;
+            var yb = ysb + SquishOffset;
 
             //Compute grid coordinates relative to rhombus origin.
-            double xins = xs - xsb;
-            double yins = ys - ysb;
+            var xins = xs - xsb;
+            var yins = ys - ysb;
 
             //Sum those together to get a value that determines which region we're in.
-            double inSum = xins + yins;
+            var inSum = xins + yins;
 
             //Positions relative to origin point.
-            double dx0 = X - xb;
-            double dy0 = Y - yb;
+            var dx0 = X - xb;
+            var dy0 = Y - yb;
 
             //We'll be defining these inside the next block and using them afterwards.
             double dx_ext, dy_ext;
@@ -95,9 +113,9 @@ namespace TrueCraft.Core.TerrainGen.Noise
             double value = 0;
 
             //Contribution (1,0)
-            double dx1 = dx0 - 1 - SQUISH_CONSTANT_2D;
-            double dy1 = dy0 - 0 - SQUISH_CONSTANT_2D;
-            double attn1 = 2 - dx1 * dx1 - dy1 * dy1;
+            var dx1 = dx0 - 1 - SQUISH_CONSTANT_2D;
+            var dy1 = dy0 - 0 - SQUISH_CONSTANT_2D;
+            var attn1 = 2 - dx1 * dx1 - dy1 * dy1;
             if (attn1 > 0)
             {
                 attn1 *= attn1;
@@ -105,18 +123,19 @@ namespace TrueCraft.Core.TerrainGen.Noise
             }
 
             //Contribution (0,1)
-            double dx2 = dx0 - 0 - SQUISH_CONSTANT_2D;
-            double dy2 = dy0 - 1 - SQUISH_CONSTANT_2D;
-            double attn2 = 2 - dx2 * dx2 - dy2 * dy2;
+            var dx2 = dx0 - 0 - SQUISH_CONSTANT_2D;
+            var dy2 = dy0 - 1 - SQUISH_CONSTANT_2D;
+            var attn2 = 2 - dx2 * dx2 - dy2 * dy2;
             if (attn2 > 0)
             {
                 attn2 *= attn2;
                 value += attn2 * attn2 * Extrapolate2D(xsb + 0, ysb + 1, dx2, dy2);
             }
+
             if (inSum <= 1)
             {
                 //We're inside the triangle (2-Simplex) at (0,0)
-                double zins = 1 - inSum;
+                var zins = 1 - inSum;
                 if (zins > xins || zins > yins)
                 {
                     //(0,0) is one of the closest two triangular vertices
@@ -147,7 +166,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
             else
             {
                 //We're inside the triangle (2-Simplex) at (1,1)
-                double zins = 2 - inSum;
+                var zins = 2 - inSum;
                 if (zins < xins || zins < yins)
                 {
                     //(0,0) is one of the closest two triangular vertices
@@ -174,59 +193,63 @@ namespace TrueCraft.Core.TerrainGen.Noise
                     xsv_ext = xsb;
                     ysv_ext = ysb;
                 }
+
                 xsb += 1;
                 ysb += 1;
                 dx0 = dx0 - 1 - 2 * SQUISH_CONSTANT_2D;
                 dy0 = dy0 - 1 - 2 * SQUISH_CONSTANT_2D;
             }
+
             //Contribution (0,0) or (1,1)
-            double attn0 = 2 - dx0 * dx0 - dy0 * dy0;
+            var attn0 = 2 - dx0 * dx0 - dy0 * dy0;
             if (attn0 > 0)
             {
                 attn0 *= attn0;
                 value += attn0 * attn0 * Extrapolate2D(xsb, ysb, dx0, dy0);
             }
+
             //Extra Vertex
-            double attn_ext = 2 - dx_ext * dx_ext - dy_ext * dy_ext;
+            var attn_ext = 2 - dx_ext * dx_ext - dy_ext * dy_ext;
             if (attn_ext > 0)
             {
                 attn_ext *= attn_ext;
                 value += attn_ext * attn_ext * Extrapolate2D(xsv_ext, ysv_ext, dx_ext, dy_ext);
             }
+
             return value / NORM_CONSTANT_2D;
         }
 
         public override double Value3D(double X, double Y, double Z)
         {
             //Place input coordinates on simplectic honeycomb.
-            double stretchOffset = (X + Y + Z) * STRETCH_CONSTANT_3D;
-            double xs = X + stretchOffset;
-            double ys = Y + stretchOffset;
-            double zs = Z + stretchOffset;
+            var stretchOffset = (X + Y + Z) * STRETCH_CONSTANT_3D;
+            var xs = X + stretchOffset;
+            var ys = Y + stretchOffset;
+            var zs = Z + stretchOffset;
 
             //Floor to get simplectic honeycomb coordinates of rhombohedron (stretched cube) super-cell origin.
-            int xsb = Floor(xs);
-            int ysb = Floor(ys);
-            int zsb = Floor(zs);
+            var xsb = Floor(xs);
+            var ysb = Floor(ys);
+            var zsb = Floor(zs);
 
             //Skew out to get actual coordinates of rhombohedron origin. We'll need these later.
-            double squishOffset = (xsb + ysb + zsb) * SQUISH_CONSTANT_3D;
-            double xb = xsb + squishOffset;
-            double yb = ysb + squishOffset;
-            double zb = zsb + squishOffset;
+            var squishOffset = (xsb + ysb + zsb) * SQUISH_CONSTANT_3D;
+            var xb = xsb + squishOffset;
+            var yb = ysb + squishOffset;
+            var zb = zsb + squishOffset;
 
             //Compute simplectic honeycomb coordinates relative to rhombohedral origin.
-            double xins = xs - xsb;
-            double yins = ys - ysb;
-            double zins = zs - zsb;
+            var xins = xs - xsb;
+            var yins = ys - ysb;
+            var zins = zs - zsb;
 
             //Sum those together to get a value that determines which region we're in.
-            double inSum = xins + yins + zins;
+            var inSum = xins + yins + zins;
 
             //Positions relative to origin point.
-            double dx0 = X - xb;
-            double dy0 = Y - yb;
-            double dz0 = Z - zb;
+            var dx0 = X - xb;
+            var dy0 = Y - yb;
+            var dz0 = Z - zb;
 
             //We'll be defining these inside the next block and using them afterwards.
             double dx_ext0, dy_ext0, dz_ext0;
@@ -241,9 +264,9 @@ namespace TrueCraft.Core.TerrainGen.Noise
                  * Determine which two of (0,0,1), (0,1,0), (1,0,0) are closest.
                  */
                 byte aPoint = 0x01;
-                double aScore = xins;
+                var aScore = xins;
                 byte bPoint = 0x02;
-                double bScore = yins;
+                var bScore = yins;
                 if (aScore >= bScore && zins > bScore)
                 {
                     bScore = zins;
@@ -259,11 +282,11 @@ namespace TrueCraft.Core.TerrainGen.Noise
                  * Now we determine the two lattice points not part of the tetrahedron that may contribute.
                  * This depends on the closest two tetrahedral vertices, including (0,0,0)
                  */
-                double wins = 1 - inSum;
+                var wins = 1 - inSum;
                 if (wins > aScore || wins > bScore)
                 {
                     //(0,0,0) is one of the closest two tetrahedral vertices.
-                    byte c = (bScore > aScore ? bPoint : aPoint); //Our other closest vertex is the closest out of a and b.
+                    var c = bScore > aScore ? bPoint : aPoint; //Our other closest vertex is the closest out of a and b.
                     if ((c & 0x01) == 0)
                     {
                         xsv_ext0 = xsb - 1;
@@ -314,7 +337,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 else
                 {
                     //(0,0,0) is not one of the closest two tetrahedral vertices.
-                    byte c = (byte)(aPoint | bPoint); //Our two extra vertices are determined by the closest two.
+                    var c = (byte) (aPoint | bPoint); //Our two extra vertices are determined by the closest two.
                     if ((c & 0x01) == 0)
                     {
                         xsv_ext0 = xsb;
@@ -359,7 +382,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (0,0,0)
-                double attn0 = 2 - dx0 * dx0 - dy0 * dy0 - dz0 * dz0;
+                var attn0 = 2 - dx0 * dx0 - dy0 * dy0 - dz0 * dz0;
                 if (attn0 > 0)
                 {
                     attn0 *= attn0;
@@ -367,10 +390,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (1,0,0)
-                double dx1 = dx0 - 1 - SQUISH_CONSTANT_3D;
-                double dy1 = dy0 - 0 - SQUISH_CONSTANT_3D;
-                double dz1 = dz0 - 0 - SQUISH_CONSTANT_3D;
-                double attn1 = 2 - dx1 * dx1 - dy1 * dy1 - dz1 * dz1;
+                var dx1 = dx0 - 1 - SQUISH_CONSTANT_3D;
+                var dy1 = dy0 - 0 - SQUISH_CONSTANT_3D;
+                var dz1 = dz0 - 0 - SQUISH_CONSTANT_3D;
+                var attn1 = 2 - dx1 * dx1 - dy1 * dy1 - dz1 * dz1;
                 if (attn1 > 0)
                 {
                     attn1 *= attn1;
@@ -378,10 +401,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (0,1,0)
-                double dx2 = dx0 - 0 - SQUISH_CONSTANT_3D;
-                double dy2 = dy0 - 1 - SQUISH_CONSTANT_3D;
-                double dz2 = dz1;
-                double attn2 = 2 - dx2 * dx2 - dy2 * dy2 - dz2 * dz2;
+                var dx2 = dx0 - 0 - SQUISH_CONSTANT_3D;
+                var dy2 = dy0 - 1 - SQUISH_CONSTANT_3D;
+                var dz2 = dz1;
+                var attn2 = 2 - dx2 * dx2 - dy2 * dy2 - dz2 * dz2;
                 if (attn2 > 0)
                 {
                     attn2 *= attn2;
@@ -389,10 +412,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (0,0,1)
-                double dx3 = dx2;
-                double dy3 = dy1;
-                double dz3 = dz0 - 1 - SQUISH_CONSTANT_3D;
-                double attn3 = 2 - dx3 * dx3 - dy3 * dy3 - dz3 * dz3;
+                var dx3 = dx2;
+                var dy3 = dy1;
+                var dz3 = dz0 - 1 - SQUISH_CONSTANT_3D;
+                var attn3 = 2 - dx3 * dx3 - dy3 * dy3 - dz3 * dz3;
                 if (attn3 > 0)
                 {
                     attn3 *= attn3;
@@ -406,9 +429,9 @@ namespace TrueCraft.Core.TerrainGen.Noise
                  * Determine which two tetrahedral vertices are the closest, out of (1,1,0), (1,0,1), (0,1,1) but not (1,1,1).
                  */
                 byte aPoint = 0x06;
-                double aScore = xins;
+                var aScore = xins;
                 byte bPoint = 0x05;
-                double bScore = yins;
+                var bScore = yins;
                 if (aScore <= bScore && zins < bScore)
                 {
                     bScore = zins;
@@ -424,11 +447,11 @@ namespace TrueCraft.Core.TerrainGen.Noise
                  * Now we determine the two lattice points not part of the tetrahedron that may contribute.
                  * This depends on the closest two tetrahedral vertices, including (1,1,1)
                  */
-                double wins = 3 - inSum;
+                var wins = 3 - inSum;
                 if (wins < aScore || wins < bScore)
                 {
                     //(1,1,1) is one of the closest two tetrahedral vertices.
-                    byte c = (bScore < aScore ? bPoint : aPoint); //Our other closest vertex is the closest out of a and b.
+                    var c = bScore < aScore ? bPoint : aPoint; //Our other closest vertex is the closest out of a and b.
                     if ((c & 0x01) != 0)
                     {
                         xsv_ext0 = xsb + 2;
@@ -479,7 +502,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 else
                 {
                     //(1,1,1) is not one of the closest two tetrahedral vertices.
-                    byte c = (byte)(aPoint & bPoint); //Our two extra vertices are determined by the closest two.
+                    var c = (byte) (aPoint & bPoint); //Our two extra vertices are determined by the closest two.
                     if ((c & 0x01) != 0)
                     {
                         xsv_ext0 = xsb + 1;
@@ -524,10 +547,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (1,1,0)
-                double dx3 = dx0 - 1 - 2 * SQUISH_CONSTANT_3D;
-                double dy3 = dy0 - 1 - 2 * SQUISH_CONSTANT_3D;
-                double dz3 = dz0 - 0 - 2 * SQUISH_CONSTANT_3D;
-                double attn3 = 2 - dx3 * dx3 - dy3 * dy3 - dz3 * dz3;
+                var dx3 = dx0 - 1 - 2 * SQUISH_CONSTANT_3D;
+                var dy3 = dy0 - 1 - 2 * SQUISH_CONSTANT_3D;
+                var dz3 = dz0 - 0 - 2 * SQUISH_CONSTANT_3D;
+                var attn3 = 2 - dx3 * dx3 - dy3 * dy3 - dz3 * dz3;
                 if (attn3 > 0)
                 {
                     attn3 *= attn3;
@@ -535,10 +558,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (1,0,1)
-                double dx2 = dx3;
-                double dy2 = dy0 - 0 - 2 * SQUISH_CONSTANT_3D;
-                double dz2 = dz0 - 1 - 2 * SQUISH_CONSTANT_3D;
-                double attn2 = 2 - dx2 * dx2 - dy2 * dy2 - dz2 * dz2;
+                var dx2 = dx3;
+                var dy2 = dy0 - 0 - 2 * SQUISH_CONSTANT_3D;
+                var dz2 = dz0 - 1 - 2 * SQUISH_CONSTANT_3D;
+                var attn2 = 2 - dx2 * dx2 - dy2 * dy2 - dz2 * dz2;
                 if (attn2 > 0)
                 {
                     attn2 *= attn2;
@@ -546,10 +569,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (0,1,1)
-                double dx1 = dx0 - 0 - 2 * SQUISH_CONSTANT_3D;
-                double dy1 = dy3;
-                double dz1 = dz2;
-                double attn1 = 2 - dx1 * dx1 - dy1 * dy1 - dz1 * dz1;
+                var dx1 = dx0 - 0 - 2 * SQUISH_CONSTANT_3D;
+                var dy1 = dy3;
+                var dz1 = dz2;
+                var attn1 = 2 - dx1 * dx1 - dy1 * dy1 - dz1 * dz1;
                 if (attn1 > 0)
                 {
                     attn1 *= attn1;
@@ -560,7 +583,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 dx0 = dx0 - 1 - 3 * SQUISH_CONSTANT_3D;
                 dy0 = dy0 - 1 - 3 * SQUISH_CONSTANT_3D;
                 dz0 = dz0 - 1 - 3 * SQUISH_CONSTANT_3D;
-                double attn0 = 2 - dx0 * dx0 - dy0 * dy0 - dz0 * dz0;
+                var attn0 = 2 - dx0 * dx0 - dy0 * dy0 - dz0 * dz0;
                 if (attn0 > 0)
                 {
                     attn0 *= attn0;
@@ -578,7 +601,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 bool bIsFurtherSide;
 
                 //Decide between point (0,0,1) and (1,1,0) as closest
-                double p1 = xins + yins;
+                var p1 = xins + yins;
                 if (p1 > 1)
                 {
                     aScore = p1 - 1;
@@ -593,7 +616,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Decide between point (0,1,0) and (1,0,1) as closest
-                double p2 = xins + zins;
+                var p2 = xins + zins;
                 if (p2 > 1)
                 {
                     bScore = p2 - 1;
@@ -608,10 +631,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //The closest out of the two (1,0,0) and (0,1,1) will replace the furthest out of the two decided above, if closer.
-                double p3 = yins + zins;
+                var p3 = yins + zins;
                 if (p3 > 1)
                 {
-                    double score = p3 - 1;
+                    var score = p3 - 1;
                     if (aScore <= bScore && aScore < score)
                     {
                         aScore = score;
@@ -627,7 +650,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
                 else
                 {
-                    double score = 1 - p3;
+                    var score = 1 - p3;
                     if (aScore <= bScore && aScore < score)
                     {
                         aScore = score;
@@ -658,7 +681,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                         zsv_ext0 = zsb + 1;
 
                         //Other extra point is based on the shared axis.
-                        byte c = (byte)(aPoint & bPoint);
+                        var c = (byte) (aPoint & bPoint);
                         if ((c & 0x01) != 0)
                         {
                             dx_ext1 = dx0 - 2 - 2 * SQUISH_CONSTANT_3D;
@@ -701,7 +724,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
                         zsv_ext0 = zsb;
 
                         //Other extra point is based on the omitted axis.
-                        byte c = (byte)(aPoint | bPoint);
+                        var c = (byte) (aPoint | bPoint);
                         if ((c & 0x01) == 0)
                         {
                             dx_ext1 = dx0 + 1 - SQUISH_CONSTANT_3D;
@@ -800,10 +823,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (1,0,0)
-                double dx1 = dx0 - 1 - SQUISH_CONSTANT_3D;
-                double dy1 = dy0 - 0 - SQUISH_CONSTANT_3D;
-                double dz1 = dz0 - 0 - SQUISH_CONSTANT_3D;
-                double attn1 = 2 - dx1 * dx1 - dy1 * dy1 - dz1 * dz1;
+                var dx1 = dx0 - 1 - SQUISH_CONSTANT_3D;
+                var dy1 = dy0 - 0 - SQUISH_CONSTANT_3D;
+                var dz1 = dz0 - 0 - SQUISH_CONSTANT_3D;
+                var attn1 = 2 - dx1 * dx1 - dy1 * dy1 - dz1 * dz1;
                 if (attn1 > 0)
                 {
                     attn1 *= attn1;
@@ -811,10 +834,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (0,1,0)
-                double dx2 = dx0 - 0 - SQUISH_CONSTANT_3D;
-                double dy2 = dy0 - 1 - SQUISH_CONSTANT_3D;
-                double dz2 = dz1;
-                double attn2 = 2 - dx2 * dx2 - dy2 * dy2 - dz2 * dz2;
+                var dx2 = dx0 - 0 - SQUISH_CONSTANT_3D;
+                var dy2 = dy0 - 1 - SQUISH_CONSTANT_3D;
+                var dz2 = dz1;
+                var attn2 = 2 - dx2 * dx2 - dy2 * dy2 - dz2 * dz2;
                 if (attn2 > 0)
                 {
                     attn2 *= attn2;
@@ -822,10 +845,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (0,0,1)
-                double dx3 = dx2;
-                double dy3 = dy1;
-                double dz3 = dz0 - 1 - SQUISH_CONSTANT_3D;
-                double attn3 = 2 - dx3 * dx3 - dy3 * dy3 - dz3 * dz3;
+                var dx3 = dx2;
+                var dy3 = dy1;
+                var dz3 = dz0 - 1 - SQUISH_CONSTANT_3D;
+                var attn3 = 2 - dx3 * dx3 - dy3 * dy3 - dz3 * dz3;
                 if (attn3 > 0)
                 {
                     attn3 *= attn3;
@@ -833,10 +856,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (1,1,0)
-                double dx4 = dx0 - 1 - 2 * SQUISH_CONSTANT_3D;
-                double dy4 = dy0 - 1 - 2 * SQUISH_CONSTANT_3D;
-                double dz4 = dz0 - 0 - 2 * SQUISH_CONSTANT_3D;
-                double attn4 = 2 - dx4 * dx4 - dy4 * dy4 - dz4 * dz4;
+                var dx4 = dx0 - 1 - 2 * SQUISH_CONSTANT_3D;
+                var dy4 = dy0 - 1 - 2 * SQUISH_CONSTANT_3D;
+                var dz4 = dz0 - 0 - 2 * SQUISH_CONSTANT_3D;
+                var attn4 = 2 - dx4 * dx4 - dy4 * dy4 - dz4 * dz4;
                 if (attn4 > 0)
                 {
                     attn4 *= attn4;
@@ -844,10 +867,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (1,0,1)
-                double dx5 = dx4;
-                double dy5 = dy0 - 0 - 2 * SQUISH_CONSTANT_3D;
-                double dz5 = dz0 - 1 - 2 * SQUISH_CONSTANT_3D;
-                double attn5 = 2 - dx5 * dx5 - dy5 * dy5 - dz5 * dz5;
+                var dx5 = dx4;
+                var dy5 = dy0 - 0 - 2 * SQUISH_CONSTANT_3D;
+                var dz5 = dz0 - 1 - 2 * SQUISH_CONSTANT_3D;
+                var attn5 = 2 - dx5 * dx5 - dy5 * dy5 - dz5 * dz5;
                 if (attn5 > 0)
                 {
                     attn5 *= attn5;
@@ -855,10 +878,10 @@ namespace TrueCraft.Core.TerrainGen.Noise
                 }
 
                 //Contribution (0,1,1)
-                double dx6 = dx0 - 0 - 2 * SQUISH_CONSTANT_3D;
-                double dy6 = dy4;
-                double dz6 = dz5;
-                double attn6 = 2 - dx6 * dx6 - dy6 * dy6 - dz6 * dz6;
+                var dx6 = dx0 - 0 - 2 * SQUISH_CONSTANT_3D;
+                var dy6 = dy4;
+                var dz6 = dz5;
+                var attn6 = 2 - dx6 * dx6 - dy6 * dy6 - dz6 * dz6;
                 if (attn6 > 0)
                 {
                     attn6 *= attn6;
@@ -867,7 +890,7 @@ namespace TrueCraft.Core.TerrainGen.Noise
             }
 
             //First extra vertex
-            double attn_ext0 = 2 - dx_ext0 * dx_ext0 - dy_ext0 * dy_ext0 - dz_ext0 * dz_ext0;
+            var attn_ext0 = 2 - dx_ext0 * dx_ext0 - dy_ext0 * dy_ext0 - dz_ext0 * dz_ext0;
             if (attn_ext0 > 0)
             {
                 attn_ext0 *= attn_ext0;
@@ -875,42 +898,26 @@ namespace TrueCraft.Core.TerrainGen.Noise
             }
 
             //Second extra vertex
-            double attn_ext1 = 2 - dx_ext1 * dx_ext1 - dy_ext1 * dy_ext1 - dz_ext1 * dz_ext1;
+            var attn_ext1 = 2 - dx_ext1 * dx_ext1 - dy_ext1 * dy_ext1 - dz_ext1 * dz_ext1;
             if (attn_ext1 > 0)
             {
                 attn_ext1 *= attn_ext1;
                 value += attn_ext1 * attn_ext1 * Extrapolate3D(xsv_ext1, ysv_ext1, zsv_ext1, dx_ext1, dy_ext1, dz_ext1);
             }
+
             return value / NORM_CONSTANT_3D;
         }
 
         private double Extrapolate2D(int XS, int YS, double XD, double YD)
         {
-            int Index = Perm[(Perm[XS & 0xFF] + YS) & 0xFF] & 0x0E;
+            var Index = Perm[(Perm[XS & 0xFF] + YS) & 0xFF] & 0x0E;
             return Gradients2D[Index] * XD + Gradients2D[Index + 1] * YD;
         }
+
         private double Extrapolate3D(int XS, int YS, int ZS, double XD, double YD, double ZD)
         {
             int Index = PermGradIndex3D[(Perm[(Perm[XS & 0xFF] + YS) & 0xFF] + ZS) & 0xFF];
             return Gradients3D[Index] * XD + Gradients3D[Index + 1] * YD + Gradients3D[Index + 2] * ZD;
-        } 
-
-        private static short[] Gradients2D = new short[] {
-            5, 2, 2, 5,
-            -5, 2, -2, 5,
-            5, -2, 2, -5,
-            -5, -2, -2, -5,
-        };
-
-        private static short[] Gradients3D = new short[] {
-            -11, 4, 4, -4, 11, 4, -4, 4, 11,
-            11, 4, 4, 4, 11, 4, 4, 4, 11,
-            -11, -4, 4, -4, -11, 4, -4, -4, 11,
-            11, -4, 4, 4, -11, 4, 4, -4, 11,
-            -11, 4, -4, -4, 11, -4, -4, 4, -11,
-            11, 4, -4, 4, 11, -4, 4, 4, -11,
-            -11, -4, -4, -4, -11, -4, -4, -4, -11,
-            11, -4, -4, 4, -11, -4, 4, -4, -11,
-       };
+        }
     }
 }

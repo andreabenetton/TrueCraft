@@ -1,38 +1,22 @@
 ﻿using System;
-using System.IO;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using Ionic.Zip;
 using TrueCraft.Core;
 using Xwt;
 using Xwt.Drawing;
-using System.Threading.Tasks;
-using System.Net;
-using Ionic.Zip;
-using System.Linq;
 
 namespace TrueCraft.Launcher.Views
 {
     public class OptionView : VBox
     {
-        public LauncherWindow Window { get; set; }
+        private readonly TexturePack _lastTexturePack;
 
-        public Label OptionLabel { get; set; }
-        public Label ResolutionLabel { get; set; }
-        public ComboBox ResolutionComboBox { get; set; }
-        public CheckBox FullscreenCheckBox { get; set; }
-        public CheckBox InvertMouseCheckBox { get; set; }
-        public Label TexturePackLabel { get; set; }
-        public DataField<Image> TexturePackImageField { get; set; }
-        public DataField<string> TexturePackTextField { get; set; }
-        public ListStore TexturePackStore { get; set; }
-        public ListView TexturePackListView { get; set; }
-        public Button OfficialAssetsButton { get; set; }
-        public ProgressBar OfficialAssetsProgress { get; set; }
-        public Button OpenFolderButton { get; set; }
-        public Button BackButton { get; set; }
-
-        private List<TexturePack> _texturePacks;
-        private TexturePack _lastTexturePack;
+        private readonly List<TexturePack> _texturePacks;
 
         public OptionView(LauncherWindow window)
         {
@@ -40,7 +24,7 @@ namespace TrueCraft.Launcher.Views
             _lastTexturePack = null;
 
             Window = window;
-            this.MinWidth = 250;
+            MinWidth = 250;
 
             OptionLabel = new Label("Options")
             {
@@ -51,17 +35,17 @@ namespace TrueCraft.Launcher.Views
             ResolutionLabel = new Label("Select a resolution...");
             ResolutionComboBox = new ComboBox();
 
-            int resolutionIndex = -1;
-            for (int i = 0; i < WindowResolution.Defaults.Length; i++)
+            var resolutionIndex = -1;
+            for (var i = 0; i < WindowResolution.Defaults.Length; i++)
             {
                 ResolutionComboBox.Items.Add(WindowResolution.Defaults[i].ToString());
 
                 if (resolutionIndex == -1)
-                {
                     resolutionIndex =
-                        ((WindowResolution.Defaults[i].Width == UserSettings.Local.WindowResolution.Width) &&
-                        (WindowResolution.Defaults[i].Height == UserSettings.Local.WindowResolution.Height)) ? i : -1;
-                }
+                        WindowResolution.Defaults[i].Width == UserSettings.Local.WindowResolution.Width &&
+                        WindowResolution.Defaults[i].Height == UserSettings.Local.WindowResolution.Height
+                            ? i
+                            : -1;
             }
 
             if (resolutionIndex == -1)
@@ -74,12 +58,12 @@ namespace TrueCraft.Launcher.Views
             FullscreenCheckBox = new CheckBox
             {
                 Label = "Fullscreen mode",
-                State = (UserSettings.Local.IsFullscreen) ? CheckBoxState.On : CheckBoxState.Off
+                State = UserSettings.Local.IsFullscreen ? CheckBoxState.On : CheckBoxState.Off
             };
             InvertMouseCheckBox = new CheckBox
             {
                 Label = "Inverted mouse",
-                State = (UserSettings.Local.InvertedMouse) ? CheckBoxState.On : CheckBoxState.Off
+                State = UserSettings.Local.InvertedMouse ? CheckBoxState.On : CheckBoxState.Off
             };
 
             TexturePackLabel = new Label("Select a texture pack...");
@@ -112,7 +96,7 @@ namespace TrueCraft.Launcher.Views
                 UserSettings.Local.Save();
             };
 
-            InvertMouseCheckBox.Clicked += (sender, e) => 
+            InvertMouseCheckBox.Clicked += (sender, e) =>
             {
                 UserSettings.Local.InvertedMouse = !UserSettings.Local.InvertedMouse;
                 UserSettings.Local.Save();
@@ -140,26 +124,43 @@ namespace TrueCraft.Launcher.Views
                 Window.InteractionBox.PackEnd(Window.MainMenuView);
             };
 
-            OfficialAssetsButton = new Button("Download Minecraft assets") { Visible = false };
+            OfficialAssetsButton = new Button("Download Minecraft assets") {Visible = false};
             OfficialAssetsButton.Clicked += OfficialAssetsButton_Clicked;
-            OfficialAssetsProgress = new ProgressBar() { Visible = false, Indeterminate = true };
+            OfficialAssetsProgress = new ProgressBar {Visible = false, Indeterminate = true};
 
             LoadTexturePacks();
 
-            this.PackStart(OptionLabel);
-            this.PackStart(ResolutionLabel);
-            this.PackStart(ResolutionComboBox);
-            this.PackStart(FullscreenCheckBox);
-            this.PackStart(InvertMouseCheckBox);
-            this.PackStart(TexturePackLabel);
-            this.PackStart(TexturePackListView);
-            this.PackStart(OfficialAssetsProgress);
-            this.PackStart(OfficialAssetsButton);
-            this.PackStart(OpenFolderButton);
-            this.PackEnd(BackButton);
+            PackStart(OptionLabel);
+            PackStart(ResolutionLabel);
+            PackStart(ResolutionComboBox);
+            PackStart(FullscreenCheckBox);
+            PackStart(InvertMouseCheckBox);
+            PackStart(TexturePackLabel);
+            PackStart(TexturePackListView);
+            PackStart(OfficialAssetsProgress);
+            PackStart(OfficialAssetsButton);
+            PackStart(OpenFolderButton);
+            PackEnd(BackButton);
         }
 
-        void OfficialAssetsButton_Clicked(object sender, EventArgs e)
+        public LauncherWindow Window { get; set; }
+
+        public Label OptionLabel { get; set; }
+        public Label ResolutionLabel { get; set; }
+        public ComboBox ResolutionComboBox { get; set; }
+        public CheckBox FullscreenCheckBox { get; set; }
+        public CheckBox InvertMouseCheckBox { get; set; }
+        public Label TexturePackLabel { get; set; }
+        public DataField<Image> TexturePackImageField { get; set; }
+        public DataField<string> TexturePackTextField { get; set; }
+        public ListStore TexturePackStore { get; set; }
+        public ListView TexturePackListView { get; set; }
+        public Button OfficialAssetsButton { get; set; }
+        public ProgressBar OfficialAssetsProgress { get; set; }
+        public Button OpenFolderButton { get; set; }
+        public Button BackButton { get; set; }
+
+        private void OfficialAssetsButton_Clicked(object sender, EventArgs e)
         {
             var result = MessageDialog.AskQuestion("Download Mojang assets",
                 "This will download the official Minecraft assets from Mojang.\n\n" +
@@ -172,56 +173,55 @@ namespace TrueCraft.Launcher.Views
                 OfficialAssetsButton.Visible = false;
                 OfficialAssetsProgress.Visible = true;
                 Task.Factory.StartNew(() =>
+                {
+                    try
                     {
-                        try
+                        var stream =
+                            new WebClient().OpenRead(
+                                "http://s3.amazonaws.com/Minecraft.Download/versions/b1.7.3/b1.7.3.jar");
+                        var ms = new MemoryStream();
+                        CopyStream(stream, ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        stream.Dispose();
+                        var jar = ZipFile.Read(ms);
+                        var zip = new ZipFile();
+                        zip.AddEntry("pack.txt", "Minecraft textures");
+
+                        string[] dirs =
                         {
-                            var stream = new WebClient().OpenRead("http://s3.amazonaws.com/Minecraft.Download/versions/b1.7.3/b1.7.3.jar");
-                            var ms = new MemoryStream();
-                            CopyStream(stream, ms);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            stream.Dispose();
-                            var jar = ZipFile.Read(ms);
-                            var zip = new ZipFile();
-                            zip.AddEntry("pack.txt", "Minecraft textures");
+                            "terrain", "gui", "armor", "art",
+                            "environment", "item", "misc", "mob"
+                        };
 
-                            string[] dirs = {
-                                "terrain", "gui", "armor", "art",
-                                "environment", "item", "misc", "mob"
-                            };
+                        foreach (var entry in jar.Entries)
+                        foreach (var c in dirs)
+                            if (entry.FileName.StartsWith(c + "/"))
+                                CopyBetweenZips(entry.FileName, jar, zip);
+                        CopyBetweenZips("pack.png", jar, zip);
+                        CopyBetweenZips("terrain.png", jar, zip);
+                        CopyBetweenZips("particles.png", jar, zip);
 
-                            foreach (var entry in jar.Entries)
-                            {
-                                foreach (var c in dirs)
-                                {
-                                    if (entry.FileName.StartsWith(c + "/"))
-                                        CopyBetweenZips(entry.FileName, jar, zip);
-                                }
-                            }
-                            CopyBetweenZips("pack.png", jar, zip);
-                            CopyBetweenZips("terrain.png", jar, zip);
-                            CopyBetweenZips("particles.png", jar, zip);
-
-                            zip.Save(Path.Combine(Paths.TexturePacks, "Minecraft.zip"));
-                            Application.Invoke(() =>
-                                {
-                                    OfficialAssetsProgress.Visible = false;
-                                    var texturePack = TexturePack.FromArchive(
-                                        Path.Combine(Paths.TexturePacks, "Minecraft.zip"));
-                                    _texturePacks.Add(texturePack);
-                                    AddTexturePackRow(texturePack);
-                                });
-                            ms.Dispose();
-                        }
-                        catch (Exception ex)
+                        zip.Save(Path.Combine(Paths.TexturePacks, "Minecraft.zip"));
+                        Application.Invoke(() =>
                         {
-                            Application.Invoke(() =>
-                                {
-                                    MessageDialog.ShowError("Error retrieving assets", ex.ToString());
-                                    OfficialAssetsProgress.Visible = false;
-                                    OfficialAssetsButton.Visible = true;
-                                });
-                        }
-                    });
+                            OfficialAssetsProgress.Visible = false;
+                            var texturePack = TexturePack.FromArchive(
+                                Path.Combine(Paths.TexturePacks, "Minecraft.zip"));
+                            _texturePacks.Add(texturePack);
+                            AddTexturePackRow(texturePack);
+                        });
+                        ms.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Application.Invoke(() =>
+                        {
+                            MessageDialog.ShowError("Error retrieving assets", ex.ToString());
+                            OfficialAssetsProgress.Visible = false;
+                            OfficialAssetsButton.Visible = true;
+                        });
+                    }
+                });
             }
         }
 
@@ -238,12 +238,9 @@ namespace TrueCraft.Launcher.Views
 
         public static void CopyStream(Stream input, Stream output)
         {
-            byte[] buffer = new byte[16*1024];
+            var buffer = new byte[16 * 1024];
             int read;
-            while((read = input.Read (buffer, 0, buffer.Length)) > 0)
-            {
-                output.Write(buffer, 0, read);
-            }
+            while ((read = input.Read(buffer, 0, buffer.Length)) > 0) output.Write(buffer, 0, read);
         }
 
         private void LoadTexturePacks()
@@ -257,7 +254,7 @@ namespace TrueCraft.Launcher.Views
                 Directory.CreateDirectory(Paths.TexturePacks);
 
             var zips = Directory.EnumerateFiles(Paths.TexturePacks);
-            bool officialPresent = false;
+            var officialPresent = false;
             foreach (var zip in zips)
             {
                 if (!zip.EndsWith(".zip"))
@@ -272,6 +269,7 @@ namespace TrueCraft.Launcher.Views
                     AddTexturePackRow(texturePack);
                 }
             }
+
             if (!officialPresent)
                 OfficialAssetsButton.Visible = true;
         }
@@ -280,7 +278,8 @@ namespace TrueCraft.Launcher.Views
         {
             var row = TexturePackStore.AddRow();
 
-            TexturePackStore.SetValue(row, TexturePackImageField, Image.FromStream(pack.Image).WithSize(IconSize.Medium));
+            TexturePackStore.SetValue(row, TexturePackImageField,
+                Image.FromStream(pack.Image).WithSize(IconSize.Medium));
             TexturePackStore.SetValue(row, TexturePackTextField, pack.Name + "\r\n" + pack.Description);
         }
     }

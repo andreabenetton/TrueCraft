@@ -1,11 +1,11 @@
 using System;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
-using TrueCraft.API.World;
 using TrueCraft.API.Networking;
-using TrueCraft.Nbt;
-using TrueCraft.Core.Windows;
+using TrueCraft.API.World;
 using TrueCraft.Core.Entities;
+using TrueCraft.Core.Windows;
+using TrueCraft.Nbt;
 using TrueCraft.Nbt.Tags;
 
 namespace TrueCraft.Core.Logic.Blocks
@@ -13,33 +13,30 @@ namespace TrueCraft.Core.Logic.Blocks
     public class ChestBlock : BlockProvider, ICraftingRecipe, IBurnableItem
     {
         public static readonly byte BlockID = 0x36;
-        
-        public override byte ID { get { return 0x36; } }
-        
-        public override double BlastResistance { get { return 12.5; } }
 
-        public override double Hardness { get { return 2.5; } }
-
-        public override byte Luminance { get { return 0; } }
-
-        public override bool Opaque { get { return false; } }
-        
-        public override string DisplayName { get { return "Chest"; } }
-
-        public TimeSpan BurnTime { get { return TimeSpan.FromSeconds(15); } }
-
-        public override SoundEffectClass SoundEffect
+        private static readonly Coordinates3D[] AdjacentBlocks =
         {
-            get
-            {
-                return SoundEffectClass.Wood;
-            }
-        }
+            Coordinates3D.North,
+            Coordinates3D.South,
+            Coordinates3D.West,
+            Coordinates3D.East
+        };
 
-        public override Tuple<int, int> GetTextureMap(byte metadata)
-        {
-            return new Tuple<int, int>(10, 1);
-        }
+        public override byte ID => 0x36;
+
+        public override double BlastResistance => 12.5;
+
+        public override double Hardness => 2.5;
+
+        public override byte Luminance => 0;
+
+        public override bool Opaque => false;
+
+        public override string DisplayName => "Chest";
+
+        public override SoundEffectClass SoundEffect => SoundEffectClass.Wood;
+
+        public TimeSpan BurnTime => TimeSpan.FromSeconds(15);
 
         public ItemStack[,] Pattern
         {
@@ -66,49 +63,36 @@ namespace TrueCraft.Core.Logic.Blocks
             }
         }
 
-        public ItemStack Output
+        public ItemStack Output => new ItemStack(BlockID);
+
+        public bool SignificantMetadata => false;
+
+        public override Tuple<int, int> GetTextureMap(byte metadata)
         {
-            get { return new ItemStack(BlockID); }
+            return new Tuple<int, int>(10, 1);
         }
 
-        public bool SignificantMetadata
+        public override void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
-            get { return false; }
-        }
-
-        private static readonly Coordinates3D[] AdjacentBlocks =
-        {
-            Coordinates3D.North,
-            Coordinates3D.South,
-            Coordinates3D.West,
-            Coordinates3D.East
-        };
-
-        public override void ItemUsedOnBlock(Coordinates3D coordinates, ItemStack item, BlockFace face, IWorld world, IRemoteClient user)
-        {
-            int adjacent = 0;
+            var adjacent = 0;
             var coords = coordinates + MathHelper.BlockFaceToCoordinates(face);
-            Coordinates3D _ = Coordinates3D.Down;
+            var _ = Coordinates3D.Down;
             // Check for adjacent chests. We can only allow one adjacent check block.
-            for (int i = 0; i < AdjacentBlocks.Length; i++)
-            {
-                if (world.GetBlockID(coords + AdjacentBlocks[i]) == ChestBlock.BlockID)
+            for (var i = 0; i < AdjacentBlocks.Length; i++)
+                if (world.GetBlockID(coords + AdjacentBlocks[i]) == BlockID)
                 {
                     _ = coords + AdjacentBlocks[i];
                     adjacent++;
                 }
-            }
+
             if (adjacent <= 1)
             {
                 if (_ != Coordinates3D.Down)
-                {
                     // Confirm that adjacent chest is not a double chest
-                    for (int i = 0; i < AdjacentBlocks.Length; i++)
-                    {
-                        if (world.GetBlockID(_ + AdjacentBlocks[i]) == ChestBlock.BlockID)
+                    for (var i = 0; i < AdjacentBlocks.Length; i++)
+                        if (world.GetBlockID(_ + AdjacentBlocks[i]) == BlockID)
                             adjacent++;
-                    }
-                }
                 if (adjacent <= 1)
                     base.ItemUsedOnBlock(coordinates, item, face, world, user);
             }
@@ -116,17 +100,18 @@ namespace TrueCraft.Core.Logic.Blocks
 
         public override void BlockPlaced(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
         {
-            world.SetMetadata(descriptor.Coordinates, (byte)MathHelper.DirectionByRotationFlat(user.Entity.Yaw, true));
+            world.SetMetadata(descriptor.Coordinates, (byte) MathHelper.DirectionByRotationFlat(user.Entity.Yaw, true));
         }
 
-        public override bool BlockRightClicked(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
+        public override bool BlockRightClicked(BlockDescriptor descriptor, BlockFace face, IWorld world,
+            IRemoteClient user)
         {
             var adjacent = -Coordinates3D.One; // -1, no adjacent chest
             var self = descriptor.Coordinates;
-            for (int i = 0; i < AdjacentBlocks.Length; i++)
+            for (var i = 0; i < AdjacentBlocks.Length; i++)
             {
                 var test = self + AdjacentBlocks[i];
-                if (world.GetBlockID(test) == ChestBlock.BlockID)
+                if (world.GetBlockID(test) == BlockID)
                 {
                     adjacent = test;
                     var up = world.BlockRepository.GetBlockProvider(world.GetBlockID(test + Coordinates3D.Up));
@@ -135,12 +120,12 @@ namespace TrueCraft.Core.Logic.Blocks
                     break;
                 }
             }
+
             var upSelf = world.BlockRepository.GetBlockProvider(world.GetBlockID(self + Coordinates3D.Up));
             if (upSelf.Opaque && !(upSelf is WallSignBlock))
                 return false; // Obstructed
 
             if (adjacent != -Coordinates3D.One)
-            {
                 // Ensure that chests are always opened in the same arrangement
                 if (adjacent.X < self.X ||
                     adjacent.Z < self.Z)
@@ -149,69 +134,67 @@ namespace TrueCraft.Core.Logic.Blocks
                     adjacent = self;
                     self = _; // Swap
                 }
-            }
 
-            var window = new ChestWindow((InventoryWindow)user.Inventory, adjacent != -Coordinates3D.One);
+            var window = new ChestWindow((InventoryWindow) user.Inventory, adjacent != -Coordinates3D.One);
             // Add items
             var entity = world.GetTileEntity(self);
             if (entity != null)
-            {
-                foreach (var item in (NbtList)entity["Items"])
+                foreach (var item in (NbtList) entity["Items"])
                 {
-                    var slot = ItemStack.FromNbt((NbtCompound)item);
+                    var slot = ItemStack.FromNbt((NbtCompound) item);
                     window.ChestInventory[slot.Index] = slot;
                 }
-            }
+
             // Add adjacent items
             if (adjacent != -Coordinates3D.One)
             {
                 entity = world.GetTileEntity(adjacent);
                 if (entity != null)
-                {
-                    foreach (var item in (NbtList)entity["Items"])
+                    foreach (var item in (NbtList) entity["Items"])
                     {
-                        var slot = ItemStack.FromNbt((NbtCompound)item);
+                        var slot = ItemStack.FromNbt((NbtCompound) item);
                         window.ChestInventory[slot.Index + ChestWindow.DoubleChestSecondaryIndex] = slot;
                     }
-                }
             }
+
             window.WindowChange += (sender, e) =>
+            {
+                var entitySelf = new NbtList("Items", NbtTagType.Compound);
+                var entityAdjacent = new NbtList("Items", NbtTagType.Compound);
+                for (var i = 0; i < window.ChestInventory.Items.Length; i++)
                 {
-                    var entitySelf = new NbtList("Items", NbtTagType.Compound);
-                    var entityAdjacent = new NbtList("Items", NbtTagType.Compound);
-                    for (int i = 0; i < window.ChestInventory.Items.Length; i++)
+                    var item = window.ChestInventory.Items[i];
+                    if (!item.Empty)
                     {
-                        var item = window.ChestInventory.Items[i];
-                        if (!item.Empty)
+                        if (i < ChestWindow.DoubleChestSecondaryIndex)
                         {
-                            if (i < ChestWindow.DoubleChestSecondaryIndex)
-                            {
-                                item.Index = i;
-                                entitySelf.Add(item.ToNbt());
-                            }
-                            else
-                            {
-                                item.Index = i - ChestWindow.DoubleChestSecondaryIndex;
-                                entityAdjacent.Add(item.ToNbt());
-                            }
+                            item.Index = i;
+                            entitySelf.Add(item.ToNbt());
+                        }
+                        else
+                        {
+                            item.Index = i - ChestWindow.DoubleChestSecondaryIndex;
+                            entityAdjacent.Add(item.ToNbt());
                         }
                     }
-                    var newEntity = world.GetTileEntity(self);
+                }
+
+                var newEntity = world.GetTileEntity(self);
+                if (newEntity == null)
+                    newEntity = new NbtCompound(new[] {entitySelf});
+                else
+                    newEntity["Items"] = entitySelf;
+                world.SetTileEntity(self, newEntity);
+                if (adjacent != -Coordinates3D.One)
+                {
+                    newEntity = world.GetTileEntity(adjacent);
                     if (newEntity == null)
-                        newEntity = new NbtCompound(new[] { entitySelf });
+                        newEntity = new NbtCompound(new[] {entityAdjacent});
                     else
-                        newEntity["Items"] = entitySelf;
-                    world.SetTileEntity(self, newEntity);
-                    if (adjacent != -Coordinates3D.One)
-                    {
-                        newEntity = world.GetTileEntity(adjacent);
-                        if (newEntity == null)
-                            newEntity = new NbtCompound(new[] { entityAdjacent });
-                        else
-                            newEntity["Items"] = entityAdjacent;
-                        world.SetTileEntity(adjacent, newEntity);
-                    }
-                };
+                        newEntity["Items"] = entityAdjacent;
+                    world.SetTileEntity(adjacent, newEntity);
+                }
+            };
             user.OpenWindow(window);
             return false;
         }
@@ -222,13 +205,12 @@ namespace TrueCraft.Core.Logic.Blocks
             var entity = world.GetTileEntity(self);
             var manager = user.Server.GetEntityManagerForWorld(world);
             if (entity != null)
-            {
-                foreach (var item in (NbtList)entity["Items"])
+                foreach (var item in (NbtList) entity["Items"])
                 {
-                    var slot = ItemStack.FromNbt((NbtCompound)item);
+                    var slot = ItemStack.FromNbt((NbtCompound) item);
                     manager.SpawnEntity(new ItemEntity(descriptor.Coordinates + new Vector3(0.5), slot));
                 }
-            }
+
             world.SetTileEntity(self, null);
             base.BlockMined(descriptor, face, world, user);
         }

@@ -3,7 +3,7 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Updates the player on changes to or status of the environment.
+    ///     Updates the player on changes to or status of the environment.
     /// </summary>
     public struct EnvironmentStatePacket : IPacket
     {
@@ -14,18 +14,18 @@ namespace TrueCraft.Core.Networking.Packets
             EndRaining = 2
         }
 
-        public byte ID { get { return 0x46; } }
+        public byte ID => 0x46;
 
         public EnvironmentState State;
 
         public void ReadPacket(IMinecraftStream stream)
         {
-            State = (EnvironmentState)stream.ReadInt8();
+            State = (EnvironmentState) stream.ReadInt8();
         }
 
         public void WritePacket(IMinecraftStream stream)
         {
-            stream.WriteInt8((sbyte)State);
+            stream.WriteInt8((sbyte) State);
         }
     }
 }

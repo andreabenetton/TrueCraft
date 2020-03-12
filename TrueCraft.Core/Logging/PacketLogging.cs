@@ -1,5 +1,5 @@
-﻿using TrueCraft.API.Networking;
-using TrueCraft.API.Logging;
+﻿using TrueCraft.API.Logging;
+using TrueCraft.API.Networking;
 
 namespace TrueCraft.Core.Logging
 {

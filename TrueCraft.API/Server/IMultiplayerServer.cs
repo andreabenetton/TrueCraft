@@ -1,25 +1,21 @@
 ﻿using System;
-using TrueCraft.API.Networking;
-using System.Net;
 using System.Collections.Generic;
-using TrueCraft.API.World;
+using System.Net;
 using TrueCraft.API.Logging;
 using TrueCraft.API.Logic;
+using TrueCraft.API.Networking;
+using TrueCraft.API.World;
 
 namespace TrueCraft.API.Server
 {
     /// <summary>
-    /// Called when the given packet comes in from a remote client. Return false to cease communication
-    /// with that client.
+    ///     Called when the given packet comes in from a remote client. Return false to cease communication
+    ///     with that client.
     /// </summary>
     public delegate void PacketHandler(IPacket packet, IRemoteClient client, IMultiplayerServer server);
 
     public interface IMultiplayerServer
     {
-        event EventHandler<ChatMessageEventArgs> ChatMessageReceived;
-        event EventHandler<PlayerJoinedQuitEventArgs> PlayerJoined;
-        event EventHandler<PlayerJoinedQuitEventArgs> PlayerQuit;
-
         IAccessConfiguration AccessConfiguration { get; }
         IPacketReader PacketReader { get; }
         IList<IRemoteClient> Clients { get; }
@@ -31,6 +27,9 @@ namespace TrueCraft.API.Server
         IPEndPoint EndPoint { get; }
         bool BlockUpdatesEnabled { get; set; }
         bool EnableClientLogging { get; set; }
+        event EventHandler<ChatMessageEventArgs> ChatMessageReceived;
+        event EventHandler<PlayerJoinedQuitEventArgs> PlayerJoined;
+        event EventHandler<PlayerJoinedQuitEventArgs> PlayerQuit;
 
         void Start(IPEndPoint endPoint);
         void Stop();

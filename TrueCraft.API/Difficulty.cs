@@ -1,27 +1,27 @@
 ﻿namespace TrueCraft.API
 {
     /// <summary>
-    /// Enumerates the difficulty levels in TrueCraft.
+    ///     Enumerates the difficulty levels in TrueCraft.
     /// </summary>
     public enum Difficulty
     {
         /// <summary>
-        /// Peaceful difficulty.
+        ///     Peaceful difficulty.
         /// </summary>
         Peaceful = 0,
 
         /// <summary>
-        /// Easy difficulty.
+        ///     Easy difficulty.
         /// </summary>
         Easy = 1,
 
         /// <summary>
-        /// Normal difficulty.
+        ///     Normal difficulty.
         /// </summary>
         Normal = 2,
 
         /// <summary>
-        /// Hard difficulty.
+        ///     Hard difficulty.
         /// </summary>
         Hard = 3
     }

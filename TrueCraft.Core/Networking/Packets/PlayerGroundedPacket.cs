@@ -3,12 +3,12 @@
 namespace TrueCraft.Core.Networking.Packets
 {
     /// <summary>
-    /// Sent by clients to update whether or not the player is on the ground.
-    /// Probably best to just ignore this.
+    ///     Sent by clients to update whether or not the player is on the ground.
+    ///     Probably best to just ignore this.
     /// </summary>
     public struct PlayerGroundedPacket : IPacket
     {
-        public byte ID { get { return 0x0A; }}
+        public byte ID => 0x0A;
 
         public bool OnGround;
 

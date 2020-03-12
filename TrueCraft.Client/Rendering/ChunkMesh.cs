@@ -3,24 +3,18 @@
 namespace TrueCraft.Client.Rendering
 {
     /// <summary>
-    /// 
     /// </summary>
     public class ChunkMesh : Mesh
     {
         /// <summary>
-        /// 
-        /// </summary>
-        public ReadOnlyChunk Chunk { get; set; }
-
-        /// <summary>
-        /// 
         /// </summary>
         /// <param name="chunk"></param>
         /// <param name="game"></param>
         /// <param name="vertices"></param>
         /// <param name="indices"></param>
-        public ChunkMesh(ReadOnlyChunk chunk, TrueCraftGame game, VertexPositionNormalColorTexture[] vertices, int[] indices)
-            : base(game, 1, true)
+        public ChunkMesh(ReadOnlyChunk chunk, TrueCraftGame game, VertexPositionNormalColorTexture[] vertices,
+            int[] indices)
+            : base(game)
         {
             Chunk = chunk;
             Vertices = vertices;
@@ -28,24 +22,27 @@ namespace TrueCraft.Client.Rendering
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="chunk"></param>
         /// <param name="game"></param>
         /// <param name="vertices"></param>
         /// <param name="opaqueIndices"></param>
         /// <param name="transparentIndices"></param>
-        public ChunkMesh(ReadOnlyChunk chunk, TrueCraftGame game, VertexPositionNormalColorTexture[] vertices, int[] opaqueIndices, int[] transparentIndices)
-            : base(game, 2, true)
+        public ChunkMesh(ReadOnlyChunk chunk, TrueCraftGame game, VertexPositionNormalColorTexture[] vertices,
+            int[] opaqueIndices, int[] transparentIndices)
+            : base(game, 2)
         {
             Chunk = chunk;
             Vertices = vertices;
             SetSubmesh(0, opaqueIndices);
             SetSubmesh(1, transparentIndices);
         }
-        
+
         /// <summary>
-        /// 
+        /// </summary>
+        public ReadOnlyChunk Chunk { get; set; }
+
+        /// <summary>
         /// </summary>
         /// <param name="vertices"></param>
         /// <returns></returns>
@@ -54,7 +51,7 @@ namespace TrueCraft.Client.Rendering
             return new BoundingBox(
                 new Vector3(Chunk.X * Core.World.Chunk.Width, 0, Chunk.Z * Core.World.Chunk.Depth),
                 new Vector3(Chunk.X * Core.World.Chunk.Width
-                    + Core.World.Chunk.Width, Core.World.Chunk.Height,
+                            + Core.World.Chunk.Width, Core.World.Chunk.Height,
                     Chunk.Z * Core.World.Chunk.Depth + Core.World.Chunk.Depth));
         }
     }

@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.Nbt;
 using TrueCraft.Nbt.Tags;
 
 namespace Test.TrueCraft.Nbt {
-    [TestFixture]
+
     internal class NbtWriterTest {
-        [Test]
+        [Fact]
         public void ValueTest() {
             // write one named tag for every value type, and read it back
             using (var ms = new MemoryStream()) {
                 var writer = new NbtWriter(ms, "root");
-                Assert.AreEqual(ms, writer.BaseStream);
+                Assert.Equal(ms, writer.BaseStream);
                 {
                     writer.WriteByte("byte", 1);
                     writer.WriteShort("short", 2);
@@ -27,9 +27,9 @@ namespace Test.TrueCraft.Nbt {
                     writer.WriteIntArray("intArray", new[] { 20, 21, 22 });
                     writer.WriteString("string", "123");
                 }
-                Assert.IsFalse(writer.IsDone);
+                Assert.False(writer.IsDone);
                 writer.EndCompound();
-                Assert.IsTrue(writer.IsDone);
+                Assert.True(writer.IsDone);
                 writer.Finish();
 
                 ms.Position = 0;
@@ -41,7 +41,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void HugeNbtWriterTest() {
             // Tests writing byte arrays that exceed the max NbtBinaryWriter chunk size
             using (BufferedStream bs = new BufferedStream(Stream.Null)) {
@@ -53,7 +53,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ByteArrayFromStream() {
             var data = new byte[64*1024];
             for (int i = 0; i < data.Length; i++) {
@@ -100,22 +100,22 @@ namespace Test.TrueCraft.Nbt {
                 file.LoadFromStream(ms, NbtCompression.None);
                 CollectionAssert.AreEqual(data, file.RootTag["byteArray1"].ByteArrayValue);
                 CollectionAssert.AreEqual(data, file.RootTag["byteArray2"].ByteArrayValue);
-                Assert.AreEqual(1, file.RootTag["byteArray3"].ByteArrayValue.Length);
-                Assert.AreEqual(data[0], file.RootTag["byteArray3"].ByteArrayValue[0]);
-                Assert.AreEqual(1, file.RootTag["byteArray4"].ByteArrayValue.Length);
-                Assert.AreEqual(data[0], file.RootTag["byteArray4"].ByteArrayValue[0]);
+                Assert.Equal(1, file.RootTag["byteArray3"].ByteArrayValue.Length);
+                Assert.Equal(data[0], file.RootTag["byteArray3"].ByteArrayValue[0]);
+                Assert.Equal(1, file.RootTag["byteArray4"].ByteArrayValue.Length);
+                Assert.Equal(data[0], file.RootTag["byteArray4"].ByteArrayValue[0]);
 
                 CollectionAssert.AreEqual(data, file.RootTag["innerLists"][0].ByteArrayValue);
                 CollectionAssert.AreEqual(data, file.RootTag["innerLists"][1].ByteArrayValue);
-                Assert.AreEqual(1, file.RootTag["innerLists"][2].ByteArrayValue.Length);
-                Assert.AreEqual(data[0], file.RootTag["innerLists"][2].ByteArrayValue[0]);
-                Assert.AreEqual(1, file.RootTag["innerLists"][3].ByteArrayValue.Length);
-                Assert.AreEqual(data[0], file.RootTag["innerLists"][3].ByteArrayValue[0]);
+                Assert.Equal(1, file.RootTag["innerLists"][2].ByteArrayValue.Length);
+                Assert.Equal(data[0], file.RootTag["innerLists"][2].ByteArrayValue[0]);
+                Assert.Equal(1, file.RootTag["innerLists"][3].ByteArrayValue.Length);
+                Assert.Equal(data[0], file.RootTag["innerLists"][3].ByteArrayValue[0]);
             }
         }
 
 
-        [Test]
+        [Fact]
         public void CompoundListTest() {
             // test writing various combinations of compound tags and list tags
             const string testString = "Come on and slam, and welcome to the jam.";
@@ -181,7 +181,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ListTest() {
             // write short (1-element) lists of every possible kind
             using (var ms = new MemoryStream()) {
@@ -239,19 +239,19 @@ namespace Test.TrueCraft.Nbt {
                     writer.EndList();
                 }
                 writer.EndList();
-                Assert.IsFalse(writer.IsDone);
+                Assert.False(writer.IsDone);
                 writer.EndCompound();
-                Assert.IsTrue(writer.IsDone);
+                Assert.True(writer.IsDone);
                 writer.Finish();
 
                 ms.Position = 0;
                 var reader = new NbtReader(ms);
-                Assert.DoesNotThrow(() => reader.ReadAsTag());
+                XAssert.DoesNotThrow(() => reader.ReadAsTag());
             }
         }
 
 
-        [Test]
+        [Fact]
         public void WriteTagTest() {
             using (var ms = new MemoryStream()) {
                 var writer = new NbtWriter(ms, "root");
@@ -260,19 +260,19 @@ namespace Test.TrueCraft.Nbt {
                         writer.WriteTag(tag);
                     }
                     writer.EndCompound();
-                    Assert.IsTrue(writer.IsDone);
+                    Assert.True(writer.IsDone);
                     writer.Finish();
                 }
                 ms.Position = 0;
                 var file = new NbtFile();
                 long bytesRead = file.LoadFromBuffer(ms.ToArray(), 0, (int)ms.Length, NbtCompression.None);
-                Assert.AreEqual(bytesRead, ms.Length);
+                Assert.Equal(bytesRead, ms.Length);
                 TestFiles.AssertValueTest(file);
             }
         }
 
 
-        [Test]
+        [Fact]
         public void ErrorTest() {
             byte[] dummyByteArray = { 1, 2, 3, 4, 5 };
             int[] dummyIntArray = { 1, 2, 3, 4, 5 };
@@ -416,7 +416,7 @@ namespace Test.TrueCraft.Nbt {
 
 
         // Ensure that Unicode strings of arbitrary size and content are written/read properly
-        [Test]
+        [Fact]
         public void ComplexStringsTest() {
             // Use a fixed seed for repeatability of this test
             Random rand = new Random(0);
@@ -456,7 +456,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void MissingNameTest() {
             using (var ms = new MemoryStream()) {
                 NbtWriter writer = new NbtWriter(ms, "test");

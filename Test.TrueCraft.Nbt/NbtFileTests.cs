@@ -1,46 +1,45 @@
 ﻿using System;
 using System.IO;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.Nbt;
 using TrueCraft.Nbt.Tags;
 
 namespace Test.TrueCraft.Nbt {
-    [TestFixture]
-    public class NbtFileTests {
+
+    public class NbtFileTests : IDisposable {
         const string TestDirName = "NbtFileTests";
 
 
-        [SetUp]
-        public void NbtFileTestSetup() {
+        public NbtFileTests() {
             Directory.CreateDirectory(TestDirName);
         }
 
 
         #region Loading Small Nbt Test File
 
-        [Test]
+        [Fact]
         public void TestNbtSmallFileLoadingUncompressed() {
             var file = new NbtFile(TestFiles.Small);
-            Assert.AreEqual(TestFiles.Small, file.FileName);
-            Assert.AreEqual(NbtCompression.None, file.FileCompression);
+            Assert.Equal(TestFiles.Small, file.FileName);
+            Assert.Equal(NbtCompression.None, file.FileCompression);
             TestFiles.AssertNbtSmallFile(file);
         }
 
 
-        [Test]
+        [Fact]
         public void LoadingSmallFileGZip() {
             var file = new NbtFile(TestFiles.SmallGZip);
-            Assert.AreEqual(TestFiles.SmallGZip, file.FileName);
-            Assert.AreEqual(NbtCompression.GZip, file.FileCompression);
+            Assert.Equal(TestFiles.SmallGZip, file.FileName);
+            Assert.Equal(NbtCompression.GZip, file.FileCompression);
             TestFiles.AssertNbtSmallFile(file);
         }
 
 
-        [Test]
+        [Fact]
         public void LoadingSmallFileZLib() {
             var file = new NbtFile(TestFiles.SmallZLib);
-            Assert.AreEqual(TestFiles.SmallZLib, file.FileName);
-            Assert.AreEqual(NbtCompression.ZLib, file.FileCompression);
+            Assert.Equal(TestFiles.SmallZLib, file.FileName);
+            Assert.Equal(NbtCompression.ZLib, file.FileCompression);
             TestFiles.AssertNbtSmallFile(file);
         }
 
@@ -49,34 +48,34 @@ namespace Test.TrueCraft.Nbt {
 
         #region Loading Big Nbt Test File
 
-        [Test]
+        [Fact]
         public void LoadingBigFileUncompressed() {
             var file = new NbtFile();
             long length = file.LoadFromFile(TestFiles.Big);
             TestFiles.AssertNbtBigFile(file);
-            Assert.AreEqual(length, new FileInfo(TestFiles.Big).Length);
+            Assert.Equal(length, new FileInfo(TestFiles.Big).Length);
         }
 
 
-        [Test]
+        [Fact]
         public void LoadingBigFileGZip() {
             var file = new NbtFile();
             long length = file.LoadFromFile(TestFiles.BigGZip);
             TestFiles.AssertNbtBigFile(file);
-            Assert.AreEqual(length, new FileInfo(TestFiles.BigGZip).Length);
+            Assert.Equal(length, new FileInfo(TestFiles.BigGZip).Length);
         }
 
 
-        [Test]
+        [Fact]
         public void LoadingBigFileZLib() {
             var file = new NbtFile();
             long length = file.LoadFromFile(TestFiles.BigZLib);
             TestFiles.AssertNbtBigFile(file);
-            Assert.AreEqual(length, new FileInfo(TestFiles.BigZLib).Length);
+            Assert.Equal(length, new FileInfo(TestFiles.BigZLib).Length);
         }
 
 
-        [Test]
+        [Fact]
         public void LoadingBigFileBuffer() {
             byte[] fileBytes = File.ReadAllBytes(TestFiles.Big);
             var file = new NbtFile();
@@ -86,11 +85,11 @@ namespace Test.TrueCraft.Nbt {
 
             long length = file.LoadFromBuffer(fileBytes, 0, fileBytes.Length, NbtCompression.AutoDetect, null);
             TestFiles.AssertNbtBigFile(file);
-            Assert.AreEqual(length, new FileInfo(TestFiles.Big).Length);
+            Assert.Equal(length, new FileInfo(TestFiles.Big).Length);
         }
 
 
-        [Test]
+        [Fact]
         public void LoadingBigFileStream() {
             byte[] fileBytes = File.ReadAllBytes(TestFiles.Big);
             using (var ms = new MemoryStream(fileBytes)) {
@@ -98,7 +97,7 @@ namespace Test.TrueCraft.Nbt {
                     var file = new NbtFile();
                     long length = file.LoadFromStream(nss, NbtCompression.None, null);
                     TestFiles.AssertNbtBigFile(file);
-                    Assert.AreEqual(length, new FileInfo(TestFiles.Big).Length);
+                    Assert.Equal(length, new FileInfo(TestFiles.Big).Length);
                 }
             }
         }
@@ -106,7 +105,7 @@ namespace Test.TrueCraft.Nbt {
         #endregion
 
 
-        [Test]
+        [Fact]
         public void TestNbtSmallFileSavingUncompressed() {
             NbtFile file = TestFiles.MakeSmallFile();
             string testFileName = Path.Combine(TestDirName, "test.nbt");
@@ -115,7 +114,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void TestNbtSmallFileSavingUncompressedStream() {
             NbtFile file = TestFiles.MakeSmallFile();
             var nbtStream = new MemoryStream();
@@ -128,7 +127,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReloadFile() {
             ReloadFileInternal("bigtest.nbt", NbtCompression.None, true, true);
             ReloadFileInternal("bigtest.nbt.gz", NbtCompression.GZip, true, true);
@@ -139,7 +138,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReloadFileUnbuffered() {
             ReloadFileInternal("bigtest.nbt", NbtCompression.None, true, false);
             ReloadFileInternal("bigtest.nbt.gz", NbtCompression.GZip, true, false);
@@ -160,12 +159,12 @@ namespace Test.TrueCraft.Nbt {
             long bytesWritten = loadedFile.SaveToFile(Path.Combine(TestDirName, fileName), compression);
             long bytesRead = loadedFile.LoadFromFile(Path.Combine(TestDirName, fileName), NbtCompression.AutoDetect,
                                                      null);
-            Assert.AreEqual(bytesWritten, bytesRead);
+            Assert.Equal(bytesWritten, bytesRead);
             TestFiles.AssertNbtBigFile(loadedFile);
         }
 
 
-        [Test]
+        [Fact]
         public void ReloadNonSeekableStream() {
             var loadedFile = new NbtFile(TestFiles.Big);
             using (var ms = new MemoryStream()) {
@@ -177,14 +176,14 @@ namespace Test.TrueCraft.Nbt {
                     Assert.Throws<InvalidDataException>(() => loadedFile.LoadFromStream(nss, NbtCompression.ZLib));
                     ms.Position = 0;
                     long bytesRead = loadedFile.LoadFromStream(nss, NbtCompression.None);
-                    Assert.AreEqual(bytesWritten, bytesRead);
+                    Assert.Equal(bytesWritten, bytesRead);
                     TestFiles.AssertNbtBigFile(loadedFile);
                 }
             }
         }
 
 
-        [Test]
+        [Fact]
         public void LoadFromStream() {
             LoadFromStreamInternal(TestFiles.Big, NbtCompression.None);
             LoadFromStreamInternal(TestFiles.BigGZip, NbtCompression.GZip);
@@ -201,29 +200,29 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void SaveToBuffer() {
             var littleTag = new NbtCompound("Root");
             var testFile = new NbtFile(littleTag);
 
             byte[] buffer1 = testFile.SaveToBuffer(NbtCompression.None);
             var buffer2 = new byte[buffer1.Length];
-            Assert.AreEqual(testFile.SaveToBuffer(buffer2, 0, NbtCompression.None), buffer2.Length);
+            Assert.Equal(testFile.SaveToBuffer(buffer2, 0, NbtCompression.None), buffer2.Length);
             CollectionAssert.AreEqual(buffer1, buffer2);
         }
 
 
-        [Test]
+        [Fact]
         public void PrettyPrint() {
             var loadedFile = new NbtFile(TestFiles.Big);
-            Assert.AreEqual(loadedFile.RootTag.ToString(), loadedFile.ToString());
-            Assert.AreEqual(loadedFile.RootTag.ToString("   "), loadedFile.ToString("   "));
+            Assert.Equal(loadedFile.RootTag.ToString(), loadedFile.ToString());
+            Assert.Equal(loadedFile.RootTag.ToString("   "), loadedFile.ToString("   "));
             Assert.Throws<ArgumentNullException>(() => loadedFile.ToString(null));
             Assert.Throws<ArgumentNullException>(() => NbtTag.DefaultIndentString = null);
         }
 
 
-        [Test]
+        [Fact]
         public void ReadRootTag() {
             Assert.Throws<FileNotFoundException>(() => NbtFile.ReadRootTagName("NonExistentFile"));
 
@@ -236,8 +235,8 @@ namespace Test.TrueCraft.Nbt {
         void ReadRootTagInternal(String fileName, NbtCompression compression) {
             Assert.Throws<ArgumentOutOfRangeException>(() => NbtFile.ReadRootTagName(fileName, compression, true, -1));
 
-            Assert.AreEqual("Level", NbtFile.ReadRootTagName(fileName));
-            Assert.AreEqual("Level", NbtFile.ReadRootTagName(fileName, compression, true, 0));
+            Assert.Equal("Level", NbtFile.ReadRootTagName(fileName));
+            Assert.Equal("Level", NbtFile.ReadRootTagName(fileName, compression, true, 0));
 
             byte[] fileBytes = File.ReadAllBytes(fileName);
             using (var ms = new MemoryStream(fileBytes)) {
@@ -250,27 +249,27 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void GlobalsTest() {
-            Assert.AreEqual(NbtFile.DefaultBufferSize, new NbtFile(new NbtCompound("Foo")).BufferSize);
+            Assert.Equal(NbtFile.DefaultBufferSize, new NbtFile(new NbtCompound("Foo")).BufferSize);
             Assert.Throws<ArgumentOutOfRangeException>(() => NbtFile.DefaultBufferSize = -1);
             NbtFile.DefaultBufferSize = 12345;
-            Assert.AreEqual(12345, NbtFile.DefaultBufferSize);
+            Assert.Equal(12345, NbtFile.DefaultBufferSize);
 
             // Newly-created NbtFiles should use default buffer size
             NbtFile tempFile = new NbtFile(new NbtCompound("Foo"));
-            Assert.AreEqual(NbtFile.DefaultBufferSize, tempFile.BufferSize);
+            Assert.Equal(NbtFile.DefaultBufferSize, tempFile.BufferSize);
             Assert.Throws<ArgumentOutOfRangeException>(() => tempFile.BufferSize = -1);
             tempFile.BufferSize = 54321;
-            Assert.AreEqual(54321, tempFile.BufferSize);
+            Assert.Equal(54321, tempFile.BufferSize);
 
             // Changing default buffer size should not retroactively change already-existing NbtFiles' buffer size.
             NbtFile.DefaultBufferSize = 8192;
-            Assert.AreEqual(54321, tempFile.BufferSize);
+            Assert.Equal(54321, tempFile.BufferSize);
         }
 
 
-        [Test]
+        [Fact]
         public void HugeNbtFileTest() {
             // Tests writing byte arrays that exceed the max NbtBinaryWriter chunk size
             byte[] val = new byte[5*1024*1024];
@@ -284,7 +283,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void RootTagTest() {
             NbtCompound oldRoot = new NbtCompound("defaultRoot");
             NbtFile newFile = new NbtFile(oldRoot);
@@ -294,7 +293,7 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<ArgumentException>(() => newFile.RootTag = new NbtCompound());
 
             // Ensure that the root has not changed
-            Assert.AreSame(oldRoot, newFile.RootTag);
+            Assert.Same(oldRoot, newFile.RootTag);
 
             // Invalidate the root tag, and ensure that expected exception is thrown
             oldRoot.Name = null;
@@ -302,7 +301,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void NullParameterTest() {
             Assert.Throws<ArgumentNullException>(() => new NbtFile((NbtCompound)null));
             Assert.Throws<ArgumentNullException>(() => new NbtFile((string)null));
@@ -326,8 +325,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [TearDown]
-        public void NbtFileTestTearDown() {
+        public void Dispose() {
             if (Directory.Exists(TestDirName)) {
                 foreach (string file in Directory.GetFiles(TestDirName)) {
                     File.Delete(file);

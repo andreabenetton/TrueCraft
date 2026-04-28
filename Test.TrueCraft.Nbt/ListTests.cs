@@ -2,14 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.Nbt;
 using TrueCraft.Nbt.Tags;
 
 namespace Test.TrueCraft.Nbt {
-    [TestFixture]
+
     public sealed class ListTests {
-        [Test]
+        [Fact]
         public void InterfaceImplementation() {
             // prepare our test lists
             var referenceList = new List<NbtTag> {
@@ -27,7 +27,7 @@ namespace Test.TrueCraft.Nbt {
             // check IList<NbtTag> implementation
             IList<NbtTag> iGenericList = originalList;
             CollectionAssert.AreEqual(referenceList, iGenericList);
-            Assert.IsFalse(iGenericList.IsReadOnly);
+            Assert.False(iGenericList.IsReadOnly);
 
             // check IList.Add
             referenceList.Add(testTag);
@@ -35,33 +35,33 @@ namespace Test.TrueCraft.Nbt {
             CollectionAssert.AreEqual(referenceList, iList);
 
             // check IList.IndexOf
-            Assert.AreEqual(referenceList.IndexOf(testTag), iList.IndexOf(testTag));
-            Assert.IsTrue(iList.IndexOf(null) < 0);
+            Assert.Equal(referenceList.IndexOf(testTag), iList.IndexOf(testTag));
+            Assert.True(iList.IndexOf(null) < 0);
 
             // check IList<NbtTag>.IndexOf
-            Assert.AreEqual(referenceList.IndexOf(testTag), iGenericList.IndexOf(testTag));
-            Assert.IsTrue(iGenericList.IndexOf(null) < 0);
+            Assert.Equal(referenceList.IndexOf(testTag), iGenericList.IndexOf(testTag));
+            Assert.True(iGenericList.IndexOf(null) < 0);
 
             // check IList.Contains
-            Assert.IsTrue(iList.Contains(testTag));
-            Assert.IsFalse(iList.Contains(null));
+            Assert.True(iList.Contains(testTag));
+            Assert.False(iList.Contains(null));
 
             // check IList.Remove
             iList.Remove(testTag);
-            Assert.IsFalse(iList.Contains(testTag));
+            Assert.False(iList.Contains(testTag));
 
             // check IList.Insert
             iList.Insert(0, testTag);
-            Assert.AreEqual(0, iList.IndexOf(testTag));
+            Assert.Equal(0, iList.IndexOf(testTag));
 
             // check IList.RemoveAt
             iList.RemoveAt(0);
-            Assert.IsFalse(iList.Contains(testTag));
+            Assert.False(iList.Contains(testTag));
 
             // check misc IList properties
-            Assert.IsFalse(iList.IsFixedSize);
-            Assert.IsFalse(iList.IsReadOnly);
-            Assert.IsFalse(iList.IsSynchronized);
+            Assert.False(iList.IsFixedSize);
+            Assert.False(iList.IsReadOnly);
+            Assert.False(iList.IsSynchronized);
             Assert.NotNull(iList.SyncRoot);
 
             // check IList.CopyTo
@@ -71,18 +71,18 @@ namespace Test.TrueCraft.Nbt {
 
             // check IList.this[int]
             for (int i = 0; i < iList.Count; i++) {
-                Assert.AreEqual(originalList[i], iList[i]);
+                Assert.Equal(originalList[i], iList[i]);
                 iList[i] = new NbtInt(i);
             }
 
             // check IList.Clear
             iList.Clear();
-            Assert.AreEqual(0, iList.Count);
-            Assert.Less(iList.IndexOf(testTag), 0);
+            Assert.Equal(0, iList.Count);
+            Assert.True(iList.IndexOf(testTag) < 0);
         }
 
 
-        [Test]
+        [Fact]
         public void IndexerTest() {
             NbtByte ourTag = new NbtByte(1);
             var secondList = new NbtList {
@@ -94,8 +94,8 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<ArgumentOutOfRangeException>(() => testList[0] = new NbtByte(1));
 
             // Make sure that setting did not affect ListType
-            Assert.AreEqual(NbtTagType.Unknown, testList.ListType);
-            Assert.AreEqual(0, testList.Count);
+            Assert.Equal(NbtTagType.Unknown, testList.ListType);
+            Assert.Equal(0, testList.Count);
             testList.Add(ourTag);
 
             // set a tag to null
@@ -114,11 +114,11 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<ArgumentException>(() => testList[0] = secondList[0]);
 
             // Make sure that none of the failed insertions went through
-            Assert.AreEqual(ourTag, testList[0]);
+            Assert.Equal(ourTag, testList[0]);
         }
 
 
-        [Test]
+        [Fact]
         public void InitializingListFromCollection() {
             // auto-detecting list type
             var test1 = new NbtList("Test1", new NbtTag[] {
@@ -126,16 +126,16 @@ namespace Test.TrueCraft.Nbt {
                 new NbtInt(2),
                 new NbtInt(3)
             });
-            Assert.AreEqual(NbtTagType.Int, test1.ListType);
+            Assert.Equal(NbtTagType.Int, test1.ListType);
 
             // check pre-conditions
             Assert.Throws<ArgumentNullException>(() => new NbtList((NbtTag[])null));
             Assert.Throws<ArgumentNullException>(() => new NbtList(null, null));
-            Assert.DoesNotThrow(() => new NbtList((string)null, NbtTagType.Unknown));
+            XAssert.DoesNotThrow(() => new NbtList((string)null, NbtTagType.Unknown));
             Assert.Throws<ArgumentNullException>(() => new NbtList((NbtTag[])null, NbtTagType.Unknown));
 
             // correct explicitly-given list type
-            Assert.DoesNotThrow(() => new NbtList("Test2", new NbtTag[] {
+            XAssert.DoesNotThrow(() => new NbtList("Test2", new NbtTag[] {
                 new NbtInt(1),
                 new NbtInt(2),
                 new NbtInt(3)
@@ -156,7 +156,7 @@ namespace Test.TrueCraft.Nbt {
             }));
 
             // using AddRange
-            Assert.DoesNotThrow(() => new NbtList().AddRange(new NbtTag[] {
+            XAssert.DoesNotThrow(() => new NbtList().AddRange(new NbtTag[] {
                 new NbtInt(1),
                 new NbtInt(2),
                 new NbtInt(3)
@@ -165,7 +165,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ManipulatingList() {
             var sameTags = new NbtTag[] {
                 new NbtInt(0),
@@ -178,9 +178,9 @@ namespace Test.TrueCraft.Nbt {
             // testing enumerator, indexer, Contains, and IndexOf
             int j = 0;
             foreach (NbtTag tag in list) {
-                Assert.IsTrue(list.Contains(sameTags[j]));
-                Assert.AreEqual(sameTags[j], tag);
-                Assert.AreEqual(j, list.IndexOf(tag));
+                Assert.True(list.Contains(sameTags[j]));
+                Assert.Equal(sameTags[j], tag);
+                Assert.Equal(j, list.IndexOf(tag));
                 j++;
             }
 
@@ -195,13 +195,13 @@ namespace Test.TrueCraft.Nbt {
 
             // testing array contents
             for (int i = 0; i < sameTags.Length; i++) {
-                Assert.AreSame(sameTags[i], list[i]);
-                Assert.AreEqual(i, ((NbtInt)list[i]).Value);
+                Assert.Same(sameTags[i], list[i]);
+                Assert.Equal(i, ((NbtInt)list[i]).Value);
             }
 
             // test removal
-            Assert.IsFalse(list.Remove(new NbtInt(5)));
-            Assert.IsTrue(list.Remove(sameTags[0]));
+            Assert.False(list.Remove(new NbtInt(5)));
+            Assert.True(list.Remove(sameTags[0]));
             Assert.Throws<ArgumentNullException>(() => list.Remove(null));
             list.RemoveAt(0);
             Assert.Throws<ArgumentOutOfRangeException>(() => list.RemoveAt(10));
@@ -209,7 +209,7 @@ namespace Test.TrueCraft.Nbt {
             // Test some failure scenarios for Add:
             // adding a list to itself
             var loopList = new NbtList();
-            Assert.AreEqual(NbtTagType.Unknown, loopList.ListType);
+            Assert.Equal(NbtTagType.Unknown, loopList.ListType);
             Assert.Throws<ArgumentException>(() => loopList.Add(loopList));
 
             // adding same tag to multiple lists
@@ -220,15 +220,15 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<ArgumentNullException>(() => loopList.Add(null));
 
             // make sure that all those failed adds didn't affect the tag
-            Assert.AreEqual(0, loopList.Count);
-            Assert.AreEqual(NbtTagType.Unknown, loopList.ListType);
+            Assert.Equal(0, loopList.Count);
+            Assert.Equal(NbtTagType.Unknown, loopList.ListType);
 
             // try creating a list with invalid tag type
             Assert.Throws<ArgumentOutOfRangeException>(() => new NbtList((NbtTagType)200));
         }
 
 
-        [Test]
+        [Fact]
         public void ChangingListTagType() {
             var list = new NbtList();
 
@@ -238,33 +238,33 @@ namespace Test.TrueCraft.Nbt {
             // failing to add or insert a tag should not change ListType
             Assert.Throws<ArgumentOutOfRangeException>(() => list.Insert(-1, new NbtInt()));
             Assert.Throws<ArgumentException>(() => list.Add(new NbtInt("namedTagWhereUnnamedIsExpected")));
-            Assert.AreEqual(NbtTagType.Unknown, list.ListType);
+            Assert.Equal(NbtTagType.Unknown, list.ListType);
 
             // changing the type of an empty list to "End" is allowed, see https://github.com/fragmer/fNbt/issues/12
-            Assert.DoesNotThrow(() => list.ListType = NbtTagType.End);
-            Assert.AreEqual(list.ListType, NbtTagType.End);
+            XAssert.DoesNotThrow(() => list.ListType = NbtTagType.End);
+            Assert.Equal(list.ListType, NbtTagType.End);
 
             // changing the type of an empty list back to "Unknown" is allowed too!
-            Assert.DoesNotThrow(() => list.ListType = NbtTagType.Unknown);
-            Assert.AreEqual(list.ListType, NbtTagType.Unknown);
+            XAssert.DoesNotThrow(() => list.ListType = NbtTagType.Unknown);
+            Assert.Equal(list.ListType, NbtTagType.Unknown);
 
             // adding the first element should set the tag type
             list.Add(new NbtInt());
-            Assert.AreEqual(list.ListType, NbtTagType.Int);
+            Assert.Equal(list.ListType, NbtTagType.Int);
 
             // setting correct type for a non-empty list
-            Assert.DoesNotThrow(() => list.ListType = NbtTagType.Int);
+            XAssert.DoesNotThrow(() => list.ListType = NbtTagType.Int);
 
             // changing list type to an incorrect type
             Assert.Throws<ArgumentException>(() => list.ListType = NbtTagType.Short);
 
             // after the list is cleared, we should once again be allowed to change its TagType
             list.Clear();
-            Assert.DoesNotThrow(() => list.ListType = NbtTagType.Short);
+            XAssert.DoesNotThrow(() => list.ListType = NbtTagType.Short);
         }
 
 
-        [Test]
+        [Fact]
         public void SerializingWithoutListType() {
             var root = new NbtCompound("root") {
                 new NbtList("list")
@@ -278,7 +278,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void Serializing1() {
             // check the basics of saving/loading
             const NbtTagType expectedListType = NbtTagType.Int;
@@ -298,14 +298,14 @@ namespace Test.TrueCraft.Nbt {
             // test loading
             var readFile = new NbtFile();
             long bytesRead = readFile.LoadFromBuffer(data, 0, data.Length, NbtCompression.None);
-            Assert.AreEqual(bytesRead, data.Length);
+            Assert.Equal(bytesRead, data.Length);
 
             // check contents of loaded file
             Assert.NotNull(readFile.RootTag);
-            Assert.IsInstanceOf<NbtList>(readFile.RootTag["Entities"]);
+            Assert.IsAssignableFrom<NbtList>(readFile.RootTag["Entities"]);
             var readList = (NbtList)readFile.RootTag["Entities"];
-            Assert.AreEqual(writtenList.ListType, readList.ListType);
-            Assert.AreEqual(readList.Count, writtenList.Count);
+            Assert.Equal(writtenList.ListType, readList.ListType);
+            Assert.Equal(readList.Count, writtenList.Count);
 
             // check .ToArray
             CollectionAssert.AreEquivalent(readList, readList.ToArray());
@@ -313,22 +313,22 @@ namespace Test.TrueCraft.Nbt {
 
             // check contents of loaded list
             for (int i = 0; i < elements; i++) {
-                Assert.AreEqual(readList.Get<NbtInt>(i).Value, writtenList.Get<NbtInt>(i).Value);
+                Assert.Equal(readList.Get<NbtInt>(i).Value, writtenList.Get<NbtInt>(i).Value);
             }
         }
 
 
-        [Test]
+        [Fact]
         public void Serializing2() {
             // check saving/loading lists of all possible value types
             var testFile = new NbtFile(TestFiles.MakeListTest());
             byte[] buffer = testFile.SaveToBuffer(NbtCompression.None);
             long bytesRead = testFile.LoadFromBuffer(buffer, 0, buffer.Length, NbtCompression.None);
-            Assert.AreEqual(bytesRead, buffer.Length);
+            Assert.Equal(bytesRead, buffer.Length);
         }
 
 
-        [Test]
+        [Fact]
         public void SerializingEmpty() {
             // check saving/loading lists of all possible value types
             var testFile = new NbtFile(new NbtCompound("root") {
@@ -342,18 +342,18 @@ namespace Test.TrueCraft.Nbt {
             testFile.LoadFromBuffer(buffer, 0, buffer.Length, NbtCompression.None);
 
             NbtList list1 = testFile.RootTag.Get<NbtList>("emptyList");
-            Assert.AreEqual(list1.Count,0);
-            Assert.AreEqual(list1.ListType, NbtTagType.End);
+            Assert.Equal(list1.Count,0);
+            Assert.Equal(list1.ListType, NbtTagType.End);
 
             NbtList list2 = testFile.RootTag.Get<NbtList>("listyList");
-            Assert.AreEqual(list2.Count,1);
-            Assert.AreEqual(list2.ListType, NbtTagType.List);
-            Assert.AreEqual(list2.Get<NbtList>(0).Count, 0);
-            Assert.AreEqual(list2.Get<NbtList>(0).ListType, NbtTagType.End);
+            Assert.Equal(list2.Count,1);
+            Assert.Equal(list2.ListType, NbtTagType.List);
+            Assert.Equal(list2.Get<NbtList>(0).Count, 0);
+            Assert.Equal(list2.Get<NbtList>(0).ListType, NbtTagType.End);
         }
 
 
-        [Test]
+        [Fact]
         public void NestedListAndCompoundTest() {
             byte[] data;
             {
@@ -374,15 +374,15 @@ namespace Test.TrueCraft.Nbt {
             {
                 var file = new NbtFile();
                 long bytesRead = file.LoadFromBuffer(data, 0, data.Length, NbtCompression.None);
-                Assert.AreEqual(bytesRead, data.Length);
-                Assert.AreEqual(1, file.RootTag.Get<NbtList>("OuterList").Count);
-                Assert.AreEqual(null, file.RootTag.Get<NbtList>("OuterList").Get<NbtCompound>(0).Name);
-                Assert.AreEqual(1,
+                Assert.Equal(bytesRead, data.Length);
+                Assert.Equal(1, file.RootTag.Get<NbtList>("OuterList").Count);
+                Assert.Equal(null, file.RootTag.Get<NbtList>("OuterList").Get<NbtCompound>(0).Name);
+                Assert.Equal(1,
                                 file.RootTag.Get<NbtList>("OuterList")
                                     .Get<NbtCompound>(0)
                                     .Get<NbtList>("InnerList")
                                     .Count);
-                Assert.AreEqual(null,
+                Assert.Equal(null,
                                 file.RootTag.Get<NbtList>("OuterList")
                                     .Get<NbtCompound>(0)
                                     .Get<NbtList>("InnerList")
@@ -392,13 +392,13 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void FirstInsertTest() {
             NbtList list = new NbtList();
-            Assert.AreEqual(NbtTagType.Unknown, list.ListType);
+            Assert.Equal(NbtTagType.Unknown, list.ListType);
             list.Insert(0, new NbtInt(123));
             // Inserting a tag should set ListType
-            Assert.AreEqual(NbtTagType.Int, list.ListType);
+            Assert.Equal(NbtTagType.Int, list.ListType);
         }
     }
 }

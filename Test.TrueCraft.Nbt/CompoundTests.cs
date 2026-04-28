@@ -2,13 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.Nbt.Tags;
 
 namespace Test.TrueCraft.Nbt {
-    [TestFixture]
+
     public sealed class CompoundTests {
-        [Test]
+        [Fact]
         public void InitializingCompoundFromCollectionTest() {
             NbtTag[] allNamed = {
                 new NbtShort("allNamed1", 1),
@@ -39,7 +39,7 @@ namespace Test.TrueCraft.Nbt {
 
             // proper initialization
             NbtCompound allNamedTest = null;
-            Assert.DoesNotThrow(() => allNamedTest = new NbtCompound("allNamedTest", allNamed));
+            XAssert.DoesNotThrow(() => allNamedTest = new NbtCompound("allNamedTest", allNamed));
             CollectionAssert.AreEquivalent(allNamed, allNamedTest);
 
             // some tags are unnamed, should throw
@@ -53,7 +53,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void GettersAndSetters() {
             // construct a document for us to test.
             var nestedChild = new NbtCompound("NestedChild");
@@ -74,21 +74,21 @@ namespace Test.TrueCraft.Nbt {
             };
 
             // Accessing nested compound tags using indexers
-            Assert.AreEqual(nestedChild, parent["Child"]["NestedChild"]);
-            Assert.AreEqual(nestedChildList, parent["Child"]["NestedChildList"]);
-            Assert.AreEqual(nestedInt, parent["Child"]["NestedChildList"][0]);
+            Assert.Equal(nestedChild, parent["Child"]["NestedChild"]);
+            Assert.Equal(nestedChildList, parent["Child"]["NestedChildList"]);
+            Assert.Equal(nestedInt, parent["Child"]["NestedChildList"][0]);
 
             // Accessing nested compound tags using Get and Get<T>
             Assert.Throws<ArgumentNullException>(() => parent.Get<NbtCompound>(null));
-            Assert.IsNull(parent.Get<NbtCompound>("NonExistingChild"));
-            Assert.AreEqual(nestedChild, parent.Get<NbtCompound>("Child").Get<NbtCompound>("NestedChild"));
-            Assert.AreEqual(nestedChildList, parent.Get<NbtCompound>("Child").Get<NbtList>("NestedChildList"));
-            Assert.AreEqual(nestedInt, parent.Get<NbtCompound>("Child").Get<NbtList>("NestedChildList")[0]);
+            Assert.Null(parent.Get<NbtCompound>("NonExistingChild"));
+            Assert.Equal(nestedChild, parent.Get<NbtCompound>("Child").Get<NbtCompound>("NestedChild"));
+            Assert.Equal(nestedChildList, parent.Get<NbtCompound>("Child").Get<NbtList>("NestedChildList"));
+            Assert.Equal(nestedInt, parent.Get<NbtCompound>("Child").Get<NbtList>("NestedChildList")[0]);
             Assert.Throws<ArgumentNullException>(() => parent.Get(null));
-            Assert.IsNull(parent.Get("NonExistingChild"));
-            Assert.AreEqual(nestedChild, (parent.Get("Child") as NbtCompound)?.Get("NestedChild"));
-            Assert.AreEqual(nestedChildList, (parent.Get("Child") as NbtCompound)?.Get("NestedChildList"));
-            Assert.AreEqual(nestedInt, (parent.Get("Child") as NbtCompound)?.Get("NestedChildList")[0]);
+            Assert.Null(parent.Get("NonExistingChild"));
+            Assert.Equal(nestedChild, (parent.Get("Child") as NbtCompound)?.Get("NestedChild"));
+            Assert.Equal(nestedChildList, (parent.Get("Child") as NbtCompound)?.Get("NestedChildList"));
+            Assert.Equal(nestedInt, (parent.Get("Child") as NbtCompound)?.Get("NestedChildList")[0]);
 
             // Accessing with Get<T> and an invalid given type
             Assert.Throws<InvalidCastException>(() => parent.Get<NbtInt>("Child"));
@@ -96,12 +96,12 @@ namespace Test.TrueCraft.Nbt {
             // Using TryGet and TryGet<T>
             NbtTag dummyTag;
             Assert.Throws<ArgumentNullException>(() => parent.TryGet(null, out dummyTag));
-            Assert.IsFalse(parent.TryGet("NonExistingChild", out dummyTag));
-            Assert.IsTrue(parent.TryGet("Child", out dummyTag));
+            Assert.False(parent.TryGet("NonExistingChild", out dummyTag));
+            Assert.True(parent.TryGet("Child", out dummyTag));
             NbtCompound dummyCompoundTag;
             Assert.Throws<ArgumentNullException>(() => parent.TryGet(null, out dummyCompoundTag));
-            Assert.IsFalse(parent.TryGet("NonExistingChild", out dummyCompoundTag));
-            Assert.IsTrue(parent.TryGet("Child", out dummyCompoundTag));
+            Assert.False(parent.TryGet("NonExistingChild", out dummyCompoundTag));
+            Assert.True(parent.TryGet("Child", out dummyCompoundTag));
 
             // Trying to use integer indexers on non-NbtList tags
             Assert.Throws<InvalidOperationException>(() => parent[0] = nestedInt);
@@ -112,8 +112,8 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<InvalidOperationException>(() => nestedInt["test"] = nestedInt);
 
             // Trying to get a non-existent element by name
-            Assert.IsNull(parent.Get<NbtTag>("NonExistentTag"));
-            Assert.IsNull(parent["NonExistentTag"]);
+            Assert.Null(parent.Get<NbtTag>("NonExistentTag"));
+            Assert.Null(parent["NonExistentTag"]);
 
             // Null indices on NbtCompound
             Assert.Throws<ArgumentNullException>(() => parent.Get<NbtTag>(null));
@@ -147,7 +147,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void Renaming() {
             var tagToRename = new NbtInt("DifferentName", 1);
             var compound = new NbtCompound {
@@ -170,7 +170,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void AddingAndRemoving() {
             var foo = new NbtInt("Foo");
             var test = new NbtCompound {
@@ -193,50 +193,50 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<ArgumentException>(() => test.Add(test));
 
             // contains existing name/object
-            Assert.IsTrue(test.Contains("Foo"));
-            Assert.IsTrue(test.Contains(foo));
+            Assert.True(test.Contains("Foo"));
+            Assert.True(test.Contains(foo));
             Assert.Throws<ArgumentNullException>(() => test.Contains((string)null));
             Assert.Throws<ArgumentNullException>(() => test.Contains((NbtTag)null));
 
             // contains non-existent name
-            Assert.IsFalse(test.Contains("Bar"));
+            Assert.False(test.Contains("Bar"));
 
             // contains existing name / different object
-            Assert.IsFalse(test.Contains(new NbtInt("Foo")));
+            Assert.False(test.Contains(new NbtInt("Foo")));
 
             // removing non-existent name
             Assert.Throws<ArgumentNullException>(() => test.Remove((string)null));
-            Assert.IsFalse(test.Remove("Bar"));
+            Assert.False(test.Remove("Bar"));
 
             // removing existing name
-            Assert.IsTrue(test.Remove("Foo"));
+            Assert.True(test.Remove("Foo"));
 
             // removing non-existent name
-            Assert.IsFalse(test.Remove("Foo"));
+            Assert.False(test.Remove("Foo"));
 
             // re-adding object
             test.Add(foo);
 
             // removing existing object
             Assert.Throws<ArgumentNullException>(() => test.Remove((NbtTag)null));
-            Assert.IsTrue(test.Remove(foo));
-            Assert.IsFalse(test.Remove(foo));
+            Assert.True(test.Remove(foo));
+            Assert.False(test.Remove(foo));
 
             // clearing an empty NbtCompound
-            Assert.AreEqual(0, test.Count);
+            Assert.Equal(0, test.Count);
             test.Clear();
 
             // re-adding after clearing
             test.Add(foo);
-            Assert.AreEqual(1, test.Count);
+            Assert.Equal(1, test.Count);
 
             // clearing a non-empty NbtCompound
             test.Clear();
-            Assert.AreEqual(0, test.Count);
+            Assert.Equal(0, test.Count);
         }
 
 
-        [Test]
+        [Fact]
         public void UtilityMethods() {
             NbtTag[] testThings = {
                 new NbtShort("Name1", 1),
@@ -253,7 +253,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void InterfaceImplementations() {
             NbtTag[] tagList = {
                 new NbtByte("First", 1), new NbtShort("Second", 2), new NbtInt("Third", 3),
@@ -271,10 +271,10 @@ namespace Test.TrueCraft.Nbt {
 
             // test ICollection and ICollection<NbtTag> boilerplate properties
             ICollection<NbtTag> iGenCollection = comp;
-            Assert.IsFalse(iGenCollection.IsReadOnly);
+            Assert.False(iGenCollection.IsReadOnly);
             ICollection iCollection = comp;
             Assert.NotNull(iCollection.SyncRoot);
-            Assert.IsFalse(iCollection.IsSynchronized);
+            Assert.False(iCollection.IsSynchronized);
 
             // test CopyTo()
             var tags = new NbtTag[iCollection.Count];

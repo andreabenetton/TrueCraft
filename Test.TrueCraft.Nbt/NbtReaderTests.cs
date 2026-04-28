@@ -1,81 +1,81 @@
 ﻿using System;
 using System.IO;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.Nbt;
 using TrueCraft.Nbt.Tags;
 
 namespace Test.TrueCraft.Nbt {
-    [TestFixture]
+
     public sealed class NbtReaderTests {
-        [Test]
+        [Fact]
         public void PrintBigFileUncompressed() {
             using (FileStream fs = File.OpenRead("TestFiles/bigtest.nbt")) {
                 var reader = new NbtReader(fs);
-                Assert.AreEqual(fs, reader.BaseStream);
+                Assert.Equal(fs, reader.BaseStream);
                 while (reader.ReadToFollowing()) {
                     Console.Write("@" + reader.TagStartOffset + " ");
                     Console.WriteLine(reader.ToString());
                 }
-                Assert.AreEqual("Level", reader.RootName);
+                Assert.Equal("Level", reader.RootName);
             }
         }
 
 
-        [Test]
+        [Fact]
         public void PrintBigFileUncompressedNoSkip() {
             using (FileStream fs = File.OpenRead("TestFiles/bigtest.nbt")) {
                 var reader = new NbtReader(fs) {
                     SkipEndTags = false
                 };
-                Assert.AreEqual(fs, reader.BaseStream);
+                Assert.Equal(fs, reader.BaseStream);
                 while (reader.ReadToFollowing()) {
                     Console.Write("@" + reader.TagStartOffset + " ");
                     Console.WriteLine(reader.ToString());
                 }
-                Assert.AreEqual("Level", reader.RootName);
+                Assert.Equal("Level", reader.RootName);
             }
         }
 
 
-        [Test]
+        [Fact]
         public void CacheTagValuesTest() {
             byte[] testData = new NbtFile(TestFiles.MakeValueTest()).SaveToBuffer(NbtCompression.None);
             var reader = new NbtReader(new MemoryStream(testData));
-            Assert.IsFalse(reader.CacheTagValues);
+            Assert.False(reader.CacheTagValues);
             reader.CacheTagValues = true;
-            Assert.IsTrue(reader.ReadToFollowing()); // root
+            Assert.True(reader.ReadToFollowing()); // root
 
-            Assert.IsTrue(reader.ReadToFollowing()); // byte
-            Assert.AreEqual(1, reader.ReadValue());
-            Assert.AreEqual(1, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // short
-            Assert.AreEqual(2, reader.ReadValue());
-            Assert.AreEqual(2, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // int
-            Assert.AreEqual(3, reader.ReadValue());
-            Assert.AreEqual(3, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // long
-            Assert.AreEqual(4L, reader.ReadValue());
-            Assert.AreEqual(4L, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // float
-            Assert.AreEqual(5f, reader.ReadValue());
-            Assert.AreEqual(5f, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // double
-            Assert.AreEqual(6d, reader.ReadValue());
-            Assert.AreEqual(6d, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // byteArray
+            Assert.True(reader.ReadToFollowing()); // byte
+            Assert.Equal(1, reader.ReadValue());
+            Assert.Equal(1, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // short
+            Assert.Equal(2, reader.ReadValue());
+            Assert.Equal(2, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // int
+            Assert.Equal(3, reader.ReadValue());
+            Assert.Equal(3, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // long
+            Assert.Equal(4L, reader.ReadValue());
+            Assert.Equal(4L, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // float
+            Assert.Equal(5f, reader.ReadValue());
+            Assert.Equal(5f, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // double
+            Assert.Equal(6d, reader.ReadValue());
+            Assert.Equal(6d, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // byteArray
             CollectionAssert.AreEqual(new byte[] { 10, 11, 12 }, (byte[])reader.ReadValue());
             CollectionAssert.AreEqual(new byte[] { 10, 11, 12 }, (byte[])reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // intArray
+            Assert.True(reader.ReadToFollowing()); // intArray
             CollectionAssert.AreEqual(new[] { 20, 21, 22 }, (int[])reader.ReadValue());
             CollectionAssert.AreEqual(new[] { 20, 21, 22 }, (int[])reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // string
-            Assert.AreEqual("123", reader.ReadValue());
-            Assert.AreEqual("123", reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // string
+            Assert.Equal("123", reader.ReadValue());
+            Assert.Equal("123", reader.ReadValue());
         }
 
 
-        [Test]
+        [Fact]
         public void NestedListTest() {
             var root = new NbtCompound("root") {
                 new NbtList("OuterList") {
@@ -100,195 +100,195 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void PropertiesTest() {
             var reader = new NbtReader(TestFiles.MakeReaderTest());
-            Assert.AreEqual(0, reader.Depth);
-            Assert.AreEqual(0, reader.TagsRead);
+            Assert.Equal(0, reader.Depth);
+            Assert.Equal(0, reader.TagsRead);
 
-            Assert.IsTrue(reader.ReadToFollowing());
-            Assert.AreEqual("root", reader.TagName);
-            Assert.AreEqual(NbtTagType.Compound, reader.TagType);
-            Assert.AreEqual(NbtTagType.Unknown, reader.ListType);
-            Assert.IsFalse(reader.HasValue);
-            Assert.IsTrue(reader.IsCompound);
-            Assert.IsFalse(reader.IsList);
-            Assert.IsFalse(reader.IsListElement);
-            Assert.IsFalse(reader.HasLength);
-            Assert.AreEqual(0, reader.ListIndex);
-            Assert.AreEqual(1, reader.Depth);
-            Assert.AreEqual(null, reader.ParentName);
-            Assert.AreEqual(NbtTagType.Unknown, reader.ParentTagType);
-            Assert.AreEqual(0, reader.ParentTagLength);
-            Assert.AreEqual(0, reader.TagLength);
-            Assert.AreEqual(1, reader.TagsRead);
+            Assert.True(reader.ReadToFollowing());
+            Assert.Equal("root", reader.TagName);
+            Assert.Equal(NbtTagType.Compound, reader.TagType);
+            Assert.Equal(NbtTagType.Unknown, reader.ListType);
+            Assert.False(reader.HasValue);
+            Assert.True(reader.IsCompound);
+            Assert.False(reader.IsList);
+            Assert.False(reader.IsListElement);
+            Assert.False(reader.HasLength);
+            Assert.Equal(0, reader.ListIndex);
+            Assert.Equal(1, reader.Depth);
+            Assert.Equal(null, reader.ParentName);
+            Assert.Equal(NbtTagType.Unknown, reader.ParentTagType);
+            Assert.Equal(0, reader.ParentTagLength);
+            Assert.Equal(0, reader.TagLength);
+            Assert.Equal(1, reader.TagsRead);
 
-            Assert.IsTrue(reader.ReadToFollowing());
-            Assert.AreEqual("first", reader.TagName);
-            Assert.AreEqual(NbtTagType.Int, reader.TagType);
-            Assert.AreEqual(NbtTagType.Unknown, reader.ListType);
-            Assert.IsTrue(reader.HasValue);
-            Assert.IsFalse(reader.IsCompound);
-            Assert.IsFalse(reader.IsList);
-            Assert.IsFalse(reader.IsListElement);
-            Assert.IsFalse(reader.HasLength);
-            Assert.AreEqual(0, reader.ListIndex);
-            Assert.AreEqual(2, reader.Depth);
-            Assert.AreEqual("root", reader.ParentName);
-            Assert.AreEqual(NbtTagType.Compound, reader.ParentTagType);
-            Assert.AreEqual(0, reader.ParentTagLength);
-            Assert.AreEqual(0, reader.TagLength);
-            Assert.AreEqual(2, reader.TagsRead);
+            Assert.True(reader.ReadToFollowing());
+            Assert.Equal("first", reader.TagName);
+            Assert.Equal(NbtTagType.Int, reader.TagType);
+            Assert.Equal(NbtTagType.Unknown, reader.ListType);
+            Assert.True(reader.HasValue);
+            Assert.False(reader.IsCompound);
+            Assert.False(reader.IsList);
+            Assert.False(reader.IsListElement);
+            Assert.False(reader.HasLength);
+            Assert.Equal(0, reader.ListIndex);
+            Assert.Equal(2, reader.Depth);
+            Assert.Equal("root", reader.ParentName);
+            Assert.Equal(NbtTagType.Compound, reader.ParentTagType);
+            Assert.Equal(0, reader.ParentTagLength);
+            Assert.Equal(0, reader.TagLength);
+            Assert.Equal(2, reader.TagsRead);
 
-            Assert.IsTrue(reader.ReadToFollowing("fourth-list"));
-            Assert.AreEqual("fourth-list", reader.TagName);
-            Assert.AreEqual(NbtTagType.List, reader.TagType);
-            Assert.AreEqual(NbtTagType.List, reader.ListType);
-            Assert.IsFalse(reader.HasValue);
-            Assert.IsFalse(reader.IsCompound);
-            Assert.IsTrue(reader.IsList);
-            Assert.IsFalse(reader.IsListElement);
-            Assert.IsTrue(reader.HasLength);
-            Assert.AreEqual(0, reader.ListIndex);
-            Assert.AreEqual(2, reader.Depth);
-            Assert.AreEqual("root", reader.ParentName);
-            Assert.AreEqual(NbtTagType.Compound, reader.ParentTagType);
-            Assert.AreEqual(0, reader.ParentTagLength);
-            Assert.AreEqual(3, reader.TagLength);
-            Assert.AreEqual(8, reader.TagsRead);
+            Assert.True(reader.ReadToFollowing("fourth-list"));
+            Assert.Equal("fourth-list", reader.TagName);
+            Assert.Equal(NbtTagType.List, reader.TagType);
+            Assert.Equal(NbtTagType.List, reader.ListType);
+            Assert.False(reader.HasValue);
+            Assert.False(reader.IsCompound);
+            Assert.True(reader.IsList);
+            Assert.False(reader.IsListElement);
+            Assert.True(reader.HasLength);
+            Assert.Equal(0, reader.ListIndex);
+            Assert.Equal(2, reader.Depth);
+            Assert.Equal("root", reader.ParentName);
+            Assert.Equal(NbtTagType.Compound, reader.ParentTagType);
+            Assert.Equal(0, reader.ParentTagLength);
+            Assert.Equal(3, reader.TagLength);
+            Assert.Equal(8, reader.TagsRead);
 
-            Assert.IsTrue(reader.ReadToFollowing()); // first list element, itself a list
-            Assert.AreEqual(null, reader.TagName);
-            Assert.AreEqual(NbtTagType.List, reader.TagType);
-            Assert.AreEqual(NbtTagType.Compound, reader.ListType);
-            Assert.IsFalse(reader.HasValue);
-            Assert.IsFalse(reader.IsCompound);
-            Assert.IsTrue(reader.IsList);
-            Assert.IsTrue(reader.IsListElement);
-            Assert.IsTrue(reader.HasLength);
-            Assert.AreEqual(0, reader.ListIndex);
-            Assert.AreEqual(3, reader.Depth);
-            Assert.AreEqual("fourth-list", reader.ParentName);
-            Assert.AreEqual(NbtTagType.List, reader.ParentTagType);
-            Assert.AreEqual(3, reader.ParentTagLength);
-            Assert.AreEqual(1, reader.TagLength);
-            Assert.AreEqual(9, reader.TagsRead);
+            Assert.True(reader.ReadToFollowing()); // first list element, itself a list
+            Assert.Equal(null, reader.TagName);
+            Assert.Equal(NbtTagType.List, reader.TagType);
+            Assert.Equal(NbtTagType.Compound, reader.ListType);
+            Assert.False(reader.HasValue);
+            Assert.False(reader.IsCompound);
+            Assert.True(reader.IsList);
+            Assert.True(reader.IsListElement);
+            Assert.True(reader.HasLength);
+            Assert.Equal(0, reader.ListIndex);
+            Assert.Equal(3, reader.Depth);
+            Assert.Equal("fourth-list", reader.ParentName);
+            Assert.Equal(NbtTagType.List, reader.ParentTagType);
+            Assert.Equal(3, reader.ParentTagLength);
+            Assert.Equal(1, reader.TagLength);
+            Assert.Equal(9, reader.TagsRead);
 
-            Assert.IsTrue(reader.ReadToFollowing()); // first nested list element, compound
-            Assert.AreEqual(null, reader.TagName);
-            Assert.AreEqual(NbtTagType.Compound, reader.TagType);
-            Assert.AreEqual(NbtTagType.Unknown, reader.ListType);
-            Assert.IsFalse(reader.HasValue);
-            Assert.IsTrue(reader.IsCompound);
-            Assert.IsFalse(reader.IsList);
-            Assert.IsTrue(reader.IsListElement);
-            Assert.IsFalse(reader.HasLength);
-            Assert.AreEqual(0, reader.ListIndex);
-            Assert.AreEqual(4, reader.Depth);
-            Assert.AreEqual(null, reader.ParentName);
-            Assert.AreEqual(NbtTagType.List, reader.ParentTagType);
-            Assert.AreEqual(1, reader.ParentTagLength);
-            Assert.AreEqual(0, reader.TagLength);
-            Assert.AreEqual(10, reader.TagsRead);
+            Assert.True(reader.ReadToFollowing()); // first nested list element, compound
+            Assert.Equal(null, reader.TagName);
+            Assert.Equal(NbtTagType.Compound, reader.TagType);
+            Assert.Equal(NbtTagType.Unknown, reader.ListType);
+            Assert.False(reader.HasValue);
+            Assert.True(reader.IsCompound);
+            Assert.False(reader.IsList);
+            Assert.True(reader.IsListElement);
+            Assert.False(reader.HasLength);
+            Assert.Equal(0, reader.ListIndex);
+            Assert.Equal(4, reader.Depth);
+            Assert.Equal(null, reader.ParentName);
+            Assert.Equal(NbtTagType.List, reader.ParentTagType);
+            Assert.Equal(1, reader.ParentTagLength);
+            Assert.Equal(0, reader.TagLength);
+            Assert.Equal(10, reader.TagsRead);
 
-            Assert.IsTrue(reader.ReadToFollowing("fifth"));
-            Assert.AreEqual("fifth", reader.TagName);
-            Assert.AreEqual(NbtTagType.Int, reader.TagType);
-            Assert.AreEqual(NbtTagType.Unknown, reader.ListType);
-            Assert.IsTrue(reader.HasValue);
-            Assert.IsFalse(reader.IsCompound);
-            Assert.IsFalse(reader.IsList);
-            Assert.IsFalse(reader.IsListElement);
-            Assert.IsFalse(reader.HasLength);
-            Assert.AreEqual(0, reader.ListIndex);
-            Assert.AreEqual(2, reader.Depth);
-            Assert.AreEqual("root", reader.ParentName);
-            Assert.AreEqual(NbtTagType.Compound, reader.ParentTagType);
-            Assert.AreEqual(0, reader.ParentTagLength);
-            Assert.AreEqual(0, reader.TagLength);
-            Assert.AreEqual(18, reader.TagsRead);
+            Assert.True(reader.ReadToFollowing("fifth"));
+            Assert.Equal("fifth", reader.TagName);
+            Assert.Equal(NbtTagType.Int, reader.TagType);
+            Assert.Equal(NbtTagType.Unknown, reader.ListType);
+            Assert.True(reader.HasValue);
+            Assert.False(reader.IsCompound);
+            Assert.False(reader.IsList);
+            Assert.False(reader.IsListElement);
+            Assert.False(reader.HasLength);
+            Assert.Equal(0, reader.ListIndex);
+            Assert.Equal(2, reader.Depth);
+            Assert.Equal("root", reader.ParentName);
+            Assert.Equal(NbtTagType.Compound, reader.ParentTagType);
+            Assert.Equal(0, reader.ParentTagLength);
+            Assert.Equal(0, reader.TagLength);
+            Assert.Equal(18, reader.TagsRead);
 
-            Assert.IsTrue(reader.ReadToFollowing());
-            Assert.AreEqual("hugeArray", reader.TagName);
-            Assert.AreEqual(NbtTagType.ByteArray, reader.TagType);
-            Assert.AreEqual(NbtTagType.Unknown, reader.ListType);
-            Assert.IsTrue(reader.HasValue);
-            Assert.IsFalse(reader.IsCompound);
-            Assert.IsFalse(reader.IsList);
-            Assert.IsFalse(reader.IsListElement);
-            Assert.IsTrue(reader.HasLength);
-            Assert.AreEqual(0, reader.ListIndex);
-            Assert.AreEqual(2, reader.Depth);
-            Assert.AreEqual("root", reader.ParentName);
-            Assert.AreEqual(NbtTagType.Compound, reader.ParentTagType);
-            Assert.AreEqual(0, reader.ParentTagLength);
-            Assert.AreEqual(1024*1024, reader.TagLength);
-            Assert.AreEqual(19, reader.TagsRead);
+            Assert.True(reader.ReadToFollowing());
+            Assert.Equal("hugeArray", reader.TagName);
+            Assert.Equal(NbtTagType.ByteArray, reader.TagType);
+            Assert.Equal(NbtTagType.Unknown, reader.ListType);
+            Assert.True(reader.HasValue);
+            Assert.False(reader.IsCompound);
+            Assert.False(reader.IsList);
+            Assert.False(reader.IsListElement);
+            Assert.True(reader.HasLength);
+            Assert.Equal(0, reader.ListIndex);
+            Assert.Equal(2, reader.Depth);
+            Assert.Equal("root", reader.ParentName);
+            Assert.Equal(NbtTagType.Compound, reader.ParentTagType);
+            Assert.Equal(0, reader.ParentTagLength);
+            Assert.Equal(1024*1024, reader.TagLength);
+            Assert.Equal(19, reader.TagsRead);
         }
 
 
-        [Test]
+        [Fact]
         public void ReadToSiblingTest() {
             var reader = new NbtReader(TestFiles.MakeReaderTest());
-            Assert.IsTrue(reader.ReadToFollowing());
-            Assert.AreEqual("root", reader.TagName);
-            Assert.IsTrue(reader.ReadToFollowing());
-            Assert.AreEqual("first", reader.TagName);
-            Assert.IsTrue(reader.ReadToNextSibling("third-comp"));
-            Assert.AreEqual("third-comp", reader.TagName);
-            Assert.IsTrue(reader.ReadToNextSibling());
-            Assert.AreEqual("fourth-list", reader.TagName);
-            Assert.IsTrue(reader.ReadToNextSibling());
-            Assert.AreEqual("fifth", reader.TagName);
-            Assert.IsTrue(reader.ReadToNextSibling());
-            Assert.AreEqual("hugeArray", reader.TagName);
-            Assert.IsFalse(reader.ReadToNextSibling());
+            Assert.True(reader.ReadToFollowing());
+            Assert.Equal("root", reader.TagName);
+            Assert.True(reader.ReadToFollowing());
+            Assert.Equal("first", reader.TagName);
+            Assert.True(reader.ReadToNextSibling("third-comp"));
+            Assert.Equal("third-comp", reader.TagName);
+            Assert.True(reader.ReadToNextSibling());
+            Assert.Equal("fourth-list", reader.TagName);
+            Assert.True(reader.ReadToNextSibling());
+            Assert.Equal("fifth", reader.TagName);
+            Assert.True(reader.ReadToNextSibling());
+            Assert.Equal("hugeArray", reader.TagName);
+            Assert.False(reader.ReadToNextSibling());
             // Test twice, since we hit different paths through the code
-            Assert.IsFalse(reader.ReadToNextSibling());
+            Assert.False(reader.ReadToNextSibling());
         }
 
 
-        [Test]
+        [Fact]
         public void ReadToSiblingTest2() {
             var reader = new NbtReader(TestFiles.MakeReaderTest());
-            Assert.IsTrue(reader.ReadToFollowing("inComp1"));
+            Assert.True(reader.ReadToFollowing("inComp1"));
             // Expect all siblings to be read while we search for a non-existent one
-            Assert.IsFalse(reader.ReadToNextSibling("no such tag"));
+            Assert.False(reader.ReadToNextSibling("no such tag"));
             // Expect to pop out of "third-comp" by now
-            Assert.AreEqual("fourth-list", reader.TagName);
+            Assert.Equal("fourth-list", reader.TagName);
         }
 
 
-        [Test]
+        [Fact]
         public void ReadToFollowingNotFound() {
             var reader = new NbtReader(TestFiles.MakeReaderTest());
-            Assert.IsTrue(reader.ReadToFollowing()); // at "root"
-            Assert.IsFalse(reader.ReadToFollowing("no such tag"));
-            Assert.IsFalse(reader.ReadToFollowing("not this one either"));
-            Assert.IsTrue(reader.IsAtStreamEnd);
+            Assert.True(reader.ReadToFollowing()); // at "root"
+            Assert.False(reader.ReadToFollowing("no such tag"));
+            Assert.False(reader.ReadToFollowing("not this one either"));
+            Assert.True(reader.IsAtStreamEnd);
         }
 
 
-        [Test]
+        [Fact]
         public void ReadToDescendantTest() {
             var reader = new NbtReader(TestFiles.MakeReaderTest());
-            Assert.IsTrue(reader.ReadToDescendant("third-comp"));
-            Assert.AreEqual("third-comp", reader.TagName);
-            Assert.IsTrue(reader.ReadToDescendant("inComp2"));
-            Assert.AreEqual("inComp2", reader.TagName);
-            Assert.IsFalse(reader.ReadToDescendant("derp"));
-            Assert.AreEqual("inComp3", reader.TagName);
+            Assert.True(reader.ReadToDescendant("third-comp"));
+            Assert.Equal("third-comp", reader.TagName);
+            Assert.True(reader.ReadToDescendant("inComp2"));
+            Assert.Equal("inComp2", reader.TagName);
+            Assert.False(reader.ReadToDescendant("derp"));
+            Assert.Equal("inComp3", reader.TagName);
             reader.ReadToFollowing(); // at fourth-list
-            Assert.IsTrue(reader.ReadToDescendant("inList2"));
-            Assert.AreEqual("inList2", reader.TagName);
+            Assert.True(reader.ReadToDescendant("inList2"));
+            Assert.Equal("inList2", reader.TagName);
 
             // Ensure ReadToDescendant returns false when at end-of-stream
             while (reader.ReadToFollowing()) {}
-            Assert.IsFalse(reader.ReadToDescendant("*"));
+            Assert.False(reader.ReadToDescendant("*"));
         }
 
 
-        [Test]
+        [Fact]
         public void SkipTest() {
             var reader = new NbtReader(TestFiles.MakeReaderTest());
             reader.ReadToFollowing(); // at root
@@ -296,16 +296,16 @@ namespace Test.TrueCraft.Nbt {
             reader.ReadToFollowing(); // at second
             reader.ReadToFollowing(); // at third-comp
             reader.ReadToFollowing(); // at inComp1
-            Assert.AreEqual("inComp1", reader.TagName);
-            Assert.AreEqual(2, reader.Skip());
-            Assert.AreEqual("fourth-list", reader.TagName);
-            Assert.AreEqual(11, reader.Skip());
-            Assert.IsFalse(reader.ReadToFollowing());
-            Assert.AreEqual(0, reader.Skip());
+            Assert.Equal("inComp1", reader.TagName);
+            Assert.Equal(2, reader.Skip());
+            Assert.Equal("fourth-list", reader.TagName);
+            Assert.Equal(11, reader.Skip());
+            Assert.False(reader.ReadToFollowing());
+            Assert.Equal(0, reader.Skip());
         }
 
 
-        [Test]
+        [Fact]
         public void ReadAsTagTest1() {
             // read various lists/compounds as tags
             var reader = new NbtReader(TestFiles.MakeReaderTest());
@@ -317,7 +317,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReadAsTagTest2() {
             // read the whole thing as one tag
             byte[] testData = new NbtFile(TestFiles.MakeValueTest()).SaveToBuffer(NbtCompression.None);
@@ -337,7 +337,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReadAsTagTest3() {
             // read values as tags
             byte[] testData = new NbtFile(TestFiles.MakeValueTest()).SaveToBuffer(NbtCompression.None);
@@ -356,7 +356,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReadAsTagTest4() {
             // read a bunch of lists as tags
             byte[] testData = new NbtFile(TestFiles.MakeListTest()).SaveToBuffer(NbtCompression.None);
@@ -381,7 +381,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReadListAsArray() {
             NbtCompound intList = TestFiles.MakeListTest();
 
@@ -438,7 +438,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReadListAsArrayRecast() {
             NbtCompound intList = TestFiles.MakeListTest();
 
@@ -457,31 +457,31 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReadValueTest() {
             byte[] testData = new NbtFile(TestFiles.MakeValueTest()).SaveToBuffer(NbtCompression.None);
             var reader = new NbtReader(new MemoryStream(testData));
 
-            Assert.IsTrue(reader.ReadToFollowing()); // root
+            Assert.True(reader.ReadToFollowing()); // root
 
-            Assert.IsTrue(reader.ReadToFollowing()); // byte
-            Assert.AreEqual(1, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // short
-            Assert.AreEqual(2, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // int
-            Assert.AreEqual(3, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // long
-            Assert.AreEqual(4L, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // float
-            Assert.AreEqual(5f, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // double
-            Assert.AreEqual(6d, reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // byteArray
+            Assert.True(reader.ReadToFollowing()); // byte
+            Assert.Equal(1, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // short
+            Assert.Equal(2, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // int
+            Assert.Equal(3, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // long
+            Assert.Equal(4L, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // float
+            Assert.Equal(5f, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // double
+            Assert.Equal(6d, reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // byteArray
             CollectionAssert.AreEqual(new byte[] { 10, 11, 12 }, (byte[])reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // intArray
+            Assert.True(reader.ReadToFollowing()); // intArray
             CollectionAssert.AreEqual(new[] { 20, 21, 22 }, (int[])reader.ReadValue());
-            Assert.IsTrue(reader.ReadToFollowing()); // string
-            Assert.AreEqual("123", reader.ReadValue());
+            Assert.True(reader.ReadToFollowing()); // string
+            Assert.Equal("123", reader.ReadValue());
 
             // Skip to the very end and make sure that we can't read any more values
             reader.ReadToFollowing();
@@ -489,35 +489,35 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void ReadValueAsTest() {
             byte[] testData = new NbtFile(TestFiles.MakeValueTest()).SaveToBuffer(NbtCompression.None);
             var reader = new NbtReader(new MemoryStream(testData));
 
-            Assert.IsTrue(reader.ReadToFollowing()); // root
+            Assert.True(reader.ReadToFollowing()); // root
 
-            Assert.IsTrue(reader.ReadToFollowing()); // byte
-            Assert.AreEqual(1, reader.ReadValueAs<byte>());
-            Assert.IsTrue(reader.ReadToFollowing()); // short
-            Assert.AreEqual(2, reader.ReadValueAs<short>());
-            Assert.IsTrue(reader.ReadToFollowing()); // int
-            Assert.AreEqual(3, reader.ReadValueAs<int>());
-            Assert.IsTrue(reader.ReadToFollowing()); // long
-            Assert.AreEqual(4L, reader.ReadValueAs<long>());
-            Assert.IsTrue(reader.ReadToFollowing()); // float
-            Assert.AreEqual(5f, reader.ReadValueAs<float>());
-            Assert.IsTrue(reader.ReadToFollowing()); // double
-            Assert.AreEqual(6d, reader.ReadValueAs<double>());
-            Assert.IsTrue(reader.ReadToFollowing()); // byteArray
+            Assert.True(reader.ReadToFollowing()); // byte
+            Assert.Equal(1, reader.ReadValueAs<byte>());
+            Assert.True(reader.ReadToFollowing()); // short
+            Assert.Equal(2, reader.ReadValueAs<short>());
+            Assert.True(reader.ReadToFollowing()); // int
+            Assert.Equal(3, reader.ReadValueAs<int>());
+            Assert.True(reader.ReadToFollowing()); // long
+            Assert.Equal(4L, reader.ReadValueAs<long>());
+            Assert.True(reader.ReadToFollowing()); // float
+            Assert.Equal(5f, reader.ReadValueAs<float>());
+            Assert.True(reader.ReadToFollowing()); // double
+            Assert.Equal(6d, reader.ReadValueAs<double>());
+            Assert.True(reader.ReadToFollowing()); // byteArray
             CollectionAssert.AreEqual(new byte[] { 10, 11, 12 }, reader.ReadValueAs<byte[]>());
-            Assert.IsTrue(reader.ReadToFollowing()); // intArray
+            Assert.True(reader.ReadToFollowing()); // intArray
             CollectionAssert.AreEqual(new[] { 20, 21, 22 }, reader.ReadValueAs<int[]>());
-            Assert.IsTrue(reader.ReadToFollowing()); // string
-            Assert.AreEqual("123", reader.ReadValueAs<string>());
+            Assert.True(reader.ReadToFollowing()); // string
+            Assert.Equal("123", reader.ReadValueAs<string>());
         }
 
 
-        [Test]
+        [Fact]
         public void ErrorTest() {
             var root = new NbtCompound("root");
             byte[] testData = new NbtFile(root).SaveToBuffer(NbtCompression.None);
@@ -539,8 +539,8 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<NbtFormatException>(() => reader.ReadToFollowing());
 
             // make sure we've properly entered the error state
-            Assert.IsTrue(reader.IsInErrorState);
-            Assert.IsFalse(reader.HasName);
+            Assert.True(reader.IsInErrorState);
+            Assert.False(reader.HasName);
             Assert.Throws<InvalidReaderStateException>(() => reader.ReadToFollowing());
             Assert.Throws<InvalidReaderStateException>(() => reader.ReadListAsArray<int>());
             Assert.Throws<InvalidReaderStateException>(() => reader.ReadToNextSibling());
@@ -550,7 +550,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void NonSeekableStreamSkip1() {
             byte[] fileBytes = File.ReadAllBytes("TestFiles/bigtest.nbt");
             using (var ms = new MemoryStream(fileBytes)) {
@@ -563,7 +563,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void NonSeekableStreamSkip2() {
             using (var ms = TestFiles.MakeReaderTest()) {
                 using (var nss = new NonSeekableStream(ms)) {
@@ -575,7 +575,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void CorruptFileRead() {
             byte[] emptyFile = new byte[0];
             Assert.Throws<EndOfStreamException>(() => TryReadBadFile(emptyFile));
@@ -654,7 +654,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void PartialReadTest() {
             // read the whole thing as one tag, one byte at a time
             TestFiles.AssertValueTest(PartialReadTestInternal(new NbtFile(TestFiles.MakeValueTest())));
@@ -663,7 +663,7 @@ namespace Test.TrueCraft.Nbt {
         }
         
 
-        [Test]
+        [Fact]
         public void PartialBatchReadTest() {
             // read the whole thing as one tag, in batches of 4 bytes
             // Verifies fix for https://github.com/fragmer/fNbt/issues/26
@@ -673,7 +673,7 @@ namespace Test.TrueCraft.Nbt {
         }
 
 
-        [Test]
+        [Fact]
         public void EndTagTest() {
             using (MemoryStream ms = new MemoryStream()) {
                 var root = new NbtCompound("root") {
@@ -684,24 +684,24 @@ namespace Test.TrueCraft.Nbt {
 
                 NbtReader reader = new NbtReader(ms) { SkipEndTags = false };
                 reader.ReadToDescendant("test");
-                Assert.AreEqual(NbtTagType.Int, reader.TagType);
-                Assert.IsTrue(reader.ReadToNextSibling());
+                Assert.Equal(NbtTagType.Int, reader.TagType);
+                Assert.True(reader.ReadToNextSibling());
 
                 // should be at root's End tag now
-                Assert.AreEqual(NbtTagType.End, reader.TagType);
-                Assert.IsFalse(reader.IsInErrorState);
-                Assert.IsFalse(reader.IsAtStreamEnd);
-                Assert.IsFalse(reader.IsCompound);
-                Assert.IsFalse(reader.IsList);
-                Assert.IsFalse(reader.IsListElement);
-                Assert.IsFalse(reader.HasValue);
-                Assert.IsFalse(reader.HasName);
-                Assert.IsFalse(reader.HasLength);
+                Assert.Equal(NbtTagType.End, reader.TagType);
+                Assert.False(reader.IsInErrorState);
+                Assert.False(reader.IsAtStreamEnd);
+                Assert.False(reader.IsCompound);
+                Assert.False(reader.IsList);
+                Assert.False(reader.IsListElement);
+                Assert.False(reader.HasValue);
+                Assert.False(reader.HasName);
+                Assert.False(reader.HasLength);
                 Assert.Throws<InvalidOperationException>(() => reader.ReadAsTag()); // Cannot create NbtTag from TAG_END
 
                 // We done now
-                Assert.IsFalse(reader.ReadToFollowing());
-                Assert.IsTrue(reader.IsAtStreamEnd);
+                Assert.False(reader.ReadToFollowing());
+                Assert.True(reader.IsAtStreamEnd);
             }
         }
 
@@ -720,7 +720,7 @@ namespace Test.TrueCraft.Nbt {
                 try {
                     while (reader.ReadToFollowing()) {}
                 } catch (Exception) {
-                    Assert.IsTrue(reader.IsInErrorState);
+                    Assert.True(reader.IsInErrorState);
                     throw;
                 }
             }

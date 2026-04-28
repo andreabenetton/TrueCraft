@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.API;
 using TrueCraft.Core.Lighting;
 using TrueCraft.Core.Logic;
@@ -10,10 +10,10 @@ using TrueCraft.Core.World;
 
 namespace Test.TrueCraft.Core.Lighting
 {
-    [TestFixture]
+
     public class WorldLighterTest
     {
-        [Test]
+        [Fact]
         public void TestBasicLighting()
         {
             var repository = new BlockRepository();
@@ -45,15 +45,15 @@ namespace Test.TrueCraft.Core.Lighting
                         var coords = new Coordinates3D(x, y, z);
                         var sky = world.GetSkyLight(coords);
                         if (y < 4)
-                            Assert.AreEqual(0, sky, coords.ToString());
+                            Assert.Equal(0, sky, coords.ToString());
                         else
-                            Assert.AreEqual(15, sky, coords.ToString());
+                            Assert.Equal(15, sky, coords.ToString());
                     }
                 }
             }
         }
 
-        [Test]
+        [Fact]
         public void TestShortPropegation()
         {
             var repository = new BlockRepository();
@@ -80,16 +80,16 @@ namespace Test.TrueCraft.Core.Lighting
             }
 
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 3, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 3, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 3, 5)));
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 2, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 2, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 2, 5)));
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 1, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 1, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 1, 5)));
             Console.WriteLine("Testing {0}", new Coordinates3D(4, 1, 5));
-            Assert.AreEqual(14, world.GetSkyLight(new Coordinates3D(4, 1, 5)));
+            Assert.Equal(14, world.GetSkyLight(new Coordinates3D(4, 1, 5)));
         }
 
-        [Test]
+        [Fact]
         public void TestFarPropegation()
         {
             var repository = new BlockRepository();
@@ -124,22 +124,22 @@ namespace Test.TrueCraft.Core.Lighting
             }
 
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 3, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 3, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 3, 5)));
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 2, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 2, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 2, 5)));
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 1, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 1, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 1, 5)));
 
             byte expected = 15;
             for (int x = 5; x >= 0; x--)
             {
                 Console.WriteLine("Testing {0}", new Coordinates3D(x, 1, 5));
-                Assert.AreEqual(expected, world.GetSkyLight(new Coordinates3D(x, 1, 5)));
+                Assert.Equal(expected, world.GetSkyLight(new Coordinates3D(x, 1, 5)));
                 expected--;
             }
         }
 
-        [Test]
+        [Fact]
         public void TestFarPropegationx2()
         {
             var repository = new BlockRepository();
@@ -204,31 +204,31 @@ namespace Test.TrueCraft.Core.Lighting
             }
 
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 3, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 3, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 3, 5)));
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 2, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 2, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 2, 5)));
             Console.WriteLine("Testing {0}", new Coordinates3D(5, 1, 5));
-            Assert.AreEqual(15, world.GetSkyLight(new Coordinates3D(5, 1, 5)));
+            Assert.Equal(15, world.GetSkyLight(new Coordinates3D(5, 1, 5)));
 
             byte expected = 15;
             for (int x = 5; x >= 0; x--)
             {
                 Console.WriteLine("Testing {0}", new Coordinates3D(x, 2, 5));
-                Assert.AreEqual(expected, world.GetSkyLight(new Coordinates3D(x, 2, 5)));
+                Assert.Equal(expected, world.GetSkyLight(new Coordinates3D(x, 2, 5)));
                 expected--;
             }
             expected = 15;
             for (int x = 5; x >= 0; x--)
             {
                 Console.WriteLine("Testing {0}", new Coordinates3D(x, 1, 5));
-                Assert.AreEqual(expected, world.GetSkyLight(new Coordinates3D(x, 1, 5)));
+                Assert.Equal(expected, world.GetSkyLight(new Coordinates3D(x, 1, 5)));
                 expected--;
             }
 
             Console.WriteLine("{0}ms", watch.ElapsedMilliseconds);
         }
 
-        [Test]
+        [Fact]
         public void TestLeavesAndEtc()
         {
             var repository = new BlockRepository();
@@ -307,7 +307,7 @@ namespace Test.TrueCraft.Core.Lighting
                     ex = expected[i];
                 else
                     ex = 0;
-                Assert.AreEqual(ex, world.GetSkyLight(new Coordinates3D(5, y, 5)));
+                Assert.Equal(ex, world.GetSkyLight(new Coordinates3D(5, y, 5)));
             }
         }
     }

@@ -1,19 +1,18 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.API;
 using TrueCraft.Core.World;
 
 namespace Test.TrueCraft.Core.World
 {
-    [TestFixture]
+
     public class RegionTest
     {
         public Region Region { get; set; }
 
-        [OneTimeSetUp]
-        public void SetUp()
+        public RegionTest()
         {
             var world = new global::TrueCraft.Core.World.World();
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -21,29 +20,29 @@ namespace Test.TrueCraft.Core.World
                 Path.Combine(assemblyDir, "Files", "r.0.0.mca"));
         }
 
-        [Test]
+        [Fact]
         public void TestGetChunk()
         {
             var chunk = Region.GetChunk(Coordinates2D.Zero);
-            Assert.AreEqual(Coordinates2D.Zero, chunk.Coordinates);
-            Assert.Throws(typeof(ArgumentException), () =>
+            Assert.Equal(Coordinates2D.Zero, chunk.Coordinates);
+            Assert.Throws<ArgumentException>(() =>
                 Region.GetChunk(new Coordinates2D(31, 31)));
         }
 
-        [Test]
+        [Fact]
         public void TestUnloadChunk()
         {
             var chunk = Region.GetChunk(Coordinates2D.Zero);
-            Assert.AreEqual(Coordinates2D.Zero, chunk.Coordinates);
-            Assert.IsTrue(Region.Chunks.ContainsKey(Coordinates2D.Zero));
+            Assert.Equal(Coordinates2D.Zero, chunk.Coordinates);
+            Assert.True(Region.Chunks.ContainsKey(Coordinates2D.Zero));
             Region.UnloadChunk(Coordinates2D.Zero);
-            Assert.IsFalse(Region.Chunks.ContainsKey(Coordinates2D.Zero));
+            Assert.False(Region.Chunks.ContainsKey(Coordinates2D.Zero));
         }
 
-        [Test]
+        [Fact]
         public void TestGetRegionFileName()
         {
-            Assert.AreEqual("r.0.0.mca", Region.GetRegionFileName(Region.Position));
+            Assert.Equal("r.0.0.mca", Region.GetRegionFileName(Region.Position));
         }
     }
 }

@@ -1,26 +1,26 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 using TrueCraft.API;
 using TrueCraft.Core;
 
 namespace Test.TrueCraft.Core
 {
-    [TestFixture]
+
     public class MathHelperTest
     {
-        [Test]
+        [Fact]
         public void TestCreateRotationByte()
         {
             byte a = (byte)MathHelper.CreateRotationByte(0);
             byte b = (byte)MathHelper.CreateRotationByte(180);
             byte c = (byte)MathHelper.CreateRotationByte(359);
             byte d = (byte)MathHelper.CreateRotationByte(360);
-            Assert.AreEqual(0, a);
-            Assert.AreEqual(128, b);
-            Assert.AreEqual(255, c);
-            Assert.AreEqual(0, d);
+            Assert.Equal(0, a);
+            Assert.Equal(128, b);
+            Assert.Equal(255, c);
+            Assert.Equal(0, d);
         }
 
-        [Test]
+        [Fact]
         public void TestGetCollisionPoint()
         {
             var inputs = new[]
@@ -52,7 +52,7 @@ namespace Test.TrueCraft.Core
             };
             for (int i = 0; i < expected.Length; i++)
             {
-                Assert.AreEqual(expected[i], results[i]);
+                Assert.Equal(expected[i], results[i]);
             }
         }
     }

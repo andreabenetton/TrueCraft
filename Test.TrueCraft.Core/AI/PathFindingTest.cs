@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.Core.AI;
@@ -8,7 +8,7 @@ using TrueCraft.Core.TerrainGen;
 
 namespace Test.TrueCraft.Core.AI
 {
-    [TestFixture]
+
     public class PathFindingTest
     {
         private void DrawGrid(PathResult path, IWorld world)
@@ -33,7 +33,7 @@ namespace Test.TrueCraft.Core.AI
             }
         }
 
-        [Test]
+        [Fact]
         public void TestAStarLinearPath()
         {
             var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
@@ -57,10 +57,10 @@ namespace Test.TrueCraft.Core.AI
                 new Coordinates3D(5, 4, 0)
             };
             for (int i = 0; i < path.Waypoints.Count; i++)
-                Assert.AreEqual(expected[i], path.Waypoints[i]);
+                Assert.Equal(expected[i], path.Waypoints[i]);
         }
 
-        [Test]
+        [Fact]
         public void TestAStarDiagonalPath()
         {
             var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
@@ -76,11 +76,11 @@ namespace Test.TrueCraft.Core.AI
             Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
             // Just test the start and end, the exact results need to be eyeballed
-            Assert.AreEqual(start, path.Waypoints[0]);
-            Assert.AreEqual(end, path.Waypoints[path.Waypoints.Count - 1]);
+            Assert.Equal(start, path.Waypoints[0]);
+            Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
         }
 
-        [Test]
+        [Fact]
         public void TestAStarObstacle()
         {
             var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
@@ -97,12 +97,12 @@ namespace Test.TrueCraft.Core.AI
             Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
             // Just test the start and end, the exact results need to be eyeballed
-            Assert.AreEqual(start, path.Waypoints[0]);
-            Assert.AreEqual(end, path.Waypoints[path.Waypoints.Count - 1]);
-            Assert.IsFalse(path.Waypoints.Contains(new Coordinates3D(3, 4, 0)));
+            Assert.Equal(start, path.Waypoints[0]);
+            Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
+            Assert.False(path.Waypoints.Contains(new Coordinates3D(3, 4, 0)));
         }
 
-        [Test]
+        [Fact]
         public void TestAStarImpossible()
         {
             var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
@@ -121,10 +121,10 @@ namespace Test.TrueCraft.Core.AI
             watch.Stop();
             Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
-            Assert.IsNull(path);
+            Assert.Null(path);
         }
 
-        [Test]
+        [Fact]
         public void TestAStarExitRoom()
         {
             var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
@@ -150,11 +150,11 @@ namespace Test.TrueCraft.Core.AI
             Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
             // Just test the start and end, the exact results need to be eyeballed
-            Assert.AreEqual(start, path.Waypoints[0]);
-            Assert.AreEqual(end, path.Waypoints[path.Waypoints.Count - 1]);
+            Assert.Equal(start, path.Waypoints[0]);
+            Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
         }
 
-        [Test]
+        [Fact]
         public void TestAStarAvoidRoom()
         {
             var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
@@ -180,8 +180,8 @@ namespace Test.TrueCraft.Core.AI
             Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
             // Just test the start and end, the exact results need to be eyeballed
-            Assert.AreEqual(start, path.Waypoints[0]);
-            Assert.AreEqual(end, path.Waypoints[path.Waypoints.Count - 1]);
+            Assert.Equal(start, path.Waypoints[0]);
+            Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
         }
     }
 }

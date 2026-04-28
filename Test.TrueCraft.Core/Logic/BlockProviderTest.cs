@@ -1,6 +1,6 @@
 ﻿using Moq;
 using Moq.Protected;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.API;
 using TrueCraft.API.Entities;
 using TrueCraft.API.Logic;
@@ -13,7 +13,7 @@ using TrueCraft.Core.TerrainGen;
 
 namespace Test.TrueCraft.Core.Logic
 {
-    [TestFixture]
+
     public class BlockProviderTest
     {
         public Mock<IWorld> World { get; set; }
@@ -22,8 +22,7 @@ namespace Test.TrueCraft.Core.Logic
         public Mock<IRemoteClient> User { get; set; }
         public Mock<IBlockRepository> BlockRepository { get; set; }
 
-        [OneTimeSetUp]
-        public void SetUp()
+        public BlockProviderTest()
         {
             World = new Mock<IWorld>();
             Server = new Mock<IMultiplayerServer>();
@@ -54,7 +53,7 @@ namespace Test.TrueCraft.Core.Logic
             User.Invocations.Clear();
         }
 
-        [Test]
+        [Fact]
         public void TestBlockMined()
         {
             ResetMocks();
@@ -76,7 +75,7 @@ namespace Test.TrueCraft.Core.Logic
             World.Verify(w => w.SetBlockID(Coordinates3D.Zero, 0));
         }
 
-        [Test]
+        [Fact]
         public void TestSupport()
         {
             // We need an actual world for this
@@ -103,7 +102,7 @@ namespace Test.TrueCraft.Core.Logic
             world.SetBlockID(Coordinates3D.Zero, 3);
 
             blockProvider.Object.BlockUpdate(updated, source, Server.Object, world);
-            Assert.AreEqual(0, world.GetBlockID(Coordinates3D.OneY));
+            Assert.Equal(0, world.GetBlockID(Coordinates3D.OneY));
             EntityManager.Verify(m => m.SpawnEntity(It.Is<ItemEntity>(e => e.Item.ID == 2)));
         }
     }

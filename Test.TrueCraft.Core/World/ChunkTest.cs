@@ -1,46 +1,46 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 using TrueCraft.API;
 using TrueCraft.Core.Logic.Blocks;
 using TrueCraft.Core.World;
 
 namespace Test.TrueCraft.Core.World
 {
-    [TestFixture]
+
     public class ChunkTest
     {
-        [Test]
+        [Fact]
         public void TestGetBlockID()
         {
             var chunk = new Chunk();
             chunk.SetBlockID(Coordinates3D.Zero, 12);
-            Assert.AreEqual(12, chunk.GetBlockID(Coordinates3D.Zero));
+            Assert.Equal(12, chunk.GetBlockID(Coordinates3D.Zero));
         }
 
-        [Test]
+        [Fact]
         public void TestGetBlockLight()
         {
             var chunk = new Chunk();
             chunk.SetBlockLight(Coordinates3D.Zero, 5);
-            Assert.AreEqual(5, chunk.GetBlockLight(Coordinates3D.Zero));
+            Assert.Equal(5, chunk.GetBlockLight(Coordinates3D.Zero));
         }
 
-        [Test]
+        [Fact]
         public void TestGetSkyLight()
         {
             var chunk = new Chunk();
             chunk.SetSkyLight(Coordinates3D.Zero, 5);
-            Assert.AreEqual(5, chunk.GetSkyLight(Coordinates3D.Zero));
+            Assert.Equal(5, chunk.GetSkyLight(Coordinates3D.Zero));
         }
 
-        [Test]
+        [Fact]
         public void TestGetMetadata()
         {
             var chunk = new Chunk();
             chunk.SetMetadata(Coordinates3D.Zero, 5);
-            Assert.AreEqual(5, chunk.GetMetadata(Coordinates3D.Zero));
+            Assert.Equal(5, chunk.GetMetadata(Coordinates3D.Zero));
         }
 
-        [Test]
+        [Fact]
         public void TestHeightMap()
         {
             var chunk = new Chunk();
@@ -48,13 +48,13 @@ namespace Test.TrueCraft.Core.World
             for (int z = 0; z < Chunk.Width; ++z)
                 chunk.SetBlockID(new Coordinates3D(x, 20, z), StoneBlock.BlockID);
             chunk.UpdateHeightMap();
-            Assert.AreEqual(20, chunk.GetHeight(0, 0));
-            Assert.AreEqual(20, chunk.GetHeight(1, 0));
+            Assert.Equal(20, chunk.GetHeight(0, 0));
+            Assert.Equal(20, chunk.GetHeight(1, 0));
             chunk.SetBlockID(new Coordinates3D(1, 80, 0), 1);
-            Assert.AreEqual(80, chunk.GetHeight(1, 0));
+            Assert.Equal(80, chunk.GetHeight(1, 0));
         }
 
-        [Test]
+        [Fact]
         public void TestConsistency()
         {
             var chunk = new Chunk();
@@ -76,10 +76,10 @@ namespace Test.TrueCraft.Core.World
             for (int z = 0; z < Chunk.Depth; z++)
             {
                 var coords = new Coordinates3D(x, y, z);
-                Assert.AreEqual(val, chunk.GetBlockID(coords));
-                Assert.AreEqual((byte)(val % 16), chunk.GetMetadata(coords));
-                Assert.AreEqual((byte)(val % 16), chunk.GetBlockLight(coords));
-                Assert.AreEqual((byte)(val % 16), chunk.GetSkyLight(coords));
+                Assert.Equal(val, chunk.GetBlockID(coords));
+                Assert.Equal((byte)(val % 16), chunk.GetMetadata(coords));
+                Assert.Equal((byte)(val % 16), chunk.GetBlockLight(coords));
+                Assert.Equal((byte)(val % 16), chunk.GetSkyLight(coords));
                 val++;
             }
         }

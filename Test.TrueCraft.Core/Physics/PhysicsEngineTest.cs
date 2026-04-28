@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using TrueCraft.API;
 using TrueCraft.API.Entities;
 using TrueCraft.API.Physics;
@@ -10,7 +10,7 @@ using TrueCraft.Core.TerrainGen;
 
 namespace Test.TrueCraft.Core.Physics
 {
-    [TestFixture]
+
     public class PhysicsEngineTest
     {
         private class TestEntity : IAABBEntity
@@ -68,7 +68,7 @@ namespace Test.TrueCraft.Core.Physics
             return repository;
         }
 
-        [Test]
+        [Fact]
         public void TestGravity()
         {
             var repository = GetBlockRepository();
@@ -83,14 +83,14 @@ namespace Test.TrueCraft.Core.Physics
             // Test
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(99, entity.Position.Y);
+            Assert.Equal(99, entity.Position.Y);
 
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(97, entity.Position.Y);
+            Assert.Equal(97, entity.Position.Y);
         }
 
-        [Test]
+        [Fact]
         public void TestDrag()
         {
             var repository = GetBlockRepository();
@@ -106,10 +106,10 @@ namespace Test.TrueCraft.Core.Physics
             // Test
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(99, entity.Position.Y);
+            Assert.Equal(99, entity.Position.Y);
         }
 
-        [Test]
+        [Fact]
         public void TestTerrainCollision()
         {
             var repository = GetBlockRepository();
@@ -124,14 +124,14 @@ namespace Test.TrueCraft.Core.Physics
             // Test
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(4, entity.Position.Y);
+            Assert.Equal(4, entity.Position.Y);
 
             physics.Update(TimeSpan.FromSeconds(5));
 
-            Assert.AreEqual(4, entity.Position.Y);
+            Assert.Equal(4, entity.Position.Y);
         }
 
-        [Test]
+        [Fact]
         public void TestExtremeTerrainCollision()
         {
             var repository = GetBlockRepository();
@@ -145,10 +145,10 @@ namespace Test.TrueCraft.Core.Physics
             // Test
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(4, entity.Position.Y);
+            Assert.Equal(4, entity.Position.Y);
         }
 
-        [Test]
+        [Fact]
         public void TestAdjacentFall()
         {
             // Tests an entity that falls alongside a wall
@@ -168,11 +168,11 @@ namespace Test.TrueCraft.Core.Physics
             // Test
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(9, entity.Position.Y);
-            Assert.IsFalse(entity.CollisionOccured);
+            Assert.Equal(9, entity.Position.Y);
+            Assert.False(entity.CollisionOccured);
         }
 
-        [Test]
+        [Fact]
         public void TestCollisionPoint()
         {
             var repository = GetBlockRepository();
@@ -189,10 +189,10 @@ namespace Test.TrueCraft.Core.Physics
             // Test
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(new Vector3(0, 4, 0), entity.CollisionPoint);
+            Assert.Equal(new Vector3(0, 4, 0), entity.CollisionPoint);
         }
 
-        [Test]
+        [Fact]
         public void TestHorizontalCollision()
         {
             var repository = GetBlockRepository();
@@ -209,11 +209,11 @@ namespace Test.TrueCraft.Core.Physics
             // Test
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(0, entity.Position.X);
-            Assert.AreEqual(0, entity.Velocity.X);
+            Assert.Equal(0, entity.Position.X);
+            Assert.Equal(0, entity.Velocity.X);
         }
 
-        [Test]
+        [Fact]
         public void TestCornerCollision()
         {
             var repository = GetBlockRepository();
@@ -230,10 +230,10 @@ namespace Test.TrueCraft.Core.Physics
             // Test
             physics.Update(TimeSpan.FromSeconds(1));
 
-            Assert.AreEqual(-1, entity.Position.X);
-            Assert.AreEqual(-1, entity.Position.Z);
-            Assert.AreEqual(0, entity.Velocity.X);
-            Assert.AreEqual(0, entity.Velocity.Z);
+            Assert.Equal(-1, entity.Position.X);
+            Assert.Equal(-1, entity.Position.Z);
+            Assert.Equal(0, entity.Velocity.X);
+            Assert.Equal(0, entity.Velocity.Z);
         }
     }
 }

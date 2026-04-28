@@ -7,10 +7,10 @@ using TrueCraft.API.World;
 using TrueCraft.API.Entities;
 using TrueCraft.API;
 using System.Collections.Generic;
+using System.IO.Compression;
 using System.Linq;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.Core.World;
-using Ionic.Zlib;
 using TrueCraft.API.Windows;
 using TrueCraft.Core.Windows;
 using System.Threading.Tasks;
@@ -536,10 +536,8 @@ namespace TrueCraft
             byte[] result;
             using (var ms = new MemoryStream())
             {
-                using (var deflate = new ZlibStream(new MemoryStream(chunk.Data),
-                    CompressionMode.Compress,
-                    CompressionLevel.BestSpeed))
-                    deflate.CopyTo(ms);
+                using (var deflate = new ZLibStream(ms, CompressionLevel.Fastest, leaveOpen: true))
+                    deflate.Write(chunk.Data, 0, chunk.Data.Length);
                 result = ms.ToArray();
             }
             Profiler.Done();

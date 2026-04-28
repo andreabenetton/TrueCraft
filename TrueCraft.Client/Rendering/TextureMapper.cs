@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Ionic.Zip;
+using System.IO.Compression;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Utilities.Png;
 using TrueCraft.Core;
@@ -102,12 +102,12 @@ namespace TrueCraft.Client.Rendering
             // they're unimportant as we can just use default textures.
             try
             {
-                var archive = new ZipFile(Path.Combine(Paths.TexturePacks, texturePack.Name));
+                using var archive = ZipFile.OpenRead(Path.Combine(Paths.TexturePacks, texturePack.Name));
                 foreach (var entry in archive.Entries)
                 {
-                    var key = entry.FileName;
+                    var key = entry.FullName;
                     if (Path.GetExtension(key) == ".png")
-                        using (var stream = entry.OpenReader())
+                        using (var stream = entry.Open())
                         {
                             try
                             {

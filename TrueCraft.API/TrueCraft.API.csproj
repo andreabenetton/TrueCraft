@@ -1,134 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{FEE55B54-91B0-4325-A2C3-D576C0B7A81F}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TrueCraft.API</RootNamespace>
     <AssemblyName>TrueCraft.API</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Configuration.cs" />
-    <Compile Include="Coordinates3D.cs" />
-    <Compile Include="ChatFormat.cs" />
-    <Compile Include="IAccessConfiguration.cs" />
-    <Compile Include="Networking\IPacketSegmentProcessor.cs" />
-    <Compile Include="PlantSpecies.cs" />
-    <Compile Include="OreTypes.cs" />
-    <Compile Include="ToolMaterial.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Networking\IPacket.cs" />
-    <Compile Include="Networking\IPacketReader.cs" />
-    <Compile Include="Networking\IMinecraftStream.cs" />
-    <Compile Include="GameMode.cs" />
-    <Compile Include="Difficulty.cs" />
-    <Compile Include="Dimension.cs" />
-    <Compile Include="BoundingBox.cs" />
-    <Compile Include="Coordinates2D.cs" />
-    <Compile Include="ItemStack.cs" />
-    <Compile Include="MetadataByte.cs" />
-    <Compile Include="MetadataDictionary.cs" />
-    <Compile Include="MetadataEntry.cs" />
-    <Compile Include="MetadataFloat.cs" />
-    <Compile Include="MetadataInt.cs" />
-    <Compile Include="MetadataShort.cs" />
-    <Compile Include="MetadataSlot.cs" />
-    <Compile Include="MetadataString.cs" />
-    <Compile Include="Ray.cs" />
-    <Compile Include="Server\ICommand.cs" />
-    <Compile Include="Server\ICommandManager.cs" />
-    <Compile Include="Size.cs" />
-    <Compile Include="TreeSpecies.cs" />
-    <Compile Include="Vector3.cs" />
-    <Compile Include="Server\IMultiplayerServer.cs" />
-    <Compile Include="Networking\IRemoteClient.cs" />
-    <Compile Include="World\IBiomeRepository.cs" />
-    <Compile Include="World\IBiomeMap.cs" />
-    <Compile Include="World\IBiomeProvider.cs" />
-    <Compile Include="World\IChunkDecorator.cs" />
-    <Compile Include="World\INoise.cs" />
-    <Compile Include="World\IDecoration.cs" />
-    <Compile Include="World\IWorld.cs" />
-    <Compile Include="World\IChunk.cs" />
-    <Compile Include="World\IChunkProvider.cs" />
-    <Compile Include="NibbleSlice.cs" />
-    <Compile Include="World\IRegion.cs" />
-    <Compile Include="Biome.cs" />
-    <Compile Include="Logging\LogCategory.cs" />
-    <Compile Include="Logging\ILogProvider.cs" />
-    <Compile Include="Server\IEventScheduler.cs" />
-    <Compile Include="Server\IEntityManager.cs" />
-    <Compile Include="Entities\IEntity.cs" />
-    <Compile Include="World\BlockChangeEventArgs.cs" />
-    <Compile Include="Windows\IWindow.cs" />
-    <Compile Include="Windows\IWindowArea.cs" />
-    <Compile Include="Windows\WindowChangeEventArgs.cs" />
-    <Compile Include="Logic\IBlockProvider.cs" />
-    <Compile Include="Logic\IItemProvider.cs" />
-    <Compile Include="Logic\ICraftingRepository.cs" />
-    <Compile Include="Logic\ICraftingRecipe.cs" />
-    <Compile Include="ChatColor.cs" />
-    <Compile Include="Server\ChatMessageEventArgs.cs" />
-    <Compile Include="BlockFace.cs" />
-    <Compile Include="Logic\IBlockRepository.cs" />
-    <Compile Include="Entities\IBlockPhysicsProvider.cs" />
-    <Compile Include="Logic\IItemRepository.cs" />
-    <Compile Include="Logic\BlockDescriptor.cs" />
-    <Compile Include="ArmorMaterial.cs" />
-    <Compile Include="Server\PlayerJoinedQuitEventArgs.cs" />
-    <Compile Include="ToolType.cs" />
-    <Compile Include="World\ChunkLoadedEventArgs.cs" />
-    <Compile Include="IEventSubject.cs" />
-    <Compile Include="PathResult.cs" />
-    <Compile Include="AI\IMobState.cs" />
-    <Compile Include="Entities\IMobEntity.cs" />
-    <Compile Include="AI\ISpawnRule.cs" />
-    <Compile Include="Physics\IPhysicsEngine.cs" />
-    <Compile Include="Physics\IPhysicsEntity.cs" />
-    <Compile Include="Physics\IAABBEntity.cs" />
-    <Compile Include="Logic\ISmeltableItem.cs" />
-    <Compile Include="Logic\IBurnableItem.cs" />
-    <Compile Include="Logic\SoundEffectClass.cs" />
-    <Compile Include="Matrix.cs" />
-    <Compile Include="BoundingCylinder.cs" />
+    <ProjectReference Include="..\TrueCraft.Nbt\TrueCraft.Nbt.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TrueCraft.Nbt\TrueCraft.Nbt.csproj">
-      <Project>{4488498d-976d-4da3-bf72-109531af0488}</Project>
-      <Name>TrueCraft.Nbt</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

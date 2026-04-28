@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using TrueCraft.API;
 
 namespace TrueCraft
@@ -13,13 +13,13 @@ namespace TrueCraft
             Oplist = new List<string>();
         }
 
-        [JsonProperty(PropertyName = "blacklist")]
+        [JsonPropertyName("blacklist")]
         public IList<string> Blacklist { get; private set; }
 
-        [JsonProperty(PropertyName = "whitelist")]
+        [JsonPropertyName("whitelist")]
         public IList<string> Whitelist { get; private set; }
-        
-        [JsonProperty(PropertyName = "ops")]
+
+        [JsonPropertyName("ops")]
         public IList<string> Oplist { get; private set; }
     }
 }

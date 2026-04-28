@@ -5,9 +5,6 @@
     <AssemblyName>TrueCraft.API</AssemblyName>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\TrueCraft.Nbt\TrueCraft.Nbt.csproj" />

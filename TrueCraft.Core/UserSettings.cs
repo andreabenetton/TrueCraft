@@ -1,11 +1,17 @@
-﻿using System;
+using System;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace TrueCraft.Core
 {
     public class UserSettings
     {
+        private static readonly JsonSerializerOptions SerializerOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true
+        };
+
         public UserSettings()
         {
             AutoLogin = false;
@@ -35,16 +41,18 @@ namespace TrueCraft.Core
         public bool InvertedMouse { get; set; }
         public WindowResolution WindowResolution { get; set; }
 
-        public void Load()
+        public static UserSettings Load()
         {
-            if (File.Exists(Paths.Settings))
-                JsonConvert.PopulateObject(File.ReadAllText(Paths.Settings), this);
+            if (!File.Exists(Paths.Settings))
+                return new UserSettings();
+            var json = File.ReadAllText(Paths.Settings);
+            return JsonSerializer.Deserialize<UserSettings>(json, SerializerOptions) ?? new UserSettings();
         }
 
         public void Save()
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Paths.Settings) ?? throw new InvalidOperationException());
-            File.WriteAllText(Paths.Settings, JsonConvert.SerializeObject(this, Formatting.Indented));
+            File.WriteAllText(Paths.Settings, JsonSerializer.Serialize(this, SerializerOptions));
         }
     }
 

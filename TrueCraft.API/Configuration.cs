@@ -1,5 +1,5 @@
-﻿using System.IO;
-using Newtonsoft.Json;
+using System.IO;
+using System.Text.Json;
 
 namespace TrueCraft.API
 {
@@ -8,6 +8,14 @@ namespace TrueCraft.API
     /// </summary>
     public abstract class Configuration
     {
+        private static readonly JsonSerializerOptions SerializerOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true
+        };
+
         /// <summary>
         ///     Creates and returns a new configuration read from a JSON file.
         /// </summary>
@@ -20,23 +28,17 @@ namespace TrueCraft.API
 
             if (File.Exists(configFileName))
             {
-                var deserializer = new JsonSerializer();
-
-                using (var file = File.OpenText(configFileName))
-                {
-                    config = (T) deserializer.Deserialize(file, typeof(T));
-                }
+                using var file = File.OpenRead(configFileName);
+                config = JsonSerializer.Deserialize<T>(file, SerializerOptions) ?? new T();
             }
             else
             {
                 config = new T();
             }
 
-            var serializer = new JsonSerializer();
-
-            using (var writer = new StreamWriter(configFileName))
+            using (var writer = File.Create(configFileName))
             {
-                serializer.Serialize(writer, config);
+                JsonSerializer.Serialize(writer, config, SerializerOptions);
             }
 
             return config;

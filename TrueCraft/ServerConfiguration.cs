@@ -1,15 +1,12 @@
-﻿using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using TrueCraft.API;
 
 namespace TrueCraft
 {
-    [JsonObject(MemberSerialization.OptIn)]
     public class ServerConfiguration : Configuration
     {
-        [JsonObject(MemberSerialization.OptIn)]
         public class DebugConfiguration
         {
-            [JsonObject(MemberSerialization.OptIn)]
             public class ProfilerConfiguration
             {
                 public ProfilerConfiguration()
@@ -17,10 +14,10 @@ namespace TrueCraft
                     Buckets = "";
                 }
 
-                [JsonProperty(PropertyName = "buckets")]
+                [JsonPropertyName("buckets")]
                 public string Buckets { get; set; }
 
-                [JsonProperty(PropertyName = "lag")]
+                [JsonPropertyName("lag")]
                 public bool Lag { get; set; }
             }
 
@@ -30,13 +27,13 @@ namespace TrueCraft
                 DeletePlayersOnStartup = false;
             }
 
-            [JsonProperty(PropertyName = "deleteWorldOnStartup")]
+            [JsonPropertyName("deleteWorldOnStartup")]
             public bool DeleteWorldOnStartup { get; set; }
 
-            [JsonProperty(PropertyName = "deletePlayersOnStartup")]
+            [JsonPropertyName("deletePlayersOnStartup")]
             public bool DeletePlayersOnStartup { get; set; }
 
-            [JsonProperty(PropertyName = "profiler")]
+            [JsonPropertyName("profiler")]
             public ProfilerConfiguration Profiler { get; set; }
         }
 
@@ -55,36 +52,37 @@ namespace TrueCraft
             DisabledEvents = new string[0];
         }
 
-        [JsonProperty(PropertyName = "motd")]
+        [JsonPropertyName("motd")]
         public string MOTD { get; set; }
 
-        [JsonProperty(PropertyName = "bind-port")]
-        public int ServerPort {get; set; }
+        [JsonPropertyName("bind-port")]
+        public int ServerPort { get; set; }
 
-        [JsonProperty(PropertyName = "bind-endpoint")]
+        [JsonPropertyName("bind-endpoint")]
         public string ServerAddress { get; set; }
 
-        [JsonProperty(PropertyName = "debug")]
+        [JsonPropertyName("debug")]
         public DebugConfiguration Debug { get; set; }
 
-        [JsonProperty(PropertyName = "save-interval")]
+        [JsonPropertyName("save-interval")]
         public int WorldSaveInterval { get; set; }
 
+        [JsonIgnore]
         public bool Singleplayer { get; set; }
 
-        [JsonProperty(PropertyName = "query-enabled")]
+        [JsonPropertyName("query-enabled")]
         public bool Query { get; set; }
 
-        [JsonProperty(PropertyName = "query-port")]
+        [JsonPropertyName("query-port")]
         public int QueryPort { get; set; }
 
-        [JsonProperty(PropertyName = "enable-lighting")]
+        [JsonPropertyName("enable-lighting")]
         public bool EnableLighting { get; set; }
 
-        [JsonProperty(PropertyName = "enable-event-loading")]
+        [JsonPropertyName("enable-event-loading")]
         public bool EnableEventLoading { get; set; }
 
-        [JsonProperty(PropertyName = "disable-events")]
+        [JsonPropertyName("disable-events")]
         public string[] DisabledEvents { get; set; }
     }
 }

@@ -11,8 +11,7 @@ namespace TrueCraft.Client
         [STAThread]
         public static void Main(string[] args)
         {
-            UserSettings.Local = new UserSettings();
-            UserSettings.Local.Load();
+            UserSettings.Local = UserSettings.Load();
 
             var user = new TrueCraftUser {Username = "andbene"};
             //var user = new TrueCraftUser { Username = args[1] };

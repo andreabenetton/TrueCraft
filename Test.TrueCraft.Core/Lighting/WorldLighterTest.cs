@@ -45,9 +45,9 @@ namespace Test.TrueCraft.Core.Lighting
                         var coords = new Coordinates3D(x, y, z);
                         var sky = world.GetSkyLight(coords);
                         if (y < 4)
-                            Assert.Equal(0, sky, coords.ToString());
+                            Assert.True(sky == 0, $"Expected sky light 0 at {coords}, got {sky}");
                         else
-                            Assert.Equal(15, sky, coords.ToString());
+                            Assert.True(sky == 15, $"Expected sky light 15 at {coords}, got {sky}");
                     }
                 }
             }

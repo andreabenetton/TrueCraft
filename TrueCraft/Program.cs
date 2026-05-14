@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using TrueCraft.Core.World;
 using TrueCraft.Core.TerrainGen;
 using TrueCraft.Core.Logging;
@@ -22,7 +23,11 @@ namespace TrueCraft
 
         public static MultiplayerServer Server;
 
-        public static void Main(string[] args)
+        // Signaled by Ctrl-C / SIGINT to release the awaitable shutdown hold in Main.
+        private static readonly TaskCompletionSource ShutdownSignal =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public static async Task Main(string[] args)
         {
             Server = new MultiplayerServer();
 
@@ -55,14 +60,14 @@ namespace TrueCraft
             IWorld world;
             try
             {
-                world = World.LoadWorld("world");
+                world = await World.LoadWorldAsync("world");
                 Server.AddWorld(world);
             }
             catch
             {
                 world = new World("default", new StandardGenerator());
                 world.BlockRepository = Server.BlockRepository;
-                world.Save("world");
+                await world.SaveAsync("world");
                 Server.AddWorld(world);
                 Server.Log(LogCategory.Notice, "Generating world around spawn point...");
                 for (int x = -5; x < 5; x++)
@@ -103,32 +108,46 @@ namespace TrueCraft
                     while (lighter.TryLightNext()) ;
                 }
             }
-            world.Save();
+            await world.SaveAsync();
             CommandManager = new CommandManager();
             Server.ChatMessageReceived += HandleChatMessageReceived;
             Server.Start(new IPEndPoint(IPAddress.Parse(ServerConfiguration.ServerAddress), ServerConfiguration.ServerPort));
             Console.CancelKeyPress += HandleCancelKeyPress;
             Server.Scheduler.ScheduleEvent("world.save", null,
                 TimeSpan.FromSeconds(ServerConfiguration.WorldSaveInterval), SaveWorlds);
-            while (true)
-            {
-                Thread.Yield();
-            }
+
+            // Park here until SIGINT (HandleCancelKeyPress) signals shutdown. Replaces the previous
+            // `while (true) Thread.Yield();` spin so the main thread doesn't burn a core idling.
+            await ShutdownSignal.Task.ConfigureAwait(false);
         }
 
+        // Scheduler delegate is still sync (Action<IMultiplayerServer>) in Phase 5; SaveAsync is fire-and-forget
+        // with logging on faults. Phase 7 converts the scheduler to Func<..., Task> so this can be properly awaited.
         static void SaveWorlds(IMultiplayerServer server)
         {
             Server.Log(LogCategory.Notice, "Saving world...");
-            foreach (var w in Server.Worlds)
-                w.Save();
-            Server.Log(LogCategory.Notice, "Done.");
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    foreach (var w in Server.Worlds)
+                        await w.SaveAsync().ConfigureAwait(false);
+                    Server.Log(LogCategory.Notice, "Done.");
+                }
+                catch (Exception ex)
+                {
+                    Server.Log(LogCategory.Error, "World save failed: {0}", ex);
+                }
+            });
             server.Scheduler.ScheduleEvent("world.save", null,
                 TimeSpan.FromSeconds(ServerConfiguration.WorldSaveInterval), SaveWorlds);
         }
 
         static void HandleCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
+            e.Cancel = true; // suppress immediate process termination so we can shut down cleanly
             Server.Stop();
+            ShutdownSignal.TrySetResult();
         }
 
         static void HandleChatMessageReceived(object sender, ChatMessageEventArgs e)

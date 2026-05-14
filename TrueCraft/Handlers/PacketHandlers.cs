@@ -1,4 +1,5 @@
-﻿using TrueCraft.API.Server;
+﻿using System.Threading.Tasks;
+using TrueCraft.API.Server;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.API.Networking;
 using TrueCraft.Exceptions;
@@ -16,7 +17,7 @@ namespace TrueCraft.Handlers
             server.RegisterPacketHandler(new HandshakePacket().ID, LoginHandlers.HandleHandshakePacket);
             server.RegisterPacketHandler(new LoginRequestPacket().ID, LoginHandlers.HandleLoginRequestPacket);
 
-            server.RegisterPacketHandler(new PlayerGroundedPacket().ID, (a, b, c) => { /* no-op */ });
+            server.RegisterPacketHandler(new PlayerGroundedPacket().ID, (a, b, c) => Task.CompletedTask);
             server.RegisterPacketHandler(new PlayerPositionPacket().ID, EntityHandlers.HandlePlayerPositionPacket);
             server.RegisterPacketHandler(new PlayerLookPacket().ID, EntityHandlers.HandlePlayerLookPacket);
             server.RegisterPacketHandler(new PlayerPositionAndLookPacket().ID, EntityHandlers.HandlePlayerPositionAndLookPacket);
@@ -31,12 +32,13 @@ namespace TrueCraft.Handlers
             server.RegisterPacketHandler(new UpdateSignPacket().ID, InteractionHandlers.HandleUpdateSignPacket);
         }
 
-        internal static void HandleKeepAlive(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        internal static Task HandleKeepAlive(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             // TODO
+            return Task.CompletedTask;
         }
 
-        internal static void HandleChatMessage(IPacket _packet, IRemoteClient _client, IMultiplayerServer _server)
+        internal static Task HandleChatMessage(IPacket _packet, IRemoteClient _client, IMultiplayerServer _server)
         {
             // TODO: Abstract this to support things like commands
             // TODO: Sanitize messages
@@ -44,9 +46,10 @@ namespace TrueCraft.Handlers
             var server = (MultiplayerServer)_server;
             var args = new ChatMessageEventArgs(_client, packet.Message);
             server.OnChatMessageReceived(args);
+            return Task.CompletedTask;
         }
 
-        internal static void HandleDisconnect(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        internal static Task HandleDisconnect(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             throw new PlayerDisconnectException(true);
         }

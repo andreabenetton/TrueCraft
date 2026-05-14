@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 using TrueCraft.API.Logging;
 using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
@@ -9,10 +10,10 @@ using TrueCraft.API.World;
 namespace TrueCraft.API.Server
 {
     /// <summary>
-    ///     Called when the given packet comes in from a remote client. Return false to cease communication
-    ///     with that client.
+    ///     Called when the given packet comes in from a remote client. Awaited by the dispatch loop; synchronous
+    ///     handlers should return Task.CompletedTask.
     /// </summary>
-    public delegate void PacketHandler(IPacket packet, IRemoteClient client, IMultiplayerServer server);
+    public delegate Task PacketHandler(IPacket packet, IRemoteClient client, IMultiplayerServer server);
 
     public interface IMultiplayerServer
     {

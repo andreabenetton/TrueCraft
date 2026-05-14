@@ -1,4 +1,5 @@
-﻿using TrueCraft.API.Networking;
+﻿using System.Threading.Tasks;
+using TrueCraft.API.Networking;
 using TrueCraft.API.Server;
 using TrueCraft.API;
 using TrueCraft.Core.Networking.Packets;
@@ -7,22 +8,25 @@ namespace TrueCraft.Handlers
 {
     internal static class EntityHandlers
     {
-        public static void HandlePlayerPositionPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandlePlayerPositionPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (PlayerPositionPacket)_packet;
             HandlePlayerMovement(_client, new Vector3(packet.X, packet.Y, packet.Z), _client.Entity.Yaw, _client.Entity.Pitch);
+            return Task.CompletedTask;
         }
 
-        public static void HandlePlayerLookPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandlePlayerLookPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (PlayerLookPacket)_packet;
             HandlePlayerMovement(_client, _client.Entity.Position, packet.Yaw, packet.Pitch);
+            return Task.CompletedTask;
         }
 
-        public static void HandlePlayerPositionAndLookPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandlePlayerPositionAndLookPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (PlayerPositionAndLookPacket)_packet;
             HandlePlayerMovement(_client, new Vector3(packet.X, packet.Y, packet.Z), packet.Yaw, packet.Pitch);
+            return Task.CompletedTask;
         }
 
         public static void HandlePlayerMovement(IRemoteClient client, Vector3 position, float yaw, float pitch)

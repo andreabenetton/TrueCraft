@@ -276,9 +276,10 @@ namespace TrueCraft
             switch (e.LastOperation)
             {
                 case SocketAsyncOperation.Receive:
-                    ProcessNetwork(e);
-
-                    SocketPool.Add(e);
+                    // Fire-and-forget: ProcessNetworkAsync now awaits async packet handlers (Phase 8a).
+                    // We can't make this method async because SocketAsyncEventArgs.Completed is a sync event;
+                    // exceptions are caught in HandleReceiveAsync, and the buffer is returned to the pool there.
+                    _ = HandleReceiveAsync(e);
                     break;
                 case SocketAsyncOperation.Send:
                     IPacket packet = e.UserToken as IPacket;
@@ -299,7 +300,23 @@ namespace TrueCraft
                     Server.DisconnectClient(this);
         }
 
-        private void ProcessNetwork(SocketAsyncEventArgs e)
+        private async Task HandleReceiveAsync(SocketAsyncEventArgs e)
+        {
+            try
+            {
+                await ProcessNetworkAsync(e).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Server.Log(LogCategory.Error, "ProcessNetwork failed: {0}", ex);
+            }
+            finally
+            {
+                SocketPool.Add(e);
+            }
+        }
+
+        private async Task ProcessNetworkAsync(SocketAsyncEventArgs e)
         {
             if (Connection == null || !Connection.Connected)
                 return;
@@ -312,17 +329,21 @@ namespace TrueCraft
                 if (!Connection.ReceiveAsync(newArgs))
                     OperationCompleted(this, newArgs);
 
+                bool acquired;
                 try
                 {
-                    sem.Wait(500, cancel.Token);
+                    acquired = await sem.WaitAsync(500, cancel.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
+                    return;
                 }
                 catch (NullReferenceException)
                 {
+                    return;
                 }
-                catch (TimeoutException)
+
+                if (!acquired)
                 {
                     Server.DisconnectClient(this);
                     return;
@@ -337,7 +358,7 @@ namespace TrueCraft
                         {
                             try
                             {
-                                PacketHandlers[packet.ID](packet, this, Server);
+                                await PacketHandlers[packet.ID](packet, this, Server).ConfigureAwait(false);
                             }
                             catch (PlayerDisconnectException)
                             {
@@ -362,9 +383,11 @@ namespace TrueCraft
                     Server.Log(LogCategory.Debug, "Disconnecting client due to unsupported packet received.");
                     return;
                 }
-
-                if (sem != null)
-                    sem.Release();
+                finally
+                {
+                    if (sem != null)
+                        sem.Release();
+                }
             }
             else
             {

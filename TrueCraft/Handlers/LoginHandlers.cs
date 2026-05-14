@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using TrueCraft.API.Server;
 using TrueCraft.API.Networking;
 using TrueCraft.Core.Networking.Packets;
@@ -10,15 +11,16 @@ namespace TrueCraft.Handlers
 {
     internal static class LoginHandlers
     {
-        public static void HandleHandshakePacket(IPacket packet, IRemoteClient client, IMultiplayerServer server)
+        public static Task HandleHandshakePacket(IPacket packet, IRemoteClient client, IMultiplayerServer server)
         {
             var handshakePacket = (HandshakePacket) packet;
             var remoteClient = (RemoteClient)client;
             remoteClient.Username = handshakePacket.Username;
             remoteClient.QueuePacket(new HandshakeResponsePacket("-")); // TODO: Implement some form of authentication
+            return Task.CompletedTask;
         }
 
-        public static void HandleLoginRequestPacket(IPacket packet, IRemoteClient client, IMultiplayerServer server)
+        public static async Task HandleLoginRequestPacket(IPacket packet, IRemoteClient client, IMultiplayerServer server)
         {
             var loginRequestPacket = (LoginRequestPacket)packet;
             var remoteClient = (RemoteClient)client;
@@ -39,9 +41,7 @@ namespace TrueCraft.Handlers
                 remoteClient.World = server.Worlds[0];
                 remoteClient.ChunkRadius = 2;
 
-                // Transitional bridge: PacketHandler is still a sync delegate in Phase 4 (the signature change
-                // is Phase 8a). The result of LoadAsync is required before continuing login, so we sync-wait it.
-                if (!remoteClient.LoadAsync().GetAwaiter().GetResult())
+                if (!await remoteClient.LoadAsync().ConfigureAwait(false))
                     remoteClient.Entity.Position = remoteClient.World.SpawnPoint;
                 // Make sure they don't spawn in the ground
                 var collision = new Func<bool>(() =>

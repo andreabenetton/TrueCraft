@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using TrueCraft.API.Networking;
 using TrueCraft.API.Server;
 using TrueCraft.Core.Networking.Packets;
@@ -18,7 +19,7 @@ namespace TrueCraft.Handlers
 {
     public static class InteractionHandlers
     {
-        public static void HandlePlayerDiggingPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandlePlayerDiggingPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (PlayerDiggingPacket)_packet;
             var client = (RemoteClient)_client;
@@ -108,9 +109,10 @@ namespace TrueCraft.Handlers
                     }
                     break;
             }
+            return Task.CompletedTask;
         }
 
-        public static void HandlePlayerBlockPlacementPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandlePlayerBlockPlacementPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (PlayerBlockPlacementPacket)_packet;
             var client = (RemoteClient)_client;
@@ -121,13 +123,13 @@ namespace TrueCraft.Handlers
             if (position != -Coordinates3D.One)
             {
                 if (position.DistanceTo((Coordinates3D)client.Entity.Position) > 10 /* TODO: Reach */)
-                    return;
+                    return Task.CompletedTask;
                 block = client.World.GetBlockData(position);
             }
             else
             {
                 // TODO: Handle situations like firing arrows and such? Is that how it works?
-                return;
+                return Task.CompletedTask;
             }
             bool use = true;
             if (block != null)
@@ -138,7 +140,7 @@ namespace TrueCraft.Handlers
                     server.SendMessage(ChatColor.Red + "WARNING: block provider for ID {0} is null (player placing)", block.Value.ID);
                     server.SendMessage(ChatColor.Red + "Error occured from client {0} at coordinates {1}", client.Username, block.Value.Coordinates);
                     server.SendMessage(ChatColor.Red + "Packet logged at {0}, please report upstream", DateTime.UtcNow);
-                    return;
+                    return Task.CompletedTask;
                 }
                 if (!provider.BlockRightClicked(block.Value, packet.Face, client.World, client))
                 {
@@ -147,7 +149,7 @@ namespace TrueCraft.Handlers
                     var oldMeta = client.World.GetMetadata(position);
                     client.QueuePacket(new BlockChangePacket(position.X, (sbyte)position.Y, position.Z, (sbyte)oldID, (sbyte)oldMeta));
                     client.QueuePacket(new SetSlotPacket(0, client.SelectedSlot, client.SelectedItem.ID, client.SelectedItem.Count, client.SelectedItem.Metadata));
-                    return;
+                    return Task.CompletedTask;
                 }
             }
             if (!slot.Empty)
@@ -172,9 +174,10 @@ namespace TrueCraft.Handlers
                     }
                 }
             }
+            return Task.CompletedTask;
         }
 
-        public static void HandleClickWindowPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandleClickWindowPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (ClickWindowPacket)_packet;
             var client = (RemoteClient)_client;
@@ -199,24 +202,26 @@ namespace TrueCraft.Handlers
                 }
                 item.Velocity = MathHelper.FowardVector(client.Entity.Yaw) * 0.3;
                 server.GetEntityManagerForWorld(client.World).SpawnEntity(item);
-                return;
+                return Task.CompletedTask;
             }
             var staging = (ItemStack)client.ItemStaging.Clone();
             Window.HandleClickPacket(packet, window, ref staging);
             client.ItemStaging = staging;
             if (packet.SlotIndex >= window.Length || packet.SlotIndex < 0)
-                return;
+                return Task.CompletedTask;
             client.QueuePacket(new WindowItemsPacket(packet.WindowID, window.GetSlots()));
+            return Task.CompletedTask;
         }
 
-        public static void HandleCloseWindowPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandleCloseWindowPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (CloseWindowPacket)_packet;
             if (packet.WindowID != 0)
                 (_client as RemoteClient).CloseWindow(true);
+            return Task.CompletedTask;
         }
 
-        public static void HandleChangeHeldItem(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandleChangeHeldItem(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (ChangeHeldItemPacket)_packet;
             var client = (RemoteClient)_client;
@@ -224,9 +229,10 @@ namespace TrueCraft.Handlers
             var notified = server.GetEntityManagerForWorld(client.World).ClientsForEntity(client.Entity);
             foreach (var c in notified)
                 c.QueuePacket(new EntityEquipmentPacket(client.Entity.EntityID, 0, client.SelectedItem.ID, client.SelectedItem.Metadata));
+            return Task.CompletedTask;
         }
 
-        public static void HandlePlayerAction(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandlePlayerAction(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (PlayerActionPacket)_packet;
             var client = (RemoteClient)_client;
@@ -240,9 +246,10 @@ namespace TrueCraft.Handlers
                     entity.EntityFlags &= ~EntityFlags.Crouched;
                     break;
             }
+            return Task.CompletedTask;
         }
 
-        public static void HandleAnimation(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandleAnimation(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (AnimationPacket)_packet;
             var client = (RemoteClient)_client;
@@ -253,9 +260,10 @@ namespace TrueCraft.Handlers
                 foreach (var player in nearby)
                     player.QueuePacket(packet);
             }
+            return Task.CompletedTask;
         }
 
-        public static void HandleUpdateSignPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+        public static Task HandleUpdateSignPacket(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
         {
             var packet = (UpdateSignPacket)_packet;
             var client = (RemoteClient)_client;
@@ -276,6 +284,7 @@ namespace TrueCraft.Handlers
                     server.Clients.Where(c => ((RemoteClient)c).LoggedIn && c.World == _client.World).ToList().ForEach(c => c.QueuePacket(packet));
                 }
             }
+            return Task.CompletedTask;
         }
     }
 }

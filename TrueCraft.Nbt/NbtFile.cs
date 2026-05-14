@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Threading;
+using System.Threading.Tasks;
 using TrueCraft.Nbt.Tags;
 
 namespace TrueCraft.Nbt
@@ -608,6 +610,69 @@ namespace TrueCraft.Nbt
             RootTag = rootCompound;
         }
 
+
+        /// <summary>
+        ///     Asynchronously loads NBT data from a file. Existing <c>RootTag</c> will be replaced.
+        ///     Compression will be auto-detected. The file is read with overlapped I/O; tag parsing itself remains CPU-bound and
+        ///     runs synchronously over the buffered file contents.
+        /// </summary>
+        public Task<long> LoadFromFileAsync([NotNull] string fileName, CancellationToken cancellationToken = default)
+        {
+            return LoadFromFileAsync(fileName, NbtCompression.AutoDetect, null, cancellationToken);
+        }
+
+
+        /// <summary>
+        ///     Asynchronously loads NBT data from a file. Existing <c>RootTag</c> will be replaced.
+        ///     The file is read with overlapped I/O; tag parsing itself remains CPU-bound and runs synchronously over the
+        ///     buffered file contents.
+        /// </summary>
+        public async Task<long> LoadFromFileAsync([NotNull] string fileName, NbtCompression compression,
+            [CanBeNull] TagSelector selector, CancellationToken cancellationToken = default)
+        {
+            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
+
+            await using var readFileStream = new FileStream(fileName,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                FileStreamBufferSize,
+                FileOptions.SequentialScan | FileOptions.Asynchronous);
+            using var ms = new MemoryStream();
+            await readFileStream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+            ms.Position = 0;
+            LoadFromStream(ms, compression, selector);
+            FileName = fileName;
+            return ms.Position;
+        }
+
+
+        /// <summary>
+        ///     Asynchronously loads NBT data from a stream. Existing <c>RootTag</c> will be replaced.
+        ///     The stream is buffered to memory asynchronously, then parsed synchronously.
+        /// </summary>
+        public Task<long> LoadFromStreamAsync([NotNull] Stream stream, NbtCompression compression,
+            CancellationToken cancellationToken = default)
+        {
+            return LoadFromStreamAsync(stream, compression, null, cancellationToken);
+        }
+
+
+        /// <summary>
+        ///     Asynchronously loads NBT data from a stream. Existing <c>RootTag</c> will be replaced.
+        ///     The stream is buffered to memory asynchronously, then parsed synchronously.
+        /// </summary>
+        public async Task<long> LoadFromStreamAsync([NotNull] Stream stream, NbtCompression compression,
+            [CanBeNull] TagSelector selector, CancellationToken cancellationToken = default)
+        {
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
+
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+            ms.Position = 0;
+            return LoadFromStream(ms, compression, selector);
+        }
+
         #endregion
 
 
@@ -790,6 +855,48 @@ namespace TrueCraft.Nbt
             if (stream.CanSeek) return stream.Position - startOffset;
 
             return ((ByteCountingStream) stream).BytesWritten;
+        }
+
+
+        /// <summary>
+        ///     Asynchronously saves this NBT file to disk.
+        ///     Serialization is CPU-bound and runs synchronously to an in-memory buffer; the file write itself is async.
+        /// </summary>
+        public async Task<long> SaveToFileAsync([NotNull] string fileName, NbtCompression compression,
+            CancellationToken cancellationToken = default)
+        {
+            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
+
+            using var ms = new MemoryStream();
+            var bytesWritten = SaveToStream(ms, compression);
+            ms.Position = 0;
+
+            await using var saveFile = new FileStream(fileName,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                FileStreamBufferSize,
+                FileOptions.SequentialScan | FileOptions.Asynchronous);
+            await ms.CopyToAsync(saveFile, cancellationToken).ConfigureAwait(false);
+            return bytesWritten;
+        }
+
+
+        /// <summary>
+        ///     Asynchronously saves this NBT file to a stream.
+        ///     Serialization is CPU-bound and runs synchronously to an in-memory buffer; the write to <paramref name="stream"/>
+        ///     is performed asynchronously.
+        /// </summary>
+        public async Task<long> SaveToStreamAsync([NotNull] Stream stream, NbtCompression compression,
+            CancellationToken cancellationToken = default)
+        {
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
+
+            using var ms = new MemoryStream();
+            var bytesWritten = SaveToStream(ms, compression);
+            ms.Position = 0;
+            await ms.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+            return bytesWritten;
         }
 
         #endregion

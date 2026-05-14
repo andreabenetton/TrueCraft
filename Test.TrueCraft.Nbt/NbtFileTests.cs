@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using Xunit;
 using TrueCraft.Nbt;
 using TrueCraft.Nbt.Tags;
@@ -322,6 +323,24 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<ArgumentNullException>(
                 () => NbtFile.ReadRootTagName((Stream)null, NbtCompression.None, true, 0));
 
+        }
+
+
+        [Fact]
+        public async Task LoadingBigFileUncompressedAsync() {
+            var file = new NbtFile();
+            long length = await file.LoadFromFileAsync(TestFiles.Big);
+            TestFiles.AssertNbtBigFile(file);
+            Assert.Equal(length, new FileInfo(TestFiles.Big).Length);
+        }
+
+
+        [Fact]
+        public async Task TestNbtSmallFileSavingUncompressedAsync() {
+            NbtFile file = TestFiles.MakeSmallFile();
+            string testFileName = Path.Combine(TestDirName, "test-async.nbt");
+            await file.SaveToFileAsync(testFileName, NbtCompression.None);
+            FileAssert.AreEqual(TestFiles.Small, testFileName);
         }
 
 

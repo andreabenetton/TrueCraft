@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.Core.Networking;
@@ -19,7 +21,13 @@ namespace TrueCraft.Core.World
     {
         // In chunks
         public const int Width = 32, Depth = 32;
-        private readonly object streamLock = new object();
+
+        // Single mutual-exclusion primitive shared by the sync and async I/O paths.
+        // SemaphoreSlim supports Wait() and WaitAsync() so sync Save/GetChunk and async SaveAsync honor the
+        // same exclusion. Note: SemaphoreSlim is *not* reentrant — callers must never re-acquire it from within
+        // an already-held critical section. The existing call patterns don't (Save's GetChunk hits the dict on
+        // dirty chunks and never reaches GetChunk's own lock acquisition).
+        private readonly SemaphoreSlim streamLock = new SemaphoreSlim(1, 1);
 
         /// <summary>
         ///     Creates a new Region for server-side use at the given position using
@@ -49,6 +57,30 @@ namespace TrueCraft.Core.World
             }
         }
 
+
+        /// <summary>
+        ///     Asynchronously creates a region from the given region file, opening it with overlapped I/O and
+        ///     reading the 8 KiB header table.
+        /// </summary>
+        public static async Task<Region> CreateAsync(Coordinates2D position, World world, string file,
+            CancellationToken cancellationToken = default)
+        {
+            var region = new Region(position, world);
+            var exists = File.Exists(file);
+            region.regionFile = new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite,
+                4096, FileOptions.Asynchronous);
+            if (exists)
+            {
+                await region.regionFile.ReadExactlyAsync(region.HeaderCache.AsMemory(0, 8192), cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            else
+            {
+                await region.CreateRegionHeaderAsync(cancellationToken).ConfigureAwait(false);
+            }
+            return region;
+        }
+
         private ConcurrentDictionary<Coordinates2D, IChunk> _Chunks { get; }
 
         public World World { get; set; }
@@ -60,10 +92,15 @@ namespace TrueCraft.Core.World
         {
             if (regionFile == null)
                 return;
-            lock (streamLock)
+            streamLock.Wait();
+            try
             {
                 regionFile.Flush();
                 regionFile.Close();
+            }
+            finally
+            {
+                streamLock.Release();
             }
         }
 
@@ -108,7 +145,8 @@ namespace TrueCraft.Core.World
                         return Chunks[position];
                     }
 
-                    lock (streamLock)
+                    streamLock.Wait();
+                    try
                     {
                         regionFile.Seek(chunkData.Item1, SeekOrigin.Begin);
                         /*int length = */
@@ -130,6 +168,10 @@ namespace TrueCraft.Core.World
                             default:
                                 throw new InvalidDataException("Invalid compression scheme provided by region file.");
                         }
+                    }
+                    finally
+                    {
+                        streamLock.Release();
                     }
                 }
                 else if (World.ChunkProvider == null)
@@ -199,43 +241,138 @@ namespace TrueCraft.Core.World
         /// </summary>
         public void Save()
         {
-            lock (streamLock)
+            streamLock.Wait();
+            try
             {
-                var toRemove = new List<Coordinates2D>();
-                var chunks = DirtyChunks.ToList();
-                DirtyChunks.Clear();
-                foreach (var coords in chunks)
+                SaveCore();
+            }
+            finally
+            {
+                streamLock.Release();
+            }
+        }
+
+
+        /// <summary>
+        ///     Asynchronously saves this region to the open region file. Tag serialization and the region-table
+        ///     allocator stay synchronous (CPU-bound, no I/O on the hot path); the actual file writes are async.
+        /// </summary>
+        public async Task SaveAsync(CancellationToken cancellationToken = default)
+        {
+            await streamLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await SaveCoreAsync(cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                streamLock.Release();
+            }
+        }
+
+
+        /// <summary>
+        ///     Asynchronously saves this region to the specified file, opening it for async I/O if not already open.
+        /// </summary>
+        public async Task SaveAsync(string file, CancellationToken cancellationToken = default)
+        {
+            if (regionFile == null)
+            {
+                var exists = File.Exists(file);
+                regionFile = new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite,
+                    4096, FileOptions.Asynchronous);
+                if (!exists)
+                    await CreateRegionHeaderAsync(cancellationToken).ConfigureAwait(false);
+            }
+            await SaveAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+
+        // Assumes streamLock is already held by caller.
+        private void SaveCore()
+        {
+            var toRemove = new List<Coordinates2D>();
+            var chunks = DirtyChunks.ToList();
+            DirtyChunks.Clear();
+            foreach (var coords in chunks)
+            {
+                // Dirty chunks are always already loaded, so this is a dict lookup with no nested lock.
+                var chunk = GetChunk(coords, false);
+                if (chunk.IsModified)
                 {
-                    var chunk = GetChunk(coords, false);
-                    if (chunk.IsModified)
-                    {
-                        var data = ((Chunk) chunk).ToNbt();
-                        var raw = data.SaveToBuffer(NbtCompression.ZLib);
+                    var data = ((Chunk) chunk).ToNbt();
+                    var raw = data.SaveToBuffer(NbtCompression.ZLib);
 
-                        var header = GetChunkFromTable(coords);
-                        if (header == null || header.Item2 > raw.Length)
-                            header = AllocateNewChunks(coords, raw.Length);
+                    var header = GetChunkFromTable(coords);
+                    if (header == null || header.Item2 > raw.Length)
+                        header = AllocateNewChunks(coords, raw.Length);
 
-                        regionFile.Seek(header.Item1, SeekOrigin.Begin);
-                        new MinecraftStream(regionFile).WriteInt32(raw.Length);
-                        regionFile.WriteByte(2); // Compressed with zlib
-                        regionFile.Write(raw, 0, raw.Length);
+                    regionFile.Seek(header.Item1, SeekOrigin.Begin);
+                    new MinecraftStream(regionFile).WriteInt32(raw.Length);
+                    regionFile.WriteByte(2); // Compressed with zlib
+                    regionFile.Write(raw, 0, raw.Length);
 
-                        chunk.IsModified = false;
-                    }
-
-                    if ((DateTime.UtcNow - chunk.LastAccessed).TotalMinutes > 5)
-                        toRemove.Add(coords);
+                    chunk.IsModified = false;
                 }
 
-                regionFile.Flush();
-                // Unload idle chunks
-                foreach (var chunk in toRemove)
+                if ((DateTime.UtcNow - chunk.LastAccessed).TotalMinutes > 5)
+                    toRemove.Add(coords);
+            }
+
+            regionFile.Flush();
+            // Unload idle chunks
+            foreach (var c in toRemove)
+            {
+                var inst = Chunks[c];
+                Chunks.Remove(c);
+                inst.Dispose();
+            }
+        }
+
+
+        // Assumes streamLock is already held by caller.
+        private async Task SaveCoreAsync(CancellationToken cancellationToken)
+        {
+            var toRemove = new List<Coordinates2D>();
+            var chunks = DirtyChunks.ToList();
+            DirtyChunks.Clear();
+            // Reused 4-byte buffer for big-endian length prefix and 1-byte zlib marker.
+            var lengthBuf = new byte[4];
+            var markerBuf = new byte[1] { 2 };
+            foreach (var coords in chunks)
+            {
+                var chunk = GetChunk(coords, false);
+                if (chunk.IsModified)
                 {
-                    var c = Chunks[chunk];
-                    Chunks.Remove(chunk);
-                    c.Dispose();
+                    var data = ((Chunk) chunk).ToNbt();
+                    var raw = data.SaveToBuffer(NbtCompression.ZLib);
+
+                    var header = GetChunkFromTable(coords);
+                    if (header == null || header.Item2 > raw.Length)
+                        header = AllocateNewChunks(coords, raw.Length);
+
+                    regionFile.Seek(header.Item1, SeekOrigin.Begin);
+                    lengthBuf[0] = (byte) (raw.Length >> 24);
+                    lengthBuf[1] = (byte) (raw.Length >> 16);
+                    lengthBuf[2] = (byte) (raw.Length >> 8);
+                    lengthBuf[3] = (byte) raw.Length;
+                    await regionFile.WriteAsync(lengthBuf.AsMemory(0, 4), cancellationToken).ConfigureAwait(false);
+                    await regionFile.WriteAsync(markerBuf.AsMemory(0, 1), cancellationToken).ConfigureAwait(false);
+                    await regionFile.WriteAsync(raw.AsMemory(0, raw.Length), cancellationToken).ConfigureAwait(false);
+
+                    chunk.IsModified = false;
                 }
+
+                if ((DateTime.UtcNow - chunk.LastAccessed).TotalMinutes > 5)
+                    toRemove.Add(coords);
+            }
+
+            await regionFile.FlushAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var c in toRemove)
+            {
+                var inst = Chunks[c];
+                Chunks.Remove(c);
+                inst.Dispose();
             }
         }
 
@@ -268,6 +405,14 @@ namespace TrueCraft.Core.World
             HeaderCache = new byte[8192];
             regionFile.Write(HeaderCache, 0, 8192);
             regionFile.Flush();
+        }
+
+
+        private async Task CreateRegionHeaderAsync(CancellationToken cancellationToken)
+        {
+            HeaderCache = new byte[8192];
+            await regionFile.WriteAsync(HeaderCache.AsMemory(0, 8192), cancellationToken).ConfigureAwait(false);
+            await regionFile.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private Tuple<int, int> AllocateNewChunks(Coordinates2D position, int length)

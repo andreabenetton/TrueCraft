@@ -45,7 +45,6 @@ namespace TrueCraft
             EnableLogging = server.EnableClientLogging;
             NextWindowID = 1;
             Connection = connection;
-            SocketPool = new SocketAsyncEventArgsPool(100, 200, 65536);
             PacketReader = packetReader;
             PacketHandlers = packetHandlers;
 
@@ -117,8 +116,6 @@ namespace TrueCraft
             public int Length { get; }
             public bool IsDisconnect { get; }
         }
-
-        private SocketAsyncEventArgsPool SocketPool { get; set; }
 
         public IPacketReader PacketReader { get; private set; }
 
@@ -683,11 +680,6 @@ namespace TrueCraft
         {
             if (disposing)
             {
-                // PacketReader.Processors still holds entries from any old code paths (e.g. tests that
-                // exercise ReadPackets via the same reader instance). Remove ours if present — harmless
-                // when absent.
-                PacketReader.Processors.TryRemove(this, out _);
-
                 Disconnect();
 
                 if (Disposed != null)

@@ -77,7 +77,6 @@ namespace TrueCraft.Client
             World.World.BlockRepository = repo;
             World.World.ChunkProvider = new EmptyGenerator();
             Physics = new PhysicsEngine(World.World, repo);
-            SocketPool = new SocketAsyncEventArgsPool(100, 200, 65536);
             _connected = 0;
             cancel = new CancellationTokenSource();
             Health = 20;
@@ -111,8 +110,6 @@ namespace TrueCraft.Client
         private TcpClient Client { get; }
         private IMinecraftStream Stream { get; set; }
         private PacketReader PacketReader { get; }
-
-        private SocketAsyncEventArgsPool SocketPool { get; }
 
         public void Dispose()
         {

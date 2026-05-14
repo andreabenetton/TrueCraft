@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using TrueCraft.API.Networking;
@@ -13,19 +11,10 @@ namespace TrueCraft.Core.Networking
     {
         public static readonly int Version = 14;
 
-        private static readonly byte[] EmptyBuffer = new byte[0];
-
         internal Func<IPacket>[] ClientboundPackets = new Func<IPacket>[0x100];
         internal Func<IPacket>[] ServerboundPackets = new Func<IPacket>[0x100];
 
-        public PacketReader()
-        {
-            Processors = new ConcurrentDictionary<object, IPacketSegmentProcessor>();
-        }
-
         public int ProtocolVersion => Version;
-
-        public ConcurrentDictionary<object, IPacketSegmentProcessor> Processors { get; }
 
         public void RegisterPacketType<T>(bool clientbound = true, bool serverbound = true) where T : IPacket
         {
@@ -37,33 +26,6 @@ namespace TrueCraft.Core.Networking
                 ClientboundPackets[packet.ID] = func;
             if (serverbound)
                 ServerboundPackets[packet.ID] = func;
-        }
-
-        public IEnumerable<IPacket> ReadPackets(object key, byte[] buffer, int offset, int length,
-            bool serverbound = true)
-        {
-            if (!Processors.ContainsKey(key))
-                Processors[key] = new PacketSegmentProcessor(this, serverbound);
-
-            var processor = Processors[key];
-
-            IPacket packet;
-            processor.ProcessNextSegment(buffer, offset, length, out packet);
-
-            if (packet == null)
-                yield break;
-
-            while (true)
-            {
-                yield return packet;
-
-                if (!processor.ProcessNextSegment(EmptyBuffer, 0, 0, out packet))
-                {
-                    if (packet != null) yield return packet;
-
-                    yield break;
-                }
-            }
         }
 
         public void WritePacket(IMinecraftStream stream, IPacket packet)

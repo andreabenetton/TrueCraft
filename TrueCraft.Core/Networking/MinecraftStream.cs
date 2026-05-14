@@ -153,14 +153,13 @@ namespace TrueCraft.Core.Networking
             var result = new byte[length];
             if (length == 0) return result;
             var n = length;
-            while (true)
+            while (n > 0)
             {
-                n -= Read(result, length - n, n);
-                if (n == 0)
-                    break;
-                Thread.Sleep(1);
+                int read = Read(result, length - n, n);
+                if (read == 0)
+                    throw new EndOfStreamException();
+                n -= read;
             }
-
             return result;
         }
 

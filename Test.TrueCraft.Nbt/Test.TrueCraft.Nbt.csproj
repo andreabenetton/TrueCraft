@@ -16,4 +16,10 @@
     <ProjectReference Include="..\TrueCraft.Nbt\TrueCraft.Nbt.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\TestFiles\**\*" Link="TestFiles\%(RecursiveDir)%(FileName)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

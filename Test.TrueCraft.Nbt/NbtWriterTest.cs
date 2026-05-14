@@ -9,7 +9,7 @@ using TrueCraft.Nbt.Tags;
 
 namespace Test.TrueCraft.Nbt {
 
-    internal class NbtWriterTest {
+    public class NbtWriterTest {
         [Fact]
         public void ValueTest() {
             // write one named tag for every value type, and read it back

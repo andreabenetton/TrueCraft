@@ -39,7 +39,9 @@ namespace TrueCraft.Handlers
                 remoteClient.World = server.Worlds[0];
                 remoteClient.ChunkRadius = 2;
 
-                if (!remoteClient.Load())
+                // Transitional bridge: PacketHandler is still a sync delegate in Phase 4 (the signature change
+                // is Phase 8a). The result of LoadAsync is required before continuing login, so we sync-wait it.
+                if (!remoteClient.LoadAsync().GetAwaiter().GetResult())
                     remoteClient.Entity.Position = remoteClient.World.SpawnPoint;
                 // Make sure they don't spawn in the ground
                 var collision = new Func<bool>(() =>

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using TrueCraft.API.Entities;
 using TrueCraft.API.Server;
 using TrueCraft.API.Windows;
@@ -72,14 +74,14 @@ namespace TrueCraft.API.Networking
         bool Disconnected { get; }
 
         /// <summary>
-        ///     Loads player data from disk for this client.
+        ///     Asynchronously loads player data from disk for this client.
         /// </summary>
-        bool Load();
+        Task<bool> LoadAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        ///     Saves player data to disk for this client.
+        ///     Asynchronously saves player data to disk for this client.
         /// </summary>
-        void Save();
+        Task SaveAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Queues a packet to be sent to this client.

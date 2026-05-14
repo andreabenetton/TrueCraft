@@ -155,7 +155,7 @@ namespace TrueCraft
             }
         }
 
-        public bool Load()
+        public async Task<bool> LoadAsync(CancellationToken cancellationToken = default)
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "players", Username + ".nbt");
             if (Program.ServerConfiguration.Singleplayer)
@@ -164,7 +164,8 @@ namespace TrueCraft
                 return false;
             try
             {
-                var nbt = new NbtFile(path);
+                var nbt = new NbtFile();
+                await nbt.LoadFromFileAsync(path, cancellationToken).ConfigureAwait(false);
                 Entity.Position = new Vector3(
                     nbt.RootTag["position"][0].DoubleValue,
                     nbt.RootTag["position"][1].DoubleValue,
@@ -178,7 +179,7 @@ namespace TrueCraft
             return true;
         }
 
-        public void Save()
+        public async Task SaveAsync(CancellationToken cancellationToken = default)
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "players", Username + ".nbt");
             if (Program.ServerConfiguration.Singleplayer)
@@ -202,7 +203,7 @@ namespace TrueCraft
                     new NbtFloat("pitch", Entity.Pitch),
                 }
             ));
-            nbt.SaveToFile(path, NbtCompression.ZLib);
+            await nbt.SaveToFileAsync(path, NbtCompression.ZLib, cancellationToken).ConfigureAwait(false);
         }
 
         public void OpenWindow(IWindow window)

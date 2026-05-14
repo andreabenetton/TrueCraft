@@ -356,7 +356,9 @@ namespace TrueCraft
                 GetEntityManagerForWorld(client.World).DespawnEntity(client.Entity);
                 GetEntityManagerForWorld(client.World).FlushDespawns();
             }
-            client.Save();
+            // Transitional bridge: DisconnectClient is still sync (IMultiplayerServer surface unchanged in Phase 4);
+            // we sync-wait the async save here. Phase 8a will await this on the async dispatch path.
+            client.SaveAsync().GetAwaiter().GetResult();
             client.Disconnect();
             OnPlayerQuit(new PlayerJoinedQuitEventArgs(client));
 

@@ -46,11 +46,11 @@ namespace Test.TrueCraft.Nbt {
             Assert.True(reader.ReadToFollowing()); // root
 
             Assert.True(reader.ReadToFollowing()); // byte
-            Assert.Equal(1, reader.ReadValue());
-            Assert.Equal(1, reader.ReadValue());
+            Assert.Equal((byte)1, reader.ReadValue());
+            Assert.Equal((byte)1, reader.ReadValue());
             Assert.True(reader.ReadToFollowing()); // short
-            Assert.Equal(2, reader.ReadValue());
-            Assert.Equal(2, reader.ReadValue());
+            Assert.Equal((short)2, reader.ReadValue());
+            Assert.Equal((short)2, reader.ReadValue());
             Assert.True(reader.ReadToFollowing()); // int
             Assert.Equal(3, reader.ReadValue());
             Assert.Equal(3, reader.ReadValue());
@@ -465,9 +465,9 @@ namespace Test.TrueCraft.Nbt {
             Assert.True(reader.ReadToFollowing()); // root
 
             Assert.True(reader.ReadToFollowing()); // byte
-            Assert.Equal(1, reader.ReadValue());
+            Assert.Equal((byte)1, reader.ReadValue());
             Assert.True(reader.ReadToFollowing()); // short
-            Assert.Equal(2, reader.ReadValue());
+            Assert.Equal((short)2, reader.ReadValue());
             Assert.True(reader.ReadToFollowing()); // int
             Assert.Equal(3, reader.ReadValue());
             Assert.True(reader.ReadToFollowing()); // long

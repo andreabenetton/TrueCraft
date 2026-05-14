@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Buffers;
 using System.ComponentModel;
 using System.IO;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
@@ -33,7 +36,11 @@ namespace TrueCraft.Client
         private long _connected;
         private int _hotbarSelection;
 
-        private SemaphoreSlim sem = new SemaphoreSlim(1, 1);
+        // Phase N5: per-client receive pipeline mirrors the server. The Pipe replaces the SAEA receive
+        // pump and the old SemaphoreSlim(cancel.Token) (which blocked the UI on a slow handler indefinitely).
+        private readonly Pipe _receivePipe = new Pipe();
+        private Task _fillTask;
+        private Task _processTask;
 
         public MultiplayerClient(TrueCraftUser user)
         {
@@ -124,7 +131,8 @@ namespace TrueCraft.Client
 
                 Physics.AddEntity(this);
 
-                StartReceive();
+                _fillTask = Task.Run(() => FillReceivePipeAsync(cancel.Token));
+                _processTask = Task.Run(() => ProcessReceivePipeAsync(cancel.Token));
                 QueuePacket(new HandshakePacket(User.Username));
             }
             else
@@ -175,26 +183,13 @@ namespace TrueCraft.Client
             }
         }
 
-        private void StartReceive()
-        {
-            var args = SocketPool.Get();
-            args.Completed += OperationCompleted;
-
-            if (!Client.Client.ReceiveAsync(args))
-                OperationCompleted(this, args);
-        }
-
         private void OperationCompleted(object sender, SocketAsyncEventArgs e)
         {
+            // After Phase N5, only Send completions reach this handler — receive moved to the Pipe.
             e.Completed -= OperationCompleted;
 
             switch (e.LastOperation)
             {
-                case SocketAsyncOperation.Receive:
-                    ProcessNetwork(e);
-
-                    SocketPool.Add(e);
-                    break;
                 case SocketAsyncOperation.Send:
                     var packet = e.UserToken as IPacket;
 
@@ -211,36 +206,90 @@ namespace TrueCraft.Client
             }
         }
 
-        private void ProcessNetwork(SocketAsyncEventArgs e)
+        // Hint for each ReceiveAsync — same rationale as the server side.
+        private const int ReceiveBufferHint = 4 * 1024;
+
+        private async Task FillReceivePipeAsync(CancellationToken cancellationToken)
         {
-            if (e.SocketError == SocketError.Success && e.BytesTransferred > 0)
+            try
             {
-                var newArgs = SocketPool.Get();
-                newArgs.Completed += OperationCompleted;
-
-                if (Client != null && !Client.Client.ReceiveAsync(newArgs))
-                    OperationCompleted(this, newArgs);
-
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    sem.Wait(cancel.Token);
+                    Memory<byte> mem = _receivePipe.Writer.GetMemory(ReceiveBufferHint);
+                    int read;
+                    try
+                    {
+                        read = await Client.Client.ReceiveAsync(mem, SocketFlags.None, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    catch (SocketException)
+                    {
+                        break;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
+                    if (read == 0)
+                        break; // server closed
+                    _receivePipe.Writer.Advance(read);
+                    FlushResult flush = await _receivePipe.Writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+                    if (flush.IsCompleted)
+                        break;
                 }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
-
-                var packets = PacketReader.ReadPackets(this, e.Buffer, e.Offset, e.BytesTransferred, false);
-
-                foreach (var packet in packets)
-                    if (PacketHandlers.Length > packet.ID && PacketHandlers[packet.ID] != null)
-                        PacketHandlers[packet.ID](packet, this);
-
-                sem?.Release();
             }
-            else
+            catch (OperationCanceledException)
             {
-                Disconnect();
+                // graceful shutdown
+            }
+            finally
+            {
+                await _receivePipe.Writer.CompleteAsync().ConfigureAwait(false);
+                if (Connected)
+                    Disconnect();
+            }
+        }
+
+        private async Task ProcessReceivePipeAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    ReadResult result;
+                    try
+                    {
+                        result = await _receivePipe.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+
+                    ReadOnlySequence<byte> buffer = result.Buffer;
+                    try
+                    {
+                        while (PacketReader.TryReadPacket(ref buffer, out IPacket packet, serverbound: false))
+                        {
+                            if (PacketHandlers.Length > packet.ID && PacketHandlers[packet.ID] != null)
+                                PacketHandlers[packet.ID](packet, this);
+                        }
+                    }
+                    catch (NotSupportedException)
+                    {
+                        // Unrecognized packet from server — disconnect cleanly.
+                        Disconnect();
+                        return;
+                    }
+
+                    _receivePipe.Reader.AdvanceTo(buffer.Start, buffer.End);
+                    if (result.IsCompleted)
+                        break;
+                }
+            }
+            finally
+            {
+                await _receivePipe.Reader.CompleteAsync().ConfigureAwait(false);
             }
         }
 
@@ -274,11 +323,7 @@ namespace TrueCraft.Client
             if (disposing)
             {
                 Disconnect();
-
-                sem.Dispose();
             }
-
-            sem = null;
         }
 
         ~MultiplayerClient()

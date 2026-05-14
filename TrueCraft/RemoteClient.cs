@@ -1,5 +1,7 @@
 ﻿using System;
 using TrueCraft.API.Networking;
+using System.Buffers;
+using System.IO.Pipelines;
 using System.Net.Sockets;
 using TrueCraft.Core.Networking;
 using TrueCraft.API.Server;
@@ -48,7 +50,12 @@ namespace TrueCraft
 
             cancel = new CancellationTokenSource();
 
-            StartReceive();
+            // Phase N2: replaces the SAEA receive pump + per-client SemaphoreSlim with a Pipe and two
+            // long-running async tasks. _fillTask reads from the socket into Writer; _processTask reads
+            // back-out, parses packets via PacketReader.TryReadPacket, and awaits the registered handler.
+            _receivePipe = new Pipe();
+            _fillTask = Task.Run(() => FillReceivePipeAsync(cancel.Token));
+            _processTask = Task.Run(() => ProcessReceivePipeAsync(cancel.Token));
         }
 
         public event EventHandler Disposed;
@@ -74,7 +81,12 @@ namespace TrueCraft
 
         public Socket Connection { get; private set; }
 
-        private SemaphoreSlim sem = new SemaphoreSlim(1, 1);
+        // Phase N2: per-client receive pipeline. The Pipe replaces both the SAEA-based receive pump
+        // and the old SemaphoreSlim(1,1) packet-handler serializer — the process task runs on a single
+        // logical thread, so concurrent handler invocations for the same client are structurally impossible.
+        private readonly Pipe _receivePipe;
+        private readonly Task _fillTask;
+        private readonly Task _processTask;
 
         private SocketAsyncEventArgsPool SocketPool { get; set; }
 
@@ -260,27 +272,13 @@ namespace TrueCraft
             }
         }
 
-        private void StartReceive()
-        {
-            SocketAsyncEventArgs args = SocketPool.Get();
-            args.Completed += OperationCompleted;
-
-            if (!Connection.ReceiveAsync(args))
-                OperationCompleted(this, args);
-        }
-
         private void OperationCompleted(object sender, SocketAsyncEventArgs e)
         {
+            // After Phase N2 this only handles Send and Disconnect completions; receive moved to the Pipe.
             e.Completed -= OperationCompleted;
 
             switch (e.LastOperation)
             {
-                case SocketAsyncOperation.Receive:
-                    // Fire-and-forget: ProcessNetworkAsync now awaits async packet handlers (Phase 8a).
-                    // We can't make this method async because SocketAsyncEventArgs.Completed is a sync event;
-                    // exceptions are caught in HandleReceiveAsync, and the buffer is returned to the pool there.
-                    _ = HandleReceiveAsync(e);
-                    break;
                 case SocketAsyncOperation.Send:
                     IPacket packet = e.UserToken as IPacket;
 
@@ -300,98 +298,119 @@ namespace TrueCraft
                     Server.DisconnectClient(this);
         }
 
-        private async Task HandleReceiveAsync(SocketAsyncEventArgs e)
+        // Hint for each ReceiveAsync — the pipe handles growth, but giving it a sane min-size
+        // avoids tiny syscalls under burst load.
+        private const int ReceiveBufferHint = 4 * 1024;
+
+        private async Task FillReceivePipeAsync(CancellationToken cancellationToken)
         {
             try
             {
-                await ProcessNetworkAsync(e).ConfigureAwait(false);
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    Memory<byte> mem = _receivePipe.Writer.GetMemory(ReceiveBufferHint);
+                    int read;
+                    try
+                    {
+                        read = await Connection.ReceiveAsync(mem, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (SocketException)
+                    {
+                        break;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
+                    if (read == 0)
+                        break; // peer closed
+                    _receivePipe.Writer.Advance(read);
+                    FlushResult flush = await _receivePipe.Writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+                    if (flush.IsCompleted)
+                        break;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // graceful shutdown
             }
             catch (Exception ex)
             {
-                Server.Log(LogCategory.Error, "ProcessNetwork failed: {0}", ex);
+                Server.Log(LogCategory.Error, "Receive pump failed: {0}", ex);
             }
             finally
             {
-                SocketPool.Add(e);
+                await _receivePipe.Writer.CompleteAsync().ConfigureAwait(false);
+                // Signal the process task to drain and exit, then make sure the client is disconnected.
+                if (!Disconnected)
+                    Server.DisconnectClient(this);
             }
         }
 
-        private async Task ProcessNetworkAsync(SocketAsyncEventArgs e)
+        private async Task ProcessReceivePipeAsync(CancellationToken cancellationToken)
         {
-            if (Connection == null || !Connection.Connected)
-                return;
-
-            if (e.SocketError == SocketError.Success && e.BytesTransferred > 0)
+            try
             {
-                SocketAsyncEventArgs newArgs = SocketPool.Get();
-                newArgs.Completed += OperationCompleted;
-
-                if (!Connection.ReceiveAsync(newArgs))
-                    OperationCompleted(this, newArgs);
-
-                bool acquired;
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    acquired = await sem.WaitAsync(500, cancel.Token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
-                catch (NullReferenceException)
-                {
-                    return;
-                }
-
-                if (!acquired)
-                {
-                    Server.DisconnectClient(this);
-                    return;
-                }
-
-                var packets = PacketReader.ReadPackets(this, e.Buffer, e.Offset, e.BytesTransferred);
-                try
-                {
-                    foreach (IPacket packet in packets)
+                    ReadResult result;
+                    try
                     {
-                        if (PacketHandlers[packet.ID] != null)
+                        result = await _receivePipe.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+
+                    ReadOnlySequence<byte> buffer = result.Buffer;
+                    try
+                    {
+                        while (PacketReader.TryReadPacket(ref buffer, out IPacket packet))
                         {
+                            var handler = PacketHandlers[packet.ID];
+                            if (handler == null)
+                            {
+                                Log("Unhandled packet {0}", packet.GetType().Name);
+                                continue;
+                            }
                             try
                             {
-                                await PacketHandlers[packet.ID](packet, this, Server).ConfigureAwait(false);
+                                await handler(packet, this, Server).ConfigureAwait(false);
                             }
                             catch (PlayerDisconnectException)
                             {
                                 Server.DisconnectClient(this);
+                                return;
                             }
                             catch (Exception ex)
                             {
                                 Server.Log(LogCategory.Debug, "Disconnecting client due to exception in network worker");
                                 Server.Log(LogCategory.Debug, ex.ToString());
-
                                 Server.DisconnectClient(this);
+                                return;
                             }
                         }
-                        else
-                        {
-                            Log("Unhandled packet {0}", packet.GetType().Name);
-                        }
                     }
-                }
-                catch (NotSupportedException)
-                {
-                    Server.Log(LogCategory.Debug, "Disconnecting client due to unsupported packet received.");
-                    return;
-                }
-                finally
-                {
-                    if (sem != null)
-                        sem.Release();
+                    catch (NotSupportedException)
+                    {
+                        Server.Log(LogCategory.Debug, "Disconnecting client due to unsupported packet received.");
+                        Server.DisconnectClient(this);
+                        return;
+                    }
+
+                    // Tell the pipe what we consumed (buffer's start advanced past parsed packets)
+                    // and that we examined everything we received this round (so the next ReadAsync
+                    // only completes when more bytes arrive or the writer completes).
+                    _receivePipe.Reader.AdvanceTo(buffer.Start, buffer.End);
+
+                    if (result.IsCompleted)
+                        break;
                 }
             }
-            else
+            finally
             {
-                Server.DisconnectClient(this);
+                await _receivePipe.Reader.CompleteAsync().ConfigureAwait(false);
             }
         }
 
@@ -579,17 +598,15 @@ namespace TrueCraft
         {
             if (disposing)
             {
-                IPacketSegmentProcessor processor;
-                while (!PacketReader.Processors.TryRemove(this, out processor))
-                    Thread.Sleep(1);
+                // PacketReader.Processors still holds entries from any old code paths (e.g. tests that
+                // exercise ReadPackets via the same reader instance). Remove ours if present — harmless
+                // when absent.
+                PacketReader.Processors.TryRemove(this, out _);
 
                 Disconnect();
 
-                sem.Dispose();
-
                 if (Disposed != null)
                     Disposed(this, null);
-                sem = null;
             }
         }
     }

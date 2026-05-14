@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq.Expressions;
 using TrueCraft.API.Networking;
 using TrueCraft.Core.Networking.Packets;
@@ -69,6 +71,51 @@ namespace TrueCraft.Core.Networking
             stream.WriteUInt8(packet.ID);
             packet.WritePacket(stream);
             stream.BaseStream.Flush();
+        }
+
+        // Hint for the contiguous scratch buffer used by TryReadPacket. Beta 1.7.3 chunk-data packets
+        // are the largest legitimate packets (raw is bounded by Chunk.Width*Height*Depth*2.5 ~= 80 KiB);
+        // 256 KiB gives us comfortable headroom without becoming a memory hog.
+        private const int MaxPacketSize = 256 * 1024;
+
+        public bool TryReadPacket(ref ReadOnlySequence<byte> buffer, out IPacket packet, bool serverbound = true)
+        {
+            packet = null;
+            if (buffer.IsEmpty) return false;
+
+            // Snapshot up to MaxPacketSize bytes into a contiguous rented buffer, then try to parse
+            // one packet via the existing MinecraftStream / IPacket.ReadPacket machinery. If parsing
+            // runs out of bytes, the packet wants more — leave the sequence untouched and return false.
+            int candidateLen = (int)Math.Min(buffer.Length, MaxPacketSize);
+            byte[] rented = ArrayPool<byte>.Shared.Rent(candidateLen);
+            try
+            {
+                buffer.Slice(0, candidateLen).CopyTo(rented);
+                byte packetId = rented[0];
+                var factory = serverbound ? ServerboundPackets[packetId] : ClientboundPackets[packetId];
+                if (factory == null)
+                    throw new NotSupportedException("Unable to read packet type 0x" + packetId.ToString("X2"));
+
+                using var ms = new MemoryStream(rented, 1, candidateLen - 1);
+                using var stream = new MinecraftStream(ms);
+                IPacket p = factory();
+                try
+                {
+                    p.ReadPacket(stream);
+                }
+                catch (EndOfStreamException)
+                {
+                    return false;
+                }
+                int consumed = 1 + (int)ms.Position; // +1 for the packet ID byte
+                buffer = buffer.Slice(consumed);
+                packet = p;
+                return true;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rented);
+            }
         }
 
         /// <summary>

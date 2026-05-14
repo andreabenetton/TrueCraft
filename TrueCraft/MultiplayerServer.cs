@@ -430,15 +430,15 @@ namespace TrueCraft
         }
 
 
-        private Task DoEnvironmentAsync(CancellationToken cancellationToken)
+        private async Task DoEnvironmentAsync(CancellationToken cancellationToken)
         {
             if (ShuttingDown)
-                return Task.CompletedTask;
+                return;
 
             long limit = Time.ElapsedMilliseconds + MillisecondsPerTick;
             Profiler.Start("environment");
 
-            Scheduler.Update();
+            await Scheduler.UpdateAsync(cancellationToken).ConfigureAwait(false);
 
             Profiler.Start("environment.entities");
             foreach (var manager in EntityManagers)
@@ -472,7 +472,6 @@ namespace TrueCraft
             }
 
             Profiler.Done(MillisecondsPerTick);
-            return Task.CompletedTask;
         }
 
         public bool PlayerIsWhitelisted(string client)

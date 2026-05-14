@@ -1,6 +1,8 @@
 ﻿using System;
 using TrueCraft.API.Server;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using TrueCraft.API;
 using System.Diagnostics;
 using TrueCraft.Core.Profiling;
@@ -46,6 +48,17 @@ namespace TrueCraft
 
         public void ScheduleEvent(string name, IEventSubject subject, TimeSpan when, Action<IMultiplayerServer> action)
         {
+            // Wrap the sync action as a Task-returning func so the dispatcher only sees one shape.
+            ScheduleEvent(name, subject, when, s =>
+            {
+                action(s);
+                return Task.CompletedTask;
+            });
+        }
+
+
+        public void ScheduleEvent(string name, IEventSubject subject, TimeSpan when, Func<IMultiplayerServer, Task> action)
+        {
             if (DisabledEvents.Contains(name))
                 return;
             long _when = Stopwatch.ElapsedTicks + when.Ticks;
@@ -69,7 +82,7 @@ namespace TrueCraft
             DisposedSubjects.Enqueue((IEventSubject)sender);
         }
 
-        public void Update()
+        public async Task UpdateAsync(CancellationToken cancellationToken = default)
         {
             Profiler.Start("scheduler");
             Profiler.Start("scheduler.receive-events");
@@ -123,7 +136,7 @@ namespace TrueCraft
                 if (e.When <= start)
                 {
                     Profiler.Start("scheduler." + e.Name);
-                    e.Action(Server);
+                    await e.Action(Server).ConfigureAwait(false);
                     Events.RemoveAt(i);
                     i--;
                     Profiler.Done();
@@ -137,7 +150,7 @@ namespace TrueCraft
         private struct ScheduledEvent
         {
             public long When;
-            public Action<IMultiplayerServer> Action;
+            public Func<IMultiplayerServer, Task> Action;
             public IEventSubject Subject;
             public string Name;
         }

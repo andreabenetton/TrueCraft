@@ -114,33 +114,30 @@ namespace TrueCraft
             Server.Start(new IPEndPoint(IPAddress.Parse(ServerConfiguration.ServerAddress), ServerConfiguration.ServerPort));
             Console.CancelKeyPress += HandleCancelKeyPress;
             Server.Scheduler.ScheduleEvent("world.save", null,
-                TimeSpan.FromSeconds(ServerConfiguration.WorldSaveInterval), SaveWorlds);
+                TimeSpan.FromSeconds(ServerConfiguration.WorldSaveInterval),
+                (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
 
             // Park here until SIGINT (HandleCancelKeyPress) signals shutdown. Replaces the previous
             // `while (true) Thread.Yield();` spin so the main thread doesn't burn a core idling.
             await ShutdownSignal.Task.ConfigureAwait(false);
         }
 
-        // Scheduler delegate is still sync (Action<IMultiplayerServer>) in Phase 5; SaveAsync is fire-and-forget
-        // with logging on faults. Phase 7 converts the scheduler to Func<..., Task> so this can be properly awaited.
-        static void SaveWorlds(IMultiplayerServer server)
+        static async Task SaveWorldsAsync(IMultiplayerServer server)
         {
             Server.Log(LogCategory.Notice, "Saving world...");
-            _ = Task.Run(async () =>
+            try
             {
-                try
-                {
-                    foreach (var w in Server.Worlds)
-                        await w.SaveAsync().ConfigureAwait(false);
-                    Server.Log(LogCategory.Notice, "Done.");
-                }
-                catch (Exception ex)
-                {
-                    Server.Log(LogCategory.Error, "World save failed: {0}", ex);
-                }
-            });
+                foreach (var w in Server.Worlds)
+                    await w.SaveAsync().ConfigureAwait(false);
+                Server.Log(LogCategory.Notice, "Done.");
+            }
+            catch (Exception ex)
+            {
+                Server.Log(LogCategory.Error, "World save failed: {0}", ex);
+            }
             server.Scheduler.ScheduleEvent("world.save", null,
-                TimeSpan.FromSeconds(ServerConfiguration.WorldSaveInterval), SaveWorlds);
+                TimeSpan.FromSeconds(ServerConfiguration.WorldSaveInterval),
+                (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
         }
 
         static void HandleCancelKeyPress(object sender, ConsoleCancelEventArgs e)

@@ -6,6 +6,7 @@ using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
@@ -41,6 +42,25 @@ namespace TrueCraft.Client
         private readonly Pipe _receivePipe = new Pipe();
         private Task _fillTask;
         private Task _processTask;
+
+        // Phase N6: send pipeline mirrors the server. Per-packet SocketAsyncEventArgs and ToArray() copies
+        // are replaced by a pooled byte[] posted onto a Channel that a dedicated send task drains.
+        private readonly Channel<PendingSend> _sendQueue = Channel.CreateUnbounded<PendingSend>(
+            new UnboundedChannelOptions { SingleReader = true, SingleWriter = false, AllowSynchronousContinuations = false });
+        private Task _sendTask;
+
+        private readonly struct PendingSend
+        {
+            public PendingSend(byte[] buffer, int length, bool isDisconnect)
+            {
+                Buffer = buffer;
+                Length = length;
+                IsDisconnect = isDisconnect;
+            }
+            public byte[] Buffer { get; }
+            public int Length { get; }
+            public bool IsDisconnect { get; }
+        }
 
         public MultiplayerClient(TrueCraftUser user)
         {
@@ -133,6 +153,7 @@ namespace TrueCraft.Client
 
                 _fillTask = Task.Run(() => FillReceivePipeAsync(cancel.Token));
                 _processTask = Task.Run(() => ProcessReceivePipeAsync(cancel.Token));
+                _sendTask = Task.Run(() => RunSendLoopAsync(cancel.Token));
                 QueuePacket(new HandshakePacket(User.Username));
             }
             else
@@ -146,7 +167,10 @@ namespace TrueCraft.Client
             if (!Connected)
                 return;
 
+            // Queue the disconnect packet; the send loop will half-close the socket and cancel
+            // after sending it. Mark Connected=false up front so further QueuePacket calls bail early.
             QueuePacket(new DisconnectPacket("Disconnecting"));
+            _sendQueue.Writer.TryComplete();
 
             Interlocked.CompareExchange(ref _connected, 0, 1);
         }
@@ -163,46 +187,70 @@ namespace TrueCraft.Client
             if (!Connected || Client != null && !Client.Connected)
                 return;
 
-            using (var writeStream = new MemoryStream())
-            {
-                using (var ms = new MinecraftStream(writeStream))
-                {
-                    ms.WriteUInt8(packet.ID);
-                    packet.WritePacket(ms);
-                }
+            // Serialize into a per-call MemoryStream and copy into a pooled byte[]. The pooled buffer is
+            // returned by the send loop after Socket.SendAsync completes.
+            using var writeStream = new MemoryStream();
+            var stream = new MinecraftStream(writeStream);
+            stream.WriteUInt8(packet.ID);
+            packet.WritePacket(stream);
 
-                var buffer = writeStream.ToArray();
+            int length = (int)writeStream.Length;
+            byte[] rented = ArrayPool<byte>.Shared.Rent(length);
+            writeStream.GetBuffer().AsSpan(0, length).CopyTo(rented);
 
-                var args = new SocketAsyncEventArgs();
-                args.UserToken = packet;
-                args.Completed += OperationCompleted;
-                args.SetBuffer(buffer, 0, buffer.Length);
-
-                if (Client != null && !Client.Client.SendAsync(args))
-                    OperationCompleted(this, args);
-            }
+            var item = new PendingSend(rented, length, packet is DisconnectPacket);
+            if (!_sendQueue.Writer.TryWrite(item))
+                ArrayPool<byte>.Shared.Return(rented);
         }
 
-        private void OperationCompleted(object sender, SocketAsyncEventArgs e)
+        private async Task RunSendLoopAsync(CancellationToken cancellationToken)
         {
-            // After Phase N5, only Send completions reach this handler — receive moved to the Pipe.
-            e.Completed -= OperationCompleted;
-
-            switch (e.LastOperation)
+            try
             {
-                case SocketAsyncOperation.Send:
-                    var packet = e.UserToken as IPacket;
-
-                    if (packet is DisconnectPacket)
+                while (await _sendQueue.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    while (_sendQueue.Reader.TryRead(out PendingSend item))
                     {
-                        Client.Client.Shutdown(SocketShutdown.Send);
-                        Client.Close();
+                        try
+                        {
+                            if (Client != null && Client.Connected)
+                            {
+                                await Client.Client.SendAsync(
+                                    item.Buffer.AsMemory(0, item.Length),
+                                    SocketFlags.None,
+                                    cancellationToken).ConfigureAwait(false);
+                            }
+                        }
+                        catch (SocketException) { /* peer gone */ }
+                        catch (ObjectDisposedException) { /* socket disposed */ }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(item.Buffer);
+                        }
 
-                        cancel.Cancel();
+                        if (item.IsDisconnect)
+                        {
+                            // Mirror the legacy OperationCompleted behavior: half-close on Disconnect,
+                            // close the TcpClient, signal the receive tasks to stop.
+                            try { Client.Client.Shutdown(SocketShutdown.Send); }
+                            catch (SocketException) { }
+                            catch (ObjectDisposedException) { }
+                            try { Client.Close(); } catch (ObjectDisposedException) { }
+                            cancel.Cancel();
+                            return;
+                        }
                     }
-
-                    e.SetBuffer(null, 0, 0);
-                    break;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // graceful shutdown
+            }
+            finally
+            {
+                // Return any buffers still queued so ArrayPool doesn't lose them.
+                while (_sendQueue.Reader.TryRead(out PendingSend leftover))
+                    ArrayPool<byte>.Shared.Return(leftover.Buffer);
             }
         }
 

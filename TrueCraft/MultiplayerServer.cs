@@ -74,6 +74,10 @@ namespace TrueCraft
         private PeriodicTimer EnvironmentTimer;
         private CancellationTokenSource EnvironmentCts;
         private Task EnvironmentLoopTask;
+        // Accept loop (Phase N4): TAP-based `await listener.AcceptSocketAsync(ct)` in a while loop. The old
+        // SAEA-recursion accept pattern is gone; accept failures are now logged instead of silently swallowed.
+        private CancellationTokenSource AcceptCts;
+        private Task AcceptLoopTask;
         private TcpListener Listener;
         private readonly PacketHandler[] PacketHandlers;
         private IList<ILogProvider> LogProviders;
@@ -137,12 +141,9 @@ namespace TrueCraft
             Listener.Start();
             EndPoint = (IPEndPoint)Listener.LocalEndpoint;
 
-            SocketAsyncEventArgs args = new SocketAsyncEventArgs();
-            args.Completed += AcceptClient;
+            AcceptCts = new CancellationTokenSource();
+            AcceptLoopTask = Task.Run(() => RunAcceptLoopAsync(AcceptCts.Token));
 
-            if (!Listener.Server.AcceptAsync(args))
-                AcceptClient(this, args);
-            
             Log(LogCategory.Notice, "Running TrueCraft server on {0}", EndPoint);
             EnvironmentCts = new CancellationTokenSource();
             EnvironmentTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(MillisecondsPerTick));
@@ -154,7 +155,18 @@ namespace TrueCraft
         public void Stop()
         {
             ShuttingDown = true;
-            Listener.Stop();
+            // Cancel the accept loop *before* Listener.Stop() so a pending AcceptSocketAsync sees cancellation
+            // rather than ObjectDisposedException — easier to filter at the catch site.
+            try
+            {
+                AcceptCts?.Cancel();
+                Listener.Stop();
+                AcceptLoopTask?.Wait(TimeSpan.FromSeconds(2));
+            }
+            catch (AggregateException ae) when (ae.InnerException is OperationCanceledException)
+            {
+                // expected on shutdown
+            }
             if(Program.ServerConfiguration.Query)
                 QueryProtocol.Stop();
             // Stop the tick loop before saving worlds: the loop must not be running concurrently with disposal.
@@ -383,25 +395,49 @@ namespace TrueCraft
             client.Dispose();
         }
 
-        private void AcceptClient(object sender, SocketAsyncEventArgs args)
+        private async Task RunAcceptLoopAsync(CancellationToken cancellationToken)
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                var client = new RemoteClient(this, PacketReader, PacketHandlers, args.AcceptSocket);
+                Socket socket;
+                try
+                {
+                    socket = await Listener.AcceptSocketAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Listener.Stop() called concurrently — that's the shutdown path.
+                    break;
+                }
+                catch (SocketException ex)
+                {
+                    // Transient errors (file descriptor exhaustion, peer aborted before accept, etc.).
+                    // Log and continue accepting; don't bring the whole server down on a single accept failure.
+                    Log(LogCategory.Error, "Accept failed: {0}", ex);
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    Log(LogCategory.Error, "Accept failed unexpectedly: {0}", ex);
+                    continue;
+                }
 
-                lock (ClientLock)
-                    Clients.Add(client);
-            }
-            catch
-            {
-                // Who cares
-            }
-            finally
-            {
-                args.AcceptSocket = null;
-
-                if (!ShuttingDown && !Listener.Server.AcceptAsync(args))
-                    AcceptClient(this, args);
+                try
+                {
+                    var client = new RemoteClient(this, PacketReader, PacketHandlers, socket);
+                    lock (ClientLock)
+                        Clients.Add(client);
+                }
+                catch (Exception ex)
+                {
+                    Log(LogCategory.Error, "Client setup failed for {0}: {1}",
+                        socket.RemoteEndPoint?.ToString() ?? "<unknown>", ex);
+                    try { socket.Close(); } catch (ObjectDisposedException) { }
+                }
             }
         }
 

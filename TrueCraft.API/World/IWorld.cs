@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using TrueCraft.API.Logic;
 using TrueCraft.Nbt.Tags;
 
@@ -41,5 +43,7 @@ namespace TrueCraft.API.World
         bool IsValidPosition(Coordinates3D position);
         void Save();
         void Save(string path);
+        Task SaveAsync(CancellationToken cancellationToken = default);
+        Task SaveAsync(string path, CancellationToken cancellationToken = default);
     }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.World;
@@ -262,6 +263,53 @@ namespace TrueCraft.Core.World
             Save();
         }
 
+
+        public async Task SaveAsync(CancellationToken cancellationToken = default)
+        {
+            // Snapshot the region dictionary under the sync lock; once we have the snapshot we can await
+            // each region's async save without holding a non-awaitable monitor.
+            KeyValuePair<Coordinates2D, IRegion>[] snapshot;
+            lock (Regions)
+            {
+                snapshot = Regions.ToArray();
+            }
+
+            foreach (var entry in snapshot)
+            {
+                if (entry.Value is Region r)
+                {
+                    await r.SaveAsync(Path.Combine(BaseDirectory, Region.GetRegionFileName(entry.Key)),
+                        cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    entry.Value.Save(Path.Combine(BaseDirectory, Region.GetRegionFileName(entry.Key)));
+                }
+            }
+
+            var file = new NbtFile();
+            file.RootTag.Add(new NbtCompound("SpawnPoint", new[]
+            {
+                new NbtInt("X", SpawnPoint.X),
+                new NbtInt("Y", SpawnPoint.Y),
+                new NbtInt("Z", SpawnPoint.Z)
+            }));
+            file.RootTag.Add(new NbtInt("Seed", Seed));
+            file.RootTag.Add(new NbtString("ChunkProvider", ChunkProvider.GetType().FullName));
+            file.RootTag.Add(new NbtString("Name", Name));
+            await file.SaveToFileAsync(Path.Combine(BaseDirectory, "manifest.nbt"), NbtCompression.ZLib,
+                cancellationToken).ConfigureAwait(false);
+        }
+
+
+        public async Task SaveAsync(string path, CancellationToken cancellationToken = default)
+        {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+            BaseDirectory = path;
+            await SaveAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         public Coordinates3D FindBlockPosition(Coordinates3D coordinates, out IChunk chunk, bool generate = true)
         {
             if (coordinates.Y < 0 || coordinates.Y >= Chunk.Height)
@@ -333,6 +381,36 @@ namespace TrueCraft.Core.World
             if (File.Exists(Path.Combine(baseDirectory, "manifest.nbt")))
             {
                 var file = new NbtFile(Path.Combine(baseDirectory, "manifest.nbt"));
+                world.SpawnPoint = new Coordinates3D(file.RootTag["SpawnPoint"]["X"].IntValue,
+                    file.RootTag["SpawnPoint"]["Y"].IntValue,
+                    file.RootTag["SpawnPoint"]["Z"].IntValue);
+                world.Seed = file.RootTag["Seed"].IntValue;
+                var providerName = file.RootTag["ChunkProvider"].StringValue;
+                var provider = (IChunkProvider) Activator.CreateInstance(Type.GetType(providerName));
+                provider.Initialize(world);
+                if (file.RootTag.Contains("Name"))
+                    world.Name = file.RootTag["Name"].StringValue;
+                world.ChunkProvider = provider;
+            }
+
+            return world;
+        }
+
+
+        public static async Task<World> LoadWorldAsync(string baseDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            if (!Directory.Exists(baseDirectory))
+                throw new DirectoryNotFoundException();
+
+            var world = new World(Path.GetFileName(baseDirectory));
+            world.BaseDirectory = baseDirectory;
+
+            var manifestPath = Path.Combine(baseDirectory, "manifest.nbt");
+            if (File.Exists(manifestPath))
+            {
+                var file = new NbtFile();
+                await file.LoadFromFileAsync(manifestPath, cancellationToken).ConfigureAwait(false);
                 world.SpawnPoint = new Coordinates3D(file.RootTag["SpawnPoint"]["X"].IntValue,
                     file.RootTag["SpawnPoint"]["Y"].IntValue,
                     file.RootTag["SpawnPoint"]["Z"].IntValue);

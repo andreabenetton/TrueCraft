@@ -3,6 +3,7 @@ using TrueCraft.API.Networking;
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.Sockets;
+using System.Threading.Channels;
 using TrueCraft.Core.Networking;
 using TrueCraft.API.Server;
 using TrueCraft.API.World;
@@ -56,6 +57,17 @@ namespace TrueCraft
             _receivePipe = new Pipe();
             _fillTask = Task.Run(() => FillReceivePipeAsync(cancel.Token));
             _processTask = Task.Run(() => ProcessReceivePipeAsync(cancel.Token));
+
+            // Phase N3: queue + per-client send loop. Replaces the per-packet SocketAsyncEventArgs and
+            // ToArray() allocations in QueuePacket. The channel is unbounded so QueuePacket never blocks;
+            // multiple writers are fine (handlers, scheduler events, the tick loop), one reader is _sendTask.
+            _sendQueue = Channel.CreateUnbounded<PendingSend>(new UnboundedChannelOptions
+            {
+                SingleReader = true,
+                SingleWriter = false,
+                AllowSynchronousContinuations = false
+            });
+            _sendTask = Task.Run(() => RunSendLoopAsync(cancel.Token));
         }
 
         public event EventHandler Disposed;
@@ -87,6 +99,24 @@ namespace TrueCraft
         private readonly Pipe _receivePipe;
         private readonly Task _fillTask;
         private readonly Task _processTask;
+
+        // Phase N3: per-client send pipeline. QueuePacket pushes a (pooled buffer, length) onto the channel;
+        // _sendTask drains and calls Socket.SendAsync on each entry, returning the buffer to ArrayPool.
+        private readonly Channel<PendingSend> _sendQueue;
+        private readonly Task _sendTask;
+
+        private readonly struct PendingSend
+        {
+            public PendingSend(byte[] buffer, int length, bool isDisconnect)
+            {
+                Buffer = buffer;
+                Length = length;
+                IsDisconnect = isDisconnect;
+            }
+            public byte[] Buffer { get; }
+            public int Length { get; }
+            public bool IsDisconnect { get; }
+        }
 
         private SocketAsyncEventArgsPool SocketPool { get; set; }
 
@@ -249,26 +279,75 @@ namespace TrueCraft
             if (Disconnected || (Connection != null && !Connection.Connected))
                 return;
 
-            using (MemoryStream writeStream = new MemoryStream())
+            // Serialize into a local MemoryStream, then copy into an ArrayPool-rented buffer that the
+            // send loop will return after Connection.SendAsync completes. The old code allocated a new
+            // SocketAsyncEventArgs and a fresh ToArray() byte[] *per packet*; both are now eliminated.
+            using var writeStream = new MemoryStream();
+            writeStream.WriteByte(packet.ID);
+            var stream = new MinecraftStream(writeStream);
+            packet.WritePacket(stream);
+
+            int length = (int)writeStream.Length;
+            byte[] rented = ArrayPool<byte>.Shared.Rent(length);
+            writeStream.GetBuffer().AsSpan(0, length).CopyTo(rented);
+
+            var item = new PendingSend(rented, length, packet is DisconnectPacket);
+            if (!_sendQueue.Writer.TryWrite(item))
+                ArrayPool<byte>.Shared.Return(rented);
+        }
+
+        private async Task RunSendLoopAsync(CancellationToken cancellationToken)
+        {
+            try
             {
-                using (MinecraftStream ms = new MinecraftStream(writeStream))
+                while (await _sendQueue.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    writeStream.WriteByte(packet.ID);
-                    packet.WritePacket(ms);
+                    while (_sendQueue.Reader.TryRead(out PendingSend item))
+                    {
+                        try
+                        {
+                            if (Connection != null && Connection.Connected)
+                            {
+                                await Connection.SendAsync(
+                                    item.Buffer.AsMemory(0, item.Length),
+                                    SocketFlags.None,
+                                    cancellationToken).ConfigureAwait(false);
+                            }
+                        }
+                        catch (SocketException)
+                        {
+                            // peer gone — drain and return remaining buffers below
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            // socket disposed during shutdown
+                        }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(item.Buffer);
+                        }
+
+                        if (item.IsDisconnect)
+                        {
+                            Server.DisconnectClient(this);
+                            return;
+                        }
+                    }
                 }
-
-                byte[] buffer = writeStream.ToArray();
-
-                SocketAsyncEventArgs args = new SocketAsyncEventArgs();
-                args.UserToken = packet;
-                args.Completed += OperationCompleted;
-                args.SetBuffer(buffer, 0, buffer.Length);
-
-                if (Connection != null)
-                {
-                    if (!Connection.SendAsync(args))
-                        OperationCompleted(this, args);
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                // graceful shutdown
+            }
+            catch (Exception ex)
+            {
+                Server.Log(LogCategory.Error, "Send loop failed: {0}", ex);
+            }
+            finally
+            {
+                // Return any buffers still queued so ArrayPool doesn't lose them.
+                while (_sendQueue.Reader.TryRead(out PendingSend leftover))
+                    ArrayPool<byte>.Shared.Return(leftover.Buffer);
             }
         }
 
@@ -421,13 +500,19 @@ namespace TrueCraft
 
             Disconnected = true;
 
+            // Stop accepting new packets to send; the send loop drains anything already queued.
+            _sendQueue.Writer.TryComplete();
+
             cancel.Cancel();
 
-            Connection.Shutdown(SocketShutdown.Send);
+            try { Connection.Shutdown(SocketShutdown.Send); }
+            catch (SocketException) { /* peer already gone */ }
+            catch (ObjectDisposedException) { /* socket already disposed */ }
 
             SocketAsyncEventArgs args = new SocketAsyncEventArgs();
             args.Completed += OperationCompleted;
-            Connection.DisconnectAsync(args);
+            try { Connection.DisconnectAsync(args); }
+            catch (ObjectDisposedException) { /* already disposed */ }
         }
 
         public void SendMessage(string message)

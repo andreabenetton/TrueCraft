@@ -3,6 +3,7 @@ using TrueCraft.API.Server;
 using TrueCraft.API.Networking;
 using TrueCraft.Core.Networking;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using System.Collections.Generic;
@@ -67,7 +68,12 @@ namespace TrueCraft
             }
         }
 
-        private Timer EnvironmentWorker;
+        // Tick loop is driven by a PeriodicTimer + async task (see RunEnvironmentLoopAsync). Phase 6 replaced the
+        // System.Threading.Timer-based EnvironmentWorker so tick callbacks can `await` without re-entering on a
+        // pool thread.
+        private PeriodicTimer EnvironmentTimer;
+        private CancellationTokenSource EnvironmentCts;
+        private Task EnvironmentLoopTask;
         private TcpListener Listener;
         private readonly PacketHandler[] PacketHandlers;
         private IList<ILogProvider> LogProviders;
@@ -84,7 +90,6 @@ namespace TrueCraft
             var reader = new PacketReader();
             PacketReader = reader;
             Clients = new List<IRemoteClient>();
-            EnvironmentWorker = new Timer(DoEnvironment);
             PacketHandlers = new PacketHandler[0x100];
             Worlds = new List<IWorld>();
             EntityManagers = new List<IEntityManager>();
@@ -139,7 +144,9 @@ namespace TrueCraft
                 AcceptClient(this, args);
             
             Log(LogCategory.Notice, "Running TrueCraft server on {0}", EndPoint);
-            EnvironmentWorker.Change(MillisecondsPerTick, Timeout.Infinite);
+            EnvironmentCts = new CancellationTokenSource();
+            EnvironmentTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(MillisecondsPerTick));
+            EnvironmentLoopTask = Task.Run(() => RunEnvironmentLoopAsync(EnvironmentCts.Token));
             if(Program.ServerConfiguration.Query)
                 QueryProtocol.Start();
         }
@@ -150,6 +157,17 @@ namespace TrueCraft
             Listener.Stop();
             if(Program.ServerConfiguration.Query)
                 QueryProtocol.Stop();
+            // Stop the tick loop before saving worlds: the loop must not be running concurrently with disposal.
+            try
+            {
+                EnvironmentCts?.Cancel();
+                EnvironmentTimer?.Dispose();
+                EnvironmentLoopTask?.Wait(TimeSpan.FromSeconds(2));
+            }
+            catch (AggregateException ae) when (ae.InnerException is OperationCanceledException)
+            {
+                // expected on shutdown
+            }
             foreach (var w in Worlds)
                 w.Save();
             foreach (var c in Clients)
@@ -387,12 +405,36 @@ namespace TrueCraft
             }
         }
 
-        private void DoEnvironment(object discarded)
+        private async Task RunEnvironmentLoopAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (await EnvironmentTimer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    if (ShuttingDown)
+                        break;
+                    try
+                    {
+                        await DoEnvironmentAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log(LogCategory.Error, "Environment tick raised: {0}", ex);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // graceful shutdown
+            }
+        }
+
+
+        private Task DoEnvironmentAsync(CancellationToken cancellationToken)
         {
             if (ShuttingDown)
-                return;
+                return Task.CompletedTask;
 
-            long start = Time.ElapsedMilliseconds;
             long limit = Time.ElapsedMilliseconds + MillisecondsPerTick;
             Profiler.Start("environment");
 
@@ -430,12 +472,7 @@ namespace TrueCraft
             }
 
             Profiler.Done(MillisecondsPerTick);
-            long end = Time.ElapsedMilliseconds;
-            long next = MillisecondsPerTick - (end - start);
-            if (next < 0)
-                next = 0;
-            
-            EnvironmentWorker.Change(next, Timeout.Infinite);
+            return Task.CompletedTask;
         }
 
         public bool PlayerIsWhitelisted(string client)

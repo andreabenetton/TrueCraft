@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TrueCraft.API.Networking;
 using System.Buffers;
@@ -34,6 +35,7 @@ namespace TrueCraft
         // Named Logger (not Log) because the IRemoteClient.Log(string, params object[])
         // chat-broadcast method already occupies "Log" in this class.
         private static ILogger Logger => App.LoggerFor<RemoteClient>();
+        private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
 
         public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection)
         {

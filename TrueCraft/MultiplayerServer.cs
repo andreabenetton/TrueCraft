@@ -9,6 +9,7 @@ using System.Net;
 using System.Collections.Generic;
 using System.Linq;
 using TrueCraft.API.World;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.API;
@@ -81,6 +82,7 @@ namespace TrueCraft
         private TcpListener Listener;
         private readonly PacketHandler[] PacketHandlers;
         private static ILogger Log => App.LoggerFor<MultiplayerServer>();
+        private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
         private Stopwatch Time;
         private ConcurrentBag<Tuple<IWorld, IChunk>> ChunksToSchedule;
         internal object ClientLock = new object();

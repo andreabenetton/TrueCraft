@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using TrueCraft.Core.Profiling;
 
 namespace TrueCraft
 {
@@ -15,11 +16,27 @@ namespace TrueCraft
     {
         private static IServiceProvider _services;
 
+        /// <summary>
+        ///     The process-wide service provider. If a caller resolves before the
+        ///     hosting process has bootstrapped one, a minimal fallback container is
+        ///     built lazily — useful for unit tests that construct production types
+        ///     directly without bootstrapping a real container. Tests that need
+        ///     specific registrations should assign a built provider explicitly.
+        /// </summary>
         public static IServiceProvider Services
         {
-            get => _services ?? throw new InvalidOperationException(
-                "App.Services is not initialized. Call App.Services = services.BuildServiceProvider() at process start.");
+            get => _services ??= BuildFallback();
             set => _services = value;
+        }
+
+        private static IServiceProvider BuildFallback()
+        {
+            var services = new ServiceCollection();
+            services.AddLogging(b => b.ClearProviders());
+            // Core-level services every consumer can expect to resolve even when no
+            // hosting process bootstrapped a richer container (unit tests, ad-hoc tools).
+            services.AddSingleton<Profiler>();
+            return services.BuildServiceProvider();
         }
 
         public static ILogger<T> LoggerFor<T>() =>

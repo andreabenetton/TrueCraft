@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
@@ -69,7 +70,11 @@ namespace TrueCraft.Client
             PacketReader = new PacketReader();
             PacketReader.RegisterCorePackets();
             PacketHandlers = new PacketHandler[0x100];
-            Handlers.PacketHandlers.RegisterHandlers(this);
+            (App.Services.GetService<Handlers.PacketHandlers>()
+                ?? new Handlers.PacketHandlers(
+                    App.Services.GetService<Microsoft.Extensions.Logging.ILogger<Handlers.PacketHandlers>>()
+                    ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Handlers.PacketHandlers>.Instance))
+                .RegisterHandlers(this);
             World = new ReadOnlyWorld();
             Inventory = new InventoryWindow(null);
             var repo = new BlockRepository();

@@ -9,7 +9,14 @@ namespace TrueCraft.Core.TerrainGen.Decorations
 {
     public class Dungeon : Decoration
     {
-        private static ILogger Log => App.LoggerFor<Dungeon>();
+        private readonly ILogger<Dungeon> _log;
+
+        public Dungeon() : this(App.LoggerFor<Dungeon>()) { }
+
+        public Dungeon(ILogger<Dungeon> log)
+        {
+            _log = log;
+        }
 
         private const int MaxEntrances = 5;
         private readonly Vector3 Size = new Vector3(7, 5, 7);
@@ -26,7 +33,7 @@ namespace TrueCraft.Core.TerrainGen.Decorations
 
         public override bool GenerateAt(IWorld world, IChunk chunk, Coordinates3D location)
         {
-            Log.LogDebug("Dungeon in chunk {ChunkCoordinates}", chunk.Coordinates);
+            _log.LogDebug("Dungeon in chunk {ChunkCoordinates}", chunk.Coordinates);
             if (!ValidLocation(location))
                 return false;
 

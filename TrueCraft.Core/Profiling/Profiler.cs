@@ -1,50 +1,40 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace TrueCraft.Core.Profiling
 {
-    public static class Profiler
+    public class Profiler
     {
-        private static ILogger Log => App.LoggerFor("TrueCraft.Core.Profiling.Profiler");
+        private readonly ILogger<Profiler> _log;
+        private readonly object _lock = new object();
+        private readonly Stopwatch _stopwatch;
+        private readonly List<string> _enabledBuckets = new();
+        private readonly Stack<ActiveTimer> _activeTimers = new();
 
-        private static readonly object Lock = new object();
-
-        static Profiler()
+        public Profiler(ILogger<Profiler> log)
         {
-            Stopwatch = new Stopwatch();
-            EnabledBuckets = new List<string>();
-            ActiveTimers = new Stack<ActiveTimer>();
-            LogLag = false;
-            Stopwatch.Start();
+            _log = log;
+            _stopwatch = new Stopwatch();
+            _stopwatch.Start();
         }
 
-        private static Stopwatch Stopwatch { get; }
-        private static List<string> EnabledBuckets { get; }
-        private static Stack<ActiveTimer> ActiveTimers { get; }
-
-        public static bool LogLag { get; set; }
+        public bool LogLag { get; set; }
 
         [Conditional("DEBUG")]
-        public static void EnableBucket(string bucket)
-        {
-            EnabledBuckets.Add(bucket);
-        }
+        public void EnableBucket(string bucket) => _enabledBuckets.Add(bucket);
 
         [Conditional("DEBUG")]
-        public static void DisableBucket(string bucket)
-        {
-            EnabledBuckets.Remove(bucket);
-        }
+        public void DisableBucket(string bucket) => _enabledBuckets.Remove(bucket);
 
         [Conditional("DEBUG")]
-        public static void Start(string bucket)
+        public void Start(string bucket)
         {
-            lock (Lock)
+            lock (_lock)
             {
-                ActiveTimers.Push(new ActiveTimer
+                _activeTimers.Push(new ActiveTimer
                 {
-                    Started = Stopwatch.ElapsedTicks,
+                    Started = _stopwatch.ElapsedTicks,
                     Finished = -1,
                     Bucket = bucket
                 });
@@ -52,25 +42,25 @@ namespace TrueCraft.Core.Profiling
         }
 
         [Conditional("DEBUG")]
-        public static void Done(long lag = -1)
+        public void Done(long lag = -1)
         {
-            lock (Lock)
+            lock (_lock)
             {
-                if (ActiveTimers.Count > 0)
+                if (_activeTimers.Count > 0)
                 {
-                    var timer = ActiveTimers.Pop();
-                    timer.Finished = Stopwatch.ElapsedTicks;
+                    var timer = _activeTimers.Pop();
+                    timer.Finished = _stopwatch.ElapsedTicks;
                     var elapsed = (timer.Finished - timer.Started) / 10000.0;
-                    foreach (var bucket in EnabledBuckets)
+                    foreach (var bucket in _enabledBuckets)
                         if (Match(bucket, timer.Bucket))
                         {
-                            Log.LogInformation("[@{Elapsed:0.00}s] {Bucket} took {Took}ms",
-                                Stopwatch.ElapsedMilliseconds / 1000.0, timer.Bucket, elapsed);
+                            _log.LogInformation("[@{Elapsed:0.00}s] {Bucket} took {Took}ms",
+                                _stopwatch.ElapsedMilliseconds / 1000.0, timer.Bucket, elapsed);
                             break;
                         }
 
                     if (LogLag && lag != -1 && elapsed > lag)
-                        Log.LogWarning("{Bucket} is lagging by {Elapsed}ms", timer.Bucket, elapsed);
+                        _log.LogWarning("{Bucket} is lagging by {Elapsed}ms", timer.Bucket, elapsed);
                 }
             }
         }

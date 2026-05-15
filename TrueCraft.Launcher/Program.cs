@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TrueCraft.Core;
+using TrueCraft.Core.Profiling;
 using TrueCraft;
 
 namespace TrueCraft.Launcher
@@ -21,6 +22,7 @@ namespace TrueCraft.Launcher
             services.AddSerilogLogging(launcherConfig.Configuration);
             services.AddSingleton(launcherConfig);
             services.AddSingleton<IConfiguration>(launcherConfig.Configuration);
+            services.AddSingleton<Profiler>();
             App.Services = services.BuildServiceProvider();
 
             Log.LogInformation("TrueCraft.Launcher starting");

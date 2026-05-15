@@ -6,12 +6,15 @@ using System.Threading.Tasks;
 using TrueCraft.API;
 using System.Diagnostics;
 using TrueCraft.Core.Profiling;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 
 namespace TrueCraft
 {
     public class EventScheduler : IEventScheduler
     {
+        private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
+
         private IList<ScheduledEvent> Events { get; set; } // Sorted
         private readonly object EventLock = new object();
         private IMultiplayerServer Server { get; set; }

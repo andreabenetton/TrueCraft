@@ -27,6 +27,7 @@ namespace TrueCraft
         // Resolved per-use so the property is safe to read before/after App.Services init
         // (Program's static field initializers run before Main, before App.Services is set).
         private static ILogger Log => App.LoggerFor<Program>();
+        private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
 
         // Signaled by Ctrl-C / SIGINT to release the awaitable shutdown hold in Main.
         private static readonly TaskCompletionSource ShutdownSignal =
@@ -40,6 +41,7 @@ namespace TrueCraft
             services.AddSerilogLogging(NodeConfiguration.Configuration);
             services.AddSingleton(NodeConfiguration);
             services.AddSingleton<IConfiguration>(NodeConfiguration.Configuration);
+            services.AddSingleton<Profiler>();
             App.Services = services.BuildServiceProvider();
 
             Server = new MultiplayerServer();

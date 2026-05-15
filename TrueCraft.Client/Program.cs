@@ -1,7 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.DependencyInjection;
+using TrueCraft.Client.Handlers;
 using TrueCraft.Core;
 
 namespace TrueCraft.Client
@@ -11,6 +13,13 @@ namespace TrueCraft.Client
         [STAThread]
         public static void Main(string[] args)
         {
+            // Minimal DI container — client has no settings file yet; logging
+            // falls back to the default null sink.
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddSingleton<PacketHandlers>();
+            App.Services = services.BuildServiceProvider();
+
             UserSettings.Local = UserSettings.Load();
 
             // Argument order: <server[:port]> <username>

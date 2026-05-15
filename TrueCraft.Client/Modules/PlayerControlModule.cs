@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using TrueCraft.API;
@@ -44,7 +43,7 @@ namespace TrueCraft.Client.Modules
             {
                 // Exit game
                 case Keys.Escape:
-                    Process.GetCurrentProcess().Kill();
+                    Game.Exit();
                     return true;
 
                 // Take a screenshot.

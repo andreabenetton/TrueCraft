@@ -19,11 +19,6 @@ namespace TrueCraft.Launcher.Views
         private Button _deleteButton;
         private Button _playButton;
         private Button _backButton;
-        private Panel _createWorldPanel;
-        private TextInput _newWorldName;
-        private TextInput _newWorldSeed;
-        private Button _newWorldCommit;
-        private Button _newWorldCancel;
         private Label _progressLabel;
         private ProgressBar _progressBar;
         private SingleplayerServer _server;
@@ -48,7 +43,8 @@ namespace TrueCraft.Launcher.Views
 
             _createButton = new Button("New world", anchor: Anchor.AutoInline,
                 size: new Vector2(0.5f, -1));
-            _createButton.OnClick = _ => SetCreateWorldVisible(true);
+            _createButton.OnClick = _ => _game.ShowView(
+                new NewWorldView(_game, world => _game.ShowView(new SingleplayerView(_game))));
             parent.AddChild(_createButton);
 
             _deleteButton = new Button("Delete", ButtonSkin.Alternative, Anchor.AutoInline,
@@ -61,26 +57,6 @@ namespace TrueCraft.Launcher.Views
             _playButton.Enabled = false;
             _playButton.OnClick = _ => PlaySelectedWorld();
             parent.AddChild(_playButton);
-
-            _createWorldPanel = new Panel(new Vector2(0, 200), PanelSkin.None, Anchor.Auto)
-            {
-                Visible = false,
-            };
-            _newWorldName = new TextInput(false) { PlaceholderText = "Name" };
-            _createWorldPanel.AddChild(_newWorldName);
-            _newWorldSeed = new TextInput(false) { PlaceholderText = "Seed (optional)" };
-            _createWorldPanel.AddChild(_newWorldSeed);
-
-            _newWorldCommit = new Button("Create", anchor: Anchor.AutoInline,
-                size: new Vector2(0.5f, -1));
-            _newWorldCommit.OnClick = _ => CommitCreateWorld();
-            _createWorldPanel.AddChild(_newWorldCommit);
-
-            _newWorldCancel = new Button("Cancel", ButtonSkin.Alternative, Anchor.AutoInline,
-                new Vector2(0.5f, -1));
-            _newWorldCancel.OnClick = _ => SetCreateWorldVisible(false);
-            _createWorldPanel.AddChild(_newWorldCancel);
-            parent.AddChild(_createWorldPanel);
 
             _progressLabel = new Label("Loading world...", Anchor.Auto) { Visible = false };
             parent.AddChild(_progressLabel);
@@ -97,26 +73,6 @@ namespace TrueCraft.Launcher.Views
             var has = _worldList.SelectedIndex >= 0;
             _playButton.Enabled = has;
             _deleteButton.Enabled = has;
-        }
-
-        private void SetCreateWorldVisible(bool visible)
-        {
-            _createWorldPanel.Visible = visible;
-            if (visible)
-            {
-                _newWorldName.Value = string.Empty;
-                _newWorldSeed.Value = string.Empty;
-            }
-        }
-
-        private void CommitCreateWorld()
-        {
-            var name = _newWorldName.Value?.Trim();
-            if (string.IsNullOrEmpty(name))
-                return;
-            var world = Worlds.Local.CreateNewWorld(name, _newWorldSeed.Value);
-            SetCreateWorldVisible(false);
-            _worldList.AddItem(world.Name);
         }
 
         private void DeleteSelectedWorld()

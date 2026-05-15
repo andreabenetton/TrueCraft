@@ -152,6 +152,7 @@ namespace TrueCraft.Client
             InputModules.Add(new HUDModule(this, Pixel));
             InputModules.Add(ControlModule = new PlayerControlModule(this));
 
+            Client.MainThreadInvoke = Invoke;
             Client.PropertyChanged += HandleClientPropertyChanged;
             Client.Connect(EndPoint);
 

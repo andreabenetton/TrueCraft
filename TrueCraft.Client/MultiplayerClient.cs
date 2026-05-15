@@ -87,6 +87,12 @@ namespace TrueCraft.Client
 
         public TrueCraftUser User { get; set; }
         public ReadOnlyWorld World { get; }
+
+        /// <summary>
+        ///     Set by the hosting game so packet handlers running on the network thread can
+        ///     marshal mutating work onto the game thread. Null when no game is attached.
+        /// </summary>
+        public Action<Action> MainThreadInvoke { get; set; }
         public PhysicsEngine Physics { get; set; }
         public bool LoggedIn { get; internal set; }
         public int EntityID { get; internal set; }

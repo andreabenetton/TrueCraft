@@ -24,12 +24,11 @@ namespace TrueCraft
 
         public static CommandManager CommandManager;
 
-        public static MultiplayerServer Server;
-
         // Resolved per-use so the property is safe to read before/after App.Services init
         // (Program's static field initializers run before Main, before App.Services is set).
         private static ILogger Log => App.LoggerFor<Program>();
         private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
+        private static MultiplayerServer Server => App.Services.GetRequiredService<MultiplayerServer>();
 
         // Signaled by Ctrl-C / SIGINT to release the awaitable shutdown hold in Main.
         private static readonly TaskCompletionSource ShutdownSignal =
@@ -62,9 +61,8 @@ namespace TrueCraft
                 repo.DiscoverRecipes();
                 return repo;
             });
+            services.AddSingleton<MultiplayerServer>();
             App.Services = services.BuildServiceProvider();
-
-            Server = new MultiplayerServer();
 
             var buckets = NodeConfiguration.Debug?.Profiler?.Buckets?.Split(',');
             if (buckets != null)

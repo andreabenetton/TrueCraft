@@ -235,7 +235,7 @@ namespace TrueCraft
         private List<string> GetPlayers()
         {
             var names = new List<string>();
-            lock (Program.Server.ClientLock)
+            lock (((MultiplayerServer)Server).ClientLock)
                 foreach (var client in Server.Clients)
                     names.Add(client.Username);
             return names;

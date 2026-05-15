@@ -312,8 +312,7 @@ namespace TrueCraft.Client
         {
             GameTime = gameTime;
 
-            if (PendingMainThreadActions.TryTake(out var action))
-                action();
+            FlushMainThreadActions();
 
             var adjusted = Client.World.World.FindBlockPosition(
                 new Coordinates3D((int) Client.Position.X, 0, (int) Client.Position.Z), out var chunk);

@@ -81,6 +81,15 @@ namespace TrueCraft.Nbt
         public int MaxArrayElements { get; set; } = 16 * 1024 * 1024;
 
         /// <summary>
+        ///     Whether the root TAG_Compound is preceded by a name on the wire.
+        ///     Defaults to <c>true</c> for the disk-format NBT every Java edition uses.
+        ///     Set to <c>false</c> for the nameless-root network NBT framing introduced
+        ///     in the Java Edition 1.20.2 protocol — that variant is also typically
+        ///     used with <see cref="UseStandardUtf8"/> = true.
+        /// </summary>
+        public bool RootHasName { get; set; } = true;
+
+        /// <summary>
         ///     Gets or sets the default value of <c>BufferSize</c> property. Default is 8192.
         ///     Set to 0 to disable buffering by default.
         /// </summary>
@@ -612,6 +621,26 @@ namespace TrueCraft.Nbt
         }
 
 
+        /// <summary>
+        ///     Write the root TAG_Compound, honouring <see cref="RootHasName"/>. With the
+        ///     flag set (default) this emits <c>[0x0A][name][body][0x00]</c> — the disk
+        ///     framing. With it cleared this emits <c>[0x0A][body][0x00]</c>, matching
+        ///     the network-NBT framing used by Java protocol 1.20.2+.
+        /// </summary>
+        private void WriteRoot(NbtBinaryWriter writer)
+        {
+            if (RootHasName)
+            {
+                _rootTag.WriteTag(writer);
+            }
+            else
+            {
+                writer.Write(NbtTagType.Compound);
+                _rootTag.WriteData(writer);
+            }
+        }
+
+
         private void LoadFromStreamInternal([NotNull] Stream stream, [CanBeNull] TagSelector tagSelector)
         {
             // Make sure the first byte in this file is the tag for a TAG_Compound
@@ -629,7 +658,8 @@ namespace TrueCraft.Nbt
                 MaxArrayElements = MaxArrayElements
             };
 
-            var rootCompound = new NbtCompound(reader.ReadString());
+            var rootName = RootHasName ? reader.ReadString() : string.Empty;
+            var rootCompound = new NbtCompound(rootName);
             rootCompound.ReadTag(reader);
             RootTag = rootCompound;
         }
@@ -823,7 +853,7 @@ namespace TrueCraft.Nbt
                     throw new ArgumentOutOfRangeException(nameof(compression));
             }
 
-            if (_rootTag.Name == null)
+            if (RootHasName && _rootTag.Name == null)
                 // This may trigger if root tag has been renamed
                 throw new NbtFormatException(
                     "Cannot save NbtFile: Root tag is not named. Its name may be an empty string, but not null.");
@@ -843,7 +873,7 @@ namespace TrueCraft.Nbt
                     using (var compressStream = new ZLibStream(stream, CompressionMode.Compress, true))
                     {
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
+                        WriteRoot(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
                         bufferedStream.Flush();
                         checksum = compressStream.Checksum;
                     }
@@ -861,7 +891,7 @@ namespace TrueCraft.Nbt
                     {
                         // use a buffered stream to avoid GZipping in small increments (which has a lot of overhead)
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
+                        WriteRoot(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
                         bufferedStream.Flush();
                     }
 
@@ -869,7 +899,7 @@ namespace TrueCraft.Nbt
 
                 case NbtCompression.None:
                     var writer = new NbtBinaryWriter(stream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 };
-                    RootTag.WriteTag(writer);
+                    WriteRoot(writer);
                     break;
 
                 default:

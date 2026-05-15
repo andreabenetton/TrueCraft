@@ -13,10 +13,22 @@ namespace TrueCraft.Client
         {
             UserSettings.Local = UserSettings.Load();
 
-            var user = new TrueCraftUser {Username = "andbene"};
-            //var user = new TrueCraftUser { Username = args[1] };
+            // Argument order: <server[:port]> <username>
+            var endpoint = args.Length > 0
+                ? args[0]
+                : !string.IsNullOrWhiteSpace(UserSettings.Local.LastIP)
+                    ? UserSettings.Local.LastIP
+                    : "127.0.0.1:25565";
+
+            var username = args.Length > 1
+                ? args[1]
+                : !string.IsNullOrWhiteSpace(UserSettings.Local.Username)
+                    ? UserSettings.Local.Username
+                    : "Player";
+
+            var user = new TrueCraftUser { Username = username };
             var client = new MultiplayerClient(user);
-            var game = new TrueCraftGame(client, ParseEndPoint("127.0.0.1:25565")); //args[0]
+            var game = new TrueCraftGame(client, ParseEndPoint(endpoint));
             game.Run();
             client.Disconnect();
         }

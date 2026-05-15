@@ -78,8 +78,7 @@ namespace TrueCraft.Client.Input
             {
                 var args = new MouseMoveEventArgs(newState.X, newState.Y, newState.X - oldState.X,
                     newState.Y - oldState.Y);
-                if (Move != null)
-                    Move(this, args);
+                Move?.Invoke(this, args);
             }
 
             // Scrolling.
@@ -87,62 +86,26 @@ namespace TrueCraft.Client.Input
             {
                 var args = new MouseScrollEventArgs(newState.X, newState.Y, newState.ScrollWheelValue,
                     newState.ScrollWheelValue - oldState.ScrollWheelValue);
-                if (Scroll != null)
-                    Scroll(this, args);
+                Scroll?.Invoke(this, args);
             }
 
             // A bit of code duplication here, shame XNA doesn't expose button state through an enumeration...
 
-            // Left button.
-            if (newState.LeftButton != oldState.LeftButton)
-            {
-                var args = new MouseButtonEventArgs(newState.X, newState.Y, MouseButton.Left,
-                    newState.LeftButton == ButtonState.Pressed);
-                if (args.IsPressed)
-                {
-                    if (ButtonDown != null)
-                        ButtonDown(this, args);
-                }
-                else
-                {
-                    if (ButtonUp != null)
-                        ButtonUp(this, args);
-                }
-            }
+            DispatchButton(MouseButton.Left, newState.LeftButton, oldState.LeftButton, newState.X, newState.Y);
+            DispatchButton(MouseButton.Right, newState.RightButton, oldState.RightButton, newState.X, newState.Y);
+            DispatchButton(MouseButton.Middle, newState.MiddleButton, oldState.MiddleButton, newState.X, newState.Y);
+        }
 
-            // Right button.
-            if (newState.RightButton != oldState.RightButton)
-            {
-                var args = new MouseButtonEventArgs(newState.X, newState.Y, MouseButton.Right,
-                    newState.RightButton == ButtonState.Pressed);
-                if (args.IsPressed)
-                {
-                    if (ButtonDown != null)
-                        ButtonDown(this, args);
-                }
-                else
-                {
-                    if (ButtonUp != null)
-                        ButtonUp(this, args);
-                }
-            }
+        private void DispatchButton(MouseButton button, ButtonState newState, ButtonState oldState, int x, int y)
+        {
+            if (newState == oldState)
+                return;
 
-            // Middle button.
-            if (newState.MiddleButton != oldState.MiddleButton)
-            {
-                var args = new MouseButtonEventArgs(newState.X, newState.Y, MouseButton.Middle,
-                    newState.MiddleButton == ButtonState.Pressed);
-                if (args.IsPressed)
-                {
-                    if (ButtonDown != null)
-                        ButtonDown(this, args);
-                }
-                else
-                {
-                    if (ButtonUp != null)
-                        ButtonUp(this, args);
-                }
-            }
+            var args = new MouseButtonEventArgs(x, y, button, newState == ButtonState.Pressed);
+            if (args.IsPressed)
+                ButtonDown?.Invoke(this, args);
+            else
+                ButtonUp?.Invoke(this, args);
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using System;
-using MonoGame.Utilities;
+using System.IO;
+using System.IO.Compression;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
@@ -46,7 +47,7 @@ namespace TrueCraft.Client.Handlers
         {
             var chunkDataPacket = (ChunkDataPacket) packet;
             var coords = new Coordinates3D(chunkDataPacket.X, chunkDataPacket.Y, chunkDataPacket.Z);
-            var data = ZlibStream.UncompressBuffer(chunkDataPacket.CompressedData);
+            var data = ZlibDecompress(chunkDataPacket.CompressedData);
             var adjustedCoords = client.World.World.FindBlockPosition(coords, out var chunk);
 
             if (chunkDataPacket.Width == Chunk.Width
@@ -125,6 +126,15 @@ namespace TrueCraft.Client.Handlers
             chunk.UpdateHeightMap();
             chunk.TerrainPopulated = true;
             client.OnChunkLoaded(new ChunkEventArgs(new ReadOnlyChunk(chunk)));
+        }
+
+        private static byte[] ZlibDecompress(byte[] compressed)
+        {
+            using var source = new MemoryStream(compressed);
+            using var zlib = new ZLibStream(source, CompressionMode.Decompress);
+            using var output = new MemoryStream();
+            zlib.CopyTo(output);
+            return output.ToArray();
         }
     }
 }

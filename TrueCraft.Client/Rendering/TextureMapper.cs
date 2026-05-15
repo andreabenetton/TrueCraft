@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using Microsoft.Xna.Framework.Graphics;
-using MonoGame.Utilities.Png;
 using TrueCraft.Core;
 
 namespace TrueCraft.Client.Rendering
@@ -62,17 +61,21 @@ namespace TrueCraft.Client.Rendering
         {
             Defaults.Clear();
 
-            Defaults.Add("terrain.png", new PngReader().Read(File.OpenRead("Content/terrain.png"), graphicsDevice));
-            Defaults.Add("gui/items.png", new PngReader().Read(File.OpenRead("Content/items.png"), graphicsDevice));
-            Defaults.Add("gui/gui.png", new PngReader().Read(File.OpenRead("Content/gui.png"), graphicsDevice));
-            Defaults.Add("gui/icons.png", new PngReader().Read(File.OpenRead("Content/icons.png"), graphicsDevice));
-            Defaults.Add("gui/crafting.png",
-                new PngReader().Read(File.OpenRead("Content/crafting.png"), graphicsDevice));
-            Defaults.Add("gui/furnace.png", new PngReader().Read(File.OpenRead("Content/furnace.png"), graphicsDevice));
-            Defaults.Add("gui/inventory.png",
-                new PngReader().Read(File.OpenRead("Content/inventory.png"), graphicsDevice));
-            Defaults.Add("terrain/moon.png", new PngReader().Read(File.OpenRead("Content/moon.png"), graphicsDevice));
-            Defaults.Add("terrain/sun.png", new PngReader().Read(File.OpenRead("Content/sun.png"), graphicsDevice));
+            Defaults.Add("terrain.png", LoadPng(graphicsDevice, "Content/terrain.png"));
+            Defaults.Add("gui/items.png", LoadPng(graphicsDevice, "Content/items.png"));
+            Defaults.Add("gui/gui.png", LoadPng(graphicsDevice, "Content/gui.png"));
+            Defaults.Add("gui/icons.png", LoadPng(graphicsDevice, "Content/icons.png"));
+            Defaults.Add("gui/crafting.png", LoadPng(graphicsDevice, "Content/crafting.png"));
+            Defaults.Add("gui/furnace.png", LoadPng(graphicsDevice, "Content/furnace.png"));
+            Defaults.Add("gui/inventory.png", LoadPng(graphicsDevice, "Content/inventory.png"));
+            Defaults.Add("terrain/moon.png", LoadPng(graphicsDevice, "Content/moon.png"));
+            Defaults.Add("terrain/sun.png", LoadPng(graphicsDevice, "Content/sun.png"));
+        }
+
+        private static Texture2D LoadPng(GraphicsDevice graphicsDevice, string path)
+        {
+            using var stream = File.OpenRead(path);
+            return Texture2D.FromStream(graphicsDevice, stream);
         }
 
         /// <summary>
@@ -115,7 +118,7 @@ namespace TrueCraft.Client.Rendering
                                 {
                                     CopyStream(stream, ms);
                                     ms.Seek(0, SeekOrigin.Begin);
-                                    AddTexture(key, new PngReader().Read(ms, Device));
+                                    AddTexture(key, Texture2D.FromStream(Device, ms));
                                 }
                             }
                             catch (Exception ex)

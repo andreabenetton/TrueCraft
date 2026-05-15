@@ -1,9 +1,14 @@
-﻿using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Input;
 
 namespace TrueCraft.Client.Input
 {
-    public class GamePadButtonEventArgs : GamePadEventArgs
+    public readonly struct GamePadButtonEventArgs
     {
-        public Buttons Button { get; set; }
+        public GamePadButtonEventArgs(Buttons button)
+        {
+            Button = button;
+        }
+
+        public Buttons Button { get; }
     }
 }

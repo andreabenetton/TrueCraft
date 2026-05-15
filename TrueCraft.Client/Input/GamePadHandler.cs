@@ -46,9 +46,9 @@ namespace TrueCraft.Client.Input
                     var wasDown = oldState.IsButtonDown(button);
                     var isDown = newState.IsButtonDown(button);
                     if (isDown && !wasDown)
-                        ButtonDown?.Invoke(this, new GamePadButtonEventArgs { Button = button });
+                        ButtonDown?.Invoke(this, new GamePadButtonEventArgs(button));
                     else if (!isDown && wasDown)
-                        ButtonUp?.Invoke(this, new GamePadButtonEventArgs { Button = button });
+                        ButtonUp?.Invoke(this, new GamePadButtonEventArgs(button));
                 }
             }
         }

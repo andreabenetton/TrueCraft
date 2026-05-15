@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
@@ -100,39 +101,52 @@ namespace TrueCraft.Client.Rendering.Blocks
         protected Vector2 SpruceSaplingTextureMap => new Vector2(15, 3);
         protected Vector2 BirchSaplingTextureMap => new Vector2(15, 4);
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
             if (descriptor.ID == RoseBlock.BlockID)
-                return RenderQuads(descriptor, offset, RoseTexture, indiciesOffset, out indicies, Color.White);
+            {
+                RenderQuadsInto(descriptor, offset, RoseTexture, Color.White, vertices, indices);
+                return;
+            }
             if (descriptor.ID == DandelionBlock.BlockID)
-                return RenderQuads(descriptor, offset, DandelionTexture, indiciesOffset, out indicies, Color.White);
+            {
+                RenderQuadsInto(descriptor, offset, DandelionTexture, Color.White, vertices, indices);
+                return;
+            }
             if (descriptor.ID == SaplingBlock.BlockID)
+            {
+                Vector2[] saplingTexture;
                 switch ((SaplingBlock.SaplingType) descriptor.Metadata)
                 {
+                    case SaplingBlock.SaplingType.Spruce:
+                        saplingTexture = SpruceSaplingTexture;
+                        break;
+                    case SaplingBlock.SaplingType.Birch:
+                        saplingTexture = BirchSaplingTexture;
+                        break;
                     case SaplingBlock.SaplingType.Oak:
                     default:
-                        return RenderQuads(descriptor, offset, OakSaplingTexture, indiciesOffset, out indicies,
-                            Color.White);
-                    case SaplingBlock.SaplingType.Spruce:
-                        return RenderQuads(descriptor, offset, SpruceSaplingTexture, indiciesOffset, out indicies,
-                            Color.White);
-                    case SaplingBlock.SaplingType.Birch:
-                        return RenderQuads(descriptor, offset, BirchSaplingTexture, indiciesOffset, out indicies,
-                            Color.White);
+                        saplingTexture = OakSaplingTexture;
+                        break;
                 }
+                RenderQuadsInto(descriptor, offset, saplingTexture, Color.White, vertices, indices);
+                return;
+            }
 
             switch ((TallGrassBlock.TallGrassType) descriptor.Metadata)
             {
                 case TallGrassBlock.TallGrassType.DeadBush:
-                    return RenderQuads(descriptor, offset, DeadBushTexture, indiciesOffset, out indicies, Color.White);
+                    RenderQuadsInto(descriptor, offset, DeadBushTexture, Color.White, vertices, indices);
+                    break;
                 case TallGrassBlock.TallGrassType.Fern:
-                    return RenderQuads(descriptor, offset, FernTexture, indiciesOffset, out indicies,
-                        GrassRenderer.BiomeColor);
+                    RenderQuadsInto(descriptor, offset, FernTexture, GrassRenderer.BiomeColor, vertices, indices);
+                    break;
                 case TallGrassBlock.TallGrassType.TallGrass:
                 default:
-                    return RenderQuads(descriptor, offset, TallGrassTexture, indiciesOffset, out indicies,
-                        GrassRenderer.BiomeColor);
+                    RenderQuadsInto(descriptor, offset, TallGrassTexture, GrassRenderer.BiomeColor, vertices, indices);
+                    break;
             }
         }
     }

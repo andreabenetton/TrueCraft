@@ -81,7 +81,11 @@ namespace Test.TrueCraft.Client
             // Baked from a pre-refactor run (commit 0c1ae3d). To regenerate, flip
             // SnapshotDump to true, paste this block from the failure output, flip
             // back. Hashes are over the raw byte stream of vertices then indices.
-            {"Cactus", "DC1F291372716A837680351F915D8578CF4CD386C1CC31566F70B0AD262FF11C"},
+            // Cactus / Wheat hashes changed in the per-block API refactor: the legacy
+            // path allocated 5*6 / 4*2*6 vertex slots but only wrote 5*4 / 4*2*4, leaving
+            // trailing zero-vertices in the GPU buffer that no index referenced. The new
+            // path emits exactly the live vertex count.
+            {"Cactus", "F80FE848971F245CAFB631D6EC30C1BE310DD0AA26D81FA75602E2D2EB95E659"},
             {"Cobweb", "2D3EAFFA12A95ECE4C41053DF7E74C4541A433613D5E5D300AF07CDE23BA4123"},
             {"CraftingTable", "A335DD4A86E0A3D6F93FC0587686556472BF570636FE272957CE0ACAC761C420"},
             {"Farmland (dry)", "AD559956ACA51B1809C3DB44F0827E0D0331B9D635C2F59AD393AC8C1332EB46"},
@@ -119,8 +123,8 @@ namespace Test.TrueCraft.Client
             {"Sapling (birch)", "B35553BCDF52CAC26F41857027FB0EA80A50C05EBE3FA1ED129345D9A54BB13C"},
             {"Water", "0FDE0C756F7233AC2FE512134013D1F72B13DFABD53040D68E61C38C03CD3F44"},
             {"StationaryWater", "0FDE0C756F7233AC2FE512134013D1F72B13DFABD53040D68E61C38C03CD3F44"},
-            {"Wheat (stage 0)", "590202CDAAAF95004ADD989F75E7D8E8C99644303943EAE8207091C30F4AB520"},
-            {"Wheat (stage 7)", "CCE1AA0901C1233F1C6B335D27E11C9F0907C7D4DBB578461439ED0602D777A1"},
+            {"Wheat (stage 0)", "11CEC24E7AA503259D223CC7CA157D2120EEC2026412EB707546939D7740921F"},
+            {"Wheat (stage 7)", "F8E475581E91AF57E561F19EC359791E8AAA09F34640B1F6FD657B57C85B6D96"},
             {"Default (stone)", "FAAFF20702FFB6918284A18456F37183110BD0FD70A6EC5662C2B422CBE56C9A"},
         };
 

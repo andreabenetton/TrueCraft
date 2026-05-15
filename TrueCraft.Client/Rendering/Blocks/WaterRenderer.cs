@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
@@ -25,27 +27,25 @@ namespace TrueCraft.Client.Rendering.Blocks
                 Texture[i] *= new Vector2(16f / 256f);
         }
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
-            var lighting = new int[6];
+            Span<int> lighting = stackalloc int[6];
             for (var i = 0; i < 6; i++)
-            {
-                var coords = descriptor.Coordinates + FaceCoords[i];
-                lighting[i] = GetLight(descriptor.Chunk, coords);
-            }
+                lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
 
             // TODO: Rest of water rendering (shape and level and so on)
             var overhead = new Vector3(0.5f, 0.5f, 0.5f);
-            var cube = CreateUniformCube(overhead, Texture, faces, indiciesOffset, out indicies, Color.Blue, lighting);
-            for (var i = 0; i < cube.Length; i++)
+            var start = vertices.Count;
+            CreateUniformCubeInto(overhead, Texture, faces, Color.Blue, lighting, vertices, indices);
+            var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+            for (var i = 0; i < span.Length; i++)
             {
-                if (cube[i].Position.Y > 0) cube[i].Position.Y *= 14f / 16f;
-                cube[i].Position += offset;
-                cube[i].Position -= overhead;
+                if (span[i].Position.Y > 0) span[i].Position.Y *= 14f / 16f;
+                span[i].Position += offset;
+                span[i].Position -= overhead;
             }
-
-            return cube;
         }
     }
 }

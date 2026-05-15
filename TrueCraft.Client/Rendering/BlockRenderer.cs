@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using TrueCraft.API;
@@ -101,16 +102,28 @@ namespace TrueCraft.Client.Rendering
             Renderers[id] = renderer;
         }
 
-        public static VertexPositionNormalColorTexture[] RenderBlock(IBlockProvider provider,
-            BlockDescriptor descriptor,
-            VisibleFaces faces, Vector3 offset, int indexesOffset, out int[] indexes)
+        // ----- New list-appending entry points (hot path used by ChunkRenderer) -----
+
+        /// <summary>
+        ///     Renders the given block by appending its geometry directly into the supplied
+        ///     accumulator lists. No per-block heap allocations.
+        /// </summary>
+        public static void RenderBlockInto(IBlockProvider provider, BlockDescriptor descriptor,
+            VisibleFaces faces, Vector3 offset,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
             var textureMap = provider.GetTextureMap(descriptor.Metadata) ?? new Tuple<int, int>(0, 0);
-            return Renderers[descriptor.ID].Render(descriptor, offset, faces, textureMap, indexesOffset, out indexes);
+            Renderers[descriptor.ID].RenderInto(descriptor, offset, faces, textureMap, vertices, indices);
         }
 
-        public virtual VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        /// <summary>
+        ///     Appends this block's geometry into <paramref name="vertices"/> and
+        ///     <paramref name="indices"/>. The default implementation emits a uniform
+        ///     cube using the provider's single texture-map coordinate.
+        /// </summary>
+        public virtual void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
             var texCoords = new Vector2(textureMap.Item1, textureMap.Item2);
             var texture = new[]
@@ -120,40 +133,84 @@ namespace TrueCraft.Client.Rendering
                 texCoords,
                 texCoords + Vector2.UnitX
             };
-
             for (var i = 0; i < texture.Length; i++)
                 texture[i] *= new Vector2(16f / 256f);
 
-            var lighting = new int[6];
+            Span<int> lighting = stackalloc int[6];
             for (var i = 0; i < 6; i++)
-            {
-                var coords = descriptor.Coordinates + FaceCoords[i];
-                lighting[i] = GetLight(descriptor.Chunk, coords);
-            }
+                lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
 
-            return CreateUniformCube(offset, texture, faces, indiciesOffset, out indicies, Color.White, lighting);
+            CreateUniformCubeInto(offset, texture, faces, Color.White, lighting, vertices, indices);
         }
 
+        // ----- Legacy array-returning wrappers (cold path; used by IconRenderer) -----
+
+        /// <summary>
+        ///     Legacy form that returns freshly-allocated arrays. Retained for callers
+        ///     that build a one-off Mesh (such as <c>IconRenderer</c>); the hot path
+        ///     in <c>ChunkRenderer</c> uses <see cref="RenderBlockInto"/> instead.
+        /// </summary>
+        public static VertexPositionNormalColorTexture[] RenderBlock(IBlockProvider provider,
+            BlockDescriptor descriptor,
+            VisibleFaces faces, Vector3 offset, int indexesOffset, out int[] indexes)
+        {
+            var verts = new List<VertexPositionNormalColorTexture>();
+            var idxs = new List<int>();
+            RenderBlockInto(provider, descriptor, faces, offset, verts, idxs);
+
+            if (indexesOffset != 0)
+                for (var i = 0; i < idxs.Count; i++)
+                    idxs[i] += indexesOffset;
+
+            indexes = idxs.ToArray();
+            return verts.ToArray();
+        }
+
+        /// <summary>
+        ///     Legacy form retained for external callers like <c>HighlightModule</c>.
+        ///     Internally routes through <see cref="CreateUniformCubeInto"/>.
+        /// </summary>
         public static VertexPositionNormalColorTexture[] CreateUniformCube(Vector3 offset, Vector2[] texture,
             VisibleFaces faces, int indexesOffset, out int[] indexes, Color color, int[] lighting = null)
         {
-            faces = VisibleFaces.All; // Temporary
-            if (lighting == null)
+            var verts = new List<VertexPositionNormalColorTexture>();
+            var idxs = new List<int>();
+            ReadOnlySpan<int> lightingSpan = lighting ?? DefaultLighting;
+            CreateUniformCubeInto(offset, texture, faces, color, lightingSpan, verts, idxs);
+
+            if (indexesOffset != 0)
+                for (var i = 0; i < idxs.Count; i++)
+                    idxs[i] += indexesOffset;
+
+            indexes = idxs.ToArray();
+            return verts.ToArray();
+        }
+
+        protected static VertexPositionNormalColorTexture[] CreateQuad(CubeFace face, Vector3 offset,
+            Vector2[] texture, int textureOffset, int indiciesOffset, out int[] indicies, Color color)
+        {
+            var quad = new VertexPositionNormalColorTexture[4];
+            indicies = new int[6];
+            EmitQuad(face, offset, texture, textureOffset, indiciesOffset, color, quad, 0, indicies, 0);
+            return quad;
+        }
+
+        // ----- Core emitters (no allocations beyond list growth) -----
+
+        /// <summary>
+        ///     Appends a uniform cube into <paramref name="vertexDest"/> /
+        ///     <paramref name="indexDest"/>. Walks the 6 cube faces, calling
+        ///     <see cref="EmitQuadInto"/> for each visible one.
+        /// </summary>
+        protected static void CreateUniformCubeInto(Vector3 offset, Vector2[] texture, VisibleFaces faces,
+            Color color, ReadOnlySpan<int> lighting,
+            List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+        {
+            faces = VisibleFaces.All; // Temporary — same as the legacy path.
+            if (lighting.IsEmpty)
                 lighting = DefaultLighting;
 
-            var totalFaces = 0;
-            var f = (uint) faces;
-            while (f != 0)
-            {
-                if ((f & 1) == 1)
-                    totalFaces++;
-                f >>= 1;
-            }
-
-            indexes = new int[6 * totalFaces];
-            var vertexes = new VertexPositionNormalColorTexture[4 * totalFaces];
             var textureIndex = 0;
-            var sidesSoFar = 0;
             for (var _side = 0; _side < 6; _side++)
             {
                 if ((faces & VisibleForCubeFace[_side]) == 0)
@@ -164,23 +221,45 @@ namespace TrueCraft.Client.Rendering
 
                 var lightColor = LightColor.ToVector3() * CubeBrightness[lighting[_side]];
                 var side = (CubeFace) _side;
-                EmitQuad(side, offset, texture, textureIndex % texture.Length, indexesOffset,
-                    new Color(lightColor * color.ToVector3()),
-                    vertexes, sidesSoFar * 4,
-                    indexes, sidesSoFar * 6);
+                EmitQuadInto(side, offset, texture, textureIndex % texture.Length,
+                    new Color(lightColor * color.ToVector3()), vertexDest, indexDest);
                 textureIndex += 4;
-                sidesSoFar++;
             }
-
-            return vertexes;
         }
 
         /// <summary>
-        ///     Writes one quad directly into the provided destination arrays, with no
-        ///     intermediate allocations. Replaces <see cref="CreateQuad"/> on the hot
-        ///     chunk-meshing path; the array-returning form is retained below for any
-        ///     external callers that still want a free-standing quad.
+        ///     Appends one cube-face quad to the destination lists. Indices reference
+        ///     vertices by absolute position in <paramref name="vertexDest"/> at append
+        ///     time; no caller-provided index offset is needed.
         /// </summary>
+        protected static void EmitQuadInto(CubeFace face, Vector3 offset, Vector2[] texture,
+            int textureOffset, Color color,
+            List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+        {
+            var faceIndex = (int) face;
+            var unit = CubeMesh[faceIndex];
+            var normal = CubeNormals[faceIndex];
+            var faceColor = new Color(FaceBrightness[faceIndex] * color.ToVector3());
+
+            var baseIdx = vertexDest.Count;
+            vertexDest.Add(new VertexPositionNormalColorTexture(
+                offset + unit[0], normal, faceColor, texture[textureOffset + 0]));
+            vertexDest.Add(new VertexPositionNormalColorTexture(
+                offset + unit[1], normal, faceColor, texture[textureOffset + 1]));
+            vertexDest.Add(new VertexPositionNormalColorTexture(
+                offset + unit[2], normal, faceColor, texture[textureOffset + 2]));
+            vertexDest.Add(new VertexPositionNormalColorTexture(
+                offset + unit[3], normal, faceColor, texture[textureOffset + 3]));
+
+            indexDest.Add(baseIdx + 0);
+            indexDest.Add(baseIdx + 1);
+            indexDest.Add(baseIdx + 3);
+            indexDest.Add(baseIdx + 1);
+            indexDest.Add(baseIdx + 2);
+            indexDest.Add(baseIdx + 3);
+        }
+
+        // Legacy array-based EmitQuad used by CreateQuad above; kept as a thin shim.
         private static void EmitQuad(CubeFace face, Vector3 offset, Vector2[] texture,
             int textureOffset, int indicesOffset, Color color,
             VertexPositionNormalColorTexture[] vertexDest, int vertexDestStart,
@@ -207,15 +286,6 @@ namespace TrueCraft.Client.Rendering
                 offset + unit[2], normal, faceColor, texture[textureOffset + 2]);
             vertexDest[vertexDestStart + 3] = new VertexPositionNormalColorTexture(
                 offset + unit[3], normal, faceColor, texture[textureOffset + 3]);
-        }
-
-        protected static VertexPositionNormalColorTexture[] CreateQuad(CubeFace face, Vector3 offset,
-            Vector2[] texture, int textureOffset, int indiciesOffset, out int[] indicies, Color color)
-        {
-            var quad = new VertexPositionNormalColorTexture[4];
-            indicies = new int[6];
-            EmitQuad(face, offset, texture, textureOffset, indiciesOffset, color, quad, 0, indicies, 0);
-            return quad;
         }
 
         protected enum CubeFace

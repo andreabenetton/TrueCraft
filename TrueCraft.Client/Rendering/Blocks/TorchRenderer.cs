@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
@@ -51,54 +53,53 @@ namespace TrueCraft.Client.Rendering.Blocks
                 Texture[i] /= 256f;
         }
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
-            var lighting = new int[6];
+            Span<int> lighting = stackalloc int[6];
             for (var i = 0; i < 6; i++)
-            {
-                var coords = descriptor.Coordinates + FaceCoords[i];
-                lighting[i] = GetLight(descriptor.Chunk, coords);
-            }
+                lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
 
             var centerized = new Vector3(7f / 16f, 0, 7f / 16f);
-            var cube = CreateUniformCube(Vector3.Zero, Texture, VisibleFaces.All,
-                indiciesOffset, out indicies, Color.White, lighting);
-            for (var i = 0; i < cube.Length; i++)
+            var start = vertices.Count;
+            CreateUniformCubeInto(Vector3.Zero, Texture, VisibleFaces.All, Color.White, lighting, vertices, indices);
+            var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+            for (var i = 0; i < span.Length; i++)
             {
-                cube[i].Position.X *= 1f / 8f;
-                cube[i].Position.Z *= 1f / 8f;
-                if (cube[i].Position.Y > 0)
-                    cube[i].Position.Y *= 5f / 8f;
+                span[i].Position.X *= 1f / 8f;
+                span[i].Position.Z *= 1f / 8f;
+                if (span[i].Position.Y > 0)
+                    span[i].Position.Y *= 5f / 8f;
                 switch ((TorchBlock.TorchDirection) descriptor.Metadata)
                 {
                     case TorchBlock.TorchDirection.West:
-                        if (cube[i].Position.Y == 0)
-                            cube[i].Position.X += 8f / 16f;
+                        if (span[i].Position.Y == 0)
+                            span[i].Position.X += 8f / 16f;
                         else
-                            cube[i].Position.X += 3f / 16f;
-                        cube[i].Position.Y += 5f / 16f;
+                            span[i].Position.X += 3f / 16f;
+                        span[i].Position.Y += 5f / 16f;
                         break;
                     case TorchBlock.TorchDirection.East:
-                        if (cube[i].Position.Y == 0)
-                            cube[i].Position.X -= 8f / 16f;
+                        if (span[i].Position.Y == 0)
+                            span[i].Position.X -= 8f / 16f;
                         else
-                            cube[i].Position.X -= 3f / 16f;
-                        cube[i].Position.Y += 5f / 16f;
+                            span[i].Position.X -= 3f / 16f;
+                        span[i].Position.Y += 5f / 16f;
                         break;
                     case TorchBlock.TorchDirection.North:
-                        if (cube[i].Position.Y == 0)
-                            cube[i].Position.Z += 8f / 16f;
+                        if (span[i].Position.Y == 0)
+                            span[i].Position.Z += 8f / 16f;
                         else
-                            cube[i].Position.Z += 3f / 16f;
-                        cube[i].Position.Y += 5f / 16f;
+                            span[i].Position.Z += 3f / 16f;
+                        span[i].Position.Y += 5f / 16f;
                         break;
                     case TorchBlock.TorchDirection.South:
-                        if (cube[i].Position.Y == 0)
-                            cube[i].Position.Z -= 8f / 16f;
+                        if (span[i].Position.Y == 0)
+                            span[i].Position.Z -= 8f / 16f;
                         else
-                            cube[i].Position.Z -= 3f / 16f;
-                        cube[i].Position.Y += 5f / 16f;
+                            span[i].Position.Z -= 3f / 16f;
+                        span[i].Position.Y += 5f / 16f;
                         break;
                     case TorchBlock.TorchDirection.Ground:
                     default:
@@ -106,11 +107,9 @@ namespace TrueCraft.Client.Rendering.Blocks
                         break;
                 }
 
-                cube[i].Position += offset;
-                cube[i].Position += centerized;
+                span[i].Position += offset;
+                span[i].Position += centerized;
             }
-
-            return cube;
         }
     }
 }

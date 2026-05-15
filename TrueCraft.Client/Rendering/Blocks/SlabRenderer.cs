@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
@@ -187,27 +189,29 @@ namespace TrueCraft.Client.Rendering.Blocks
             }
         }
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
             if (descriptor.ID == SlabBlock.BlockID)
-                return RenderSlab(descriptor, offset, textureMap, indiciesOffset, out indicies);
-            return RenderDoubleSlab(descriptor, offset, textureMap, indiciesOffset, out indicies);
+                RenderSlabInto(descriptor, offset, vertices, indices);
+            else
+                RenderDoubleSlabInto(descriptor, offset, vertices, indices);
         }
 
-        protected virtual VertexPositionNormalColorTexture[] RenderSlab(BlockDescriptor descriptor, Vector3 offset,
-            Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        protected virtual void RenderSlabInto(BlockDescriptor descriptor, Vector3 offset,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
-            var lighting = new int[6];
+            Span<int> lighting = stackalloc int[6];
             for (var i = 0; i < 6; i++)
-            {
-                var coords = descriptor.Coordinates + FaceCoords[i];
-                lighting[i] = GetLight(descriptor.Chunk, coords);
-            }
+                lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
 
-            var result = CreateUniformCube(offset,
+            var start = vertices.Count;
+            CreateUniformCubeInto(offset,
                 GetTextureMap((SlabBlock.SlabMaterial) descriptor.Metadata), VisibleFaces.All,
-                indiciesOffset, out indicies, Color.White, lighting);
+                Color.White, lighting, vertices, indices);
+
+            var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
             for (var i = 0; i < 6; i++)
             {
                 var face = (CubeFace) i;
@@ -218,27 +222,25 @@ namespace TrueCraft.Client.Rendering.Blocks
                     case CubeFace.PositiveX:
                     case CubeFace.NegativeX:
                         for (var j = 0; j < 2; j++)
-                            result[i * 4 + j].Texture.Y -= 1f / 32f;
+                            span[i * 4 + j].Texture.Y -= 1f / 32f;
                         for (var k = 2; k < 4; k++)
-                            result[i * 4 + k].Position.Y -= 0.5f;
-                        // result[(i * 4) + k].Texture.Y -= (1f / 16f);
+                            span[i * 4 + k].Position.Y -= 0.5f;
                         break;
 
                     case CubeFace.PositiveY:
                         for (var j = 0; j < 4; j++)
-                            result[i * 4 + j].Position.Y -= 0.5f;
+                            span[i * 4 + j].Position.Y -= 0.5f;
                         break;
                 }
             }
-
-            return result;
         }
 
-        protected virtual VertexPositionNormalColorTexture[] RenderDoubleSlab(BlockDescriptor descriptor,
-            Vector3 offset, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        protected virtual void RenderDoubleSlabInto(BlockDescriptor descriptor, Vector3 offset,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
-            return CreateUniformCube(offset, GetTextureMap((SlabBlock.SlabMaterial) descriptor.Metadata),
-                VisibleFaces.All, indiciesOffset, out indicies, Color.White);
+            ReadOnlySpan<int> defaultLighting = DefaultLighting;
+            CreateUniformCubeInto(offset, GetTextureMap((SlabBlock.SlabMaterial) descriptor.Metadata),
+                VisibleFaces.All, Color.White, defaultLighting, vertices, indices);
         }
     }
 }

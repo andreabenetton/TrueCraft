@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 
@@ -71,45 +72,57 @@ namespace TrueCraft.Client.Rendering
 
         protected virtual Vector2 TextureMap => Vector2.Zero;
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
-            return RenderQuads(descriptor, offset, Texture, indiciesOffset, out indicies, Color.White);
+            RenderQuadsInto(descriptor, offset, Texture, Color.White, vertices, indices);
         }
 
-        protected VertexPositionNormalColorTexture[] RenderQuads(BlockDescriptor descriptor, Vector3 offset,
-            Vector2[] textureMap, int indiciesOffset, out int[] indicies, Color color)
+        /// <summary>
+        ///     Appends four angled quads (cross pattern, used for cobweb / sugarcane /
+        ///     vegetation) directly into the destination lists.
+        /// </summary>
+        protected static void RenderQuadsInto(BlockDescriptor descriptor, Vector3 offset,
+            Vector2[] textureMap, Color color,
+            List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
         {
-            indicies = new int[6 * 4];
-            var verticies = new VertexPositionNormalColorTexture[4 * 4];
-            int[] _indicies;
             var textureIndex = 0;
-            for (var side = 0; side < 4; side++)
+            for (var face = 0; face < 4; face++)
             {
-                var quad = CreateAngledQuad(side, offset, textureMap, textureIndex % textureMap.Length, indiciesOffset,
-                    out _indicies, color);
-                Array.Copy(quad, 0, verticies, side * 4, 4);
-                Array.Copy(_indicies, 0, indicies, side * 6, 6);
+                EmitAngledQuadInto(face, offset, textureMap, textureIndex % textureMap.Length,
+                    color, vertexDest, indexDest);
                 textureIndex += 4;
             }
-
-            return verticies;
         }
 
-        protected static VertexPositionNormalColorTexture[] CreateAngledQuad(int face, Vector3 offset,
-            Vector2[] texture, int textureOffset,
-            int indiciesOffset, out int[] indicies, Color color)
+        /// <summary>
+        ///     Appends one cross-pattern quad to the destination lists. Indices reference
+        ///     vertices by absolute position in <paramref name="vertexDest"/> at append time.
+        /// </summary>
+        protected static void EmitAngledQuadInto(int face, Vector3 offset, Vector2[] texture,
+            int textureOffset, Color color,
+            List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
         {
-            indicies = new[] {0, 1, 3, 1, 2, 3};
-            for (var i = 0; i < indicies.Length; i++)
-                indicies[i] += face * 4 + indiciesOffset;
-            var quad = new VertexPositionNormalColorTexture[4];
             var unit = QuadMesh[face];
             var normal = CubeNormals[face];
-            for (var i = 0; i < 4; i++)
-                quad[i] = new VertexPositionNormalColorTexture(offset + unit[i], normal, color,
-                    texture[textureOffset + i]);
-            return quad;
+
+            var baseIdx = vertexDest.Count;
+            vertexDest.Add(new VertexPositionNormalColorTexture(
+                offset + unit[0], normal, color, texture[textureOffset + 0]));
+            vertexDest.Add(new VertexPositionNormalColorTexture(
+                offset + unit[1], normal, color, texture[textureOffset + 1]));
+            vertexDest.Add(new VertexPositionNormalColorTexture(
+                offset + unit[2], normal, color, texture[textureOffset + 2]));
+            vertexDest.Add(new VertexPositionNormalColorTexture(
+                offset + unit[3], normal, color, texture[textureOffset + 3]));
+
+            indexDest.Add(baseIdx + 0);
+            indexDest.Add(baseIdx + 1);
+            indexDest.Add(baseIdx + 3);
+            indexDest.Add(baseIdx + 1);
+            indexDest.Add(baseIdx + 2);
+            indexDest.Add(baseIdx + 3);
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
@@ -24,58 +26,45 @@ namespace TrueCraft.Client.Rendering.Blocks
                 Texture[i] *= new Vector2(16f / 256f);
         }
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
-            var lighting = new int[6];
-            for (var i = 0; i < 6; i++)
-            {
-                var coords = descriptor.Coordinates + FaceCoords[i];
-                lighting[i] = GetLight(descriptor.Chunk, coords);
-            }
-
-            VertexPositionNormalColorTexture[] verticies;
+            // EmitQuadInto's indices are derived from vertices.Count at emit time, so the
+            // legacy "subtract faceCorrection to bring indices into [0..6)" step from the
+            // array-returning path is no longer needed — indices are already correct.
             Vector3 correction;
-            var faceCorrection = 0;
+            var start = vertices.Count;
             switch ((LadderBlock.LadderDirection) descriptor.Metadata)
             {
                 case LadderBlock.LadderDirection.North:
-                    verticies = CreateQuad(CubeFace.PositiveZ, offset, Texture, 0, indiciesOffset, out indicies,
-                        Color.White);
+                    EmitQuadInto(CubeFace.PositiveZ, offset, Texture, 0, Color.White, vertices, indices);
                     correction = Vector3.Forward;
-                    faceCorrection = (int) CubeFace.PositiveZ * 4;
                     break;
                 case LadderBlock.LadderDirection.South:
-                    verticies = CreateQuad(CubeFace.NegativeZ, offset, Texture, 0, indiciesOffset, out indicies,
-                        Color.White);
+                    EmitQuadInto(CubeFace.NegativeZ, offset, Texture, 0, Color.White, vertices, indices);
                     correction = Vector3.Backward;
-                    faceCorrection = (int) CubeFace.NegativeZ * 4;
                     break;
                 case LadderBlock.LadderDirection.East:
-                    verticies = CreateQuad(CubeFace.NegativeX, offset, Texture, 0, indiciesOffset, out indicies,
-                        Color.White);
+                    EmitQuadInto(CubeFace.NegativeX, offset, Texture, 0, Color.White, vertices, indices);
                     correction = Vector3.Right;
-                    faceCorrection = (int) CubeFace.NegativeX * 4;
                     break;
                 case LadderBlock.LadderDirection.West:
-                    verticies = CreateQuad(CubeFace.PositiveX, offset, Texture, 0, indiciesOffset, out indicies,
-                        Color.White);
+                    EmitQuadInto(CubeFace.PositiveX, offset, Texture, 0, Color.White, vertices, indices);
                     correction = Vector3.Left;
-                    faceCorrection = (int) CubeFace.PositiveX * 4;
                     break;
                 default:
-                    // Should never happen
-                    verticies = CreateUniformCube(offset, Texture, VisibleFaces.All,
-                        indiciesOffset, out indicies, Color.White);
+                    // Should never happen — fall back to a full cube with default lighting.
+                    ReadOnlySpan<int> defaultLighting = DefaultLighting;
+                    CreateUniformCubeInto(offset, Texture, VisibleFaces.All,
+                        Color.White, defaultLighting, vertices, indices);
                     correction = Vector3.Zero;
                     break;
             }
 
-            for (var i = 0; i < verticies.Length; i++)
-                verticies[i].Position += correction;
-            for (var i = 0; i < indicies.Length; i++)
-                indicies[i] -= faceCorrection;
-            return verticies;
+            var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+            for (var i = 0; i < span.Length; i++)
+                span[i].Position += correction;
         }
     }
 }

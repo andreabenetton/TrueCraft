@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
@@ -94,27 +96,26 @@ namespace TrueCraft.Client.Rendering.Blocks
                 SnowTexture[i] *= new Vector2(16f / 256f);
         }
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
             var texture = Texture;
             if (descriptor.Coordinates.Y < World.Height && descriptor.Chunk != null)
                 if (descriptor.Chunk.GetBlockID(descriptor.Coordinates + Coordinates3D.Up) == SnowfallBlock.BlockID)
                     texture = SnowTexture;
 
-            var lighting = new int[6];
+            Span<int> lighting = stackalloc int[6];
             for (var i = 0; i < 6; i++)
-            {
-                var coords = descriptor.Coordinates + FaceCoords[i];
-                lighting[i] = GetLight(descriptor.Chunk, coords);
-            }
+                lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
 
-            var cube = CreateUniformCube(offset, texture, faces, indiciesOffset, out indicies, Color.White, lighting);
-            // Apply biome colors to top of cube
-            for (var i = (int) CubeFace.PositiveY * 4; i < (int) CubeFace.PositiveY * 4 + 4; i++)
-                cube[i].Color =
-                    new Color(cube[i].Color.ToVector3() * BiomeColor.ToVector3()); // TODO: Take this from biome
-            return cube;
+            var start = vertices.Count;
+            CreateUniformCubeInto(offset, texture, faces, Color.White, lighting, vertices, indices);
+            // Apply biome colors to top of cube (PositiveY face = 4; 4 verts per face).
+            var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+            for (var i = (int) CubeFace.PositiveY * 4; i < (int) CubeFace.PositiveY * 4 + 4 && i < span.Length; i++)
+                span[i].Color =
+                    new Color(span[i].Color.ToVector3() * BiomeColor.ToVector3()); // TODO: Take this from biome
         }
     }
 }

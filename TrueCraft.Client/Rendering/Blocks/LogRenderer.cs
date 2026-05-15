@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
@@ -125,29 +126,30 @@ namespace TrueCraft.Client.Rendering.Blocks
             }
         }
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
-            var lighting = new int[6];
+            Span<int> lighting = stackalloc int[6];
             for (var i = 0; i < 6; i++)
-            {
-                var coords = descriptor.Coordinates + FaceCoords[i];
-                lighting[i] = GetLight(descriptor.Chunk, coords);
-            }
+                lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
 
+            Vector2[] texture;
             switch ((WoodBlock.WoodType) descriptor.Metadata)
             {
                 case WoodBlock.WoodType.Spruce:
-                    return CreateUniformCube(offset, SpruceTexture, faces, indiciesOffset, out indicies, Color.White,
-                        lighting);
+                    texture = SpruceTexture;
+                    break;
                 case WoodBlock.WoodType.Birch:
-                    return CreateUniformCube(offset, BirchTexture, faces, indiciesOffset, out indicies, Color.White,
-                        lighting);
+                    texture = BirchTexture;
+                    break;
                 case WoodBlock.WoodType.Oak:
                 default:
-                    return CreateUniformCube(offset, BaseTexture, faces, indiciesOffset, out indicies, Color.White,
-                        lighting);
+                    texture = BaseTexture;
+                    break;
             }
+
+            CreateUniformCubeInto(offset, texture, faces, Color.White, lighting, vertices, indices);
         }
     }
 }

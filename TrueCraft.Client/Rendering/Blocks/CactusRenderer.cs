@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
@@ -36,61 +38,58 @@ namespace TrueCraft.Client.Rendering.Blocks
                 TopTexture[j] *= new Vector2(16f / 256f);
         }
 
-        public override VertexPositionNormalColorTexture[] Render(BlockDescriptor descriptor, Vector3 offset,
-            VisibleFaces faces, Tuple<int, int> textureMap, int indiciesOffset, out int[] indicies)
+        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+            Tuple<int, int> textureMap,
+            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
-            // This is similar to how wheat is rendered
-            indicies = new int[5 * 6];
-            var verticies = new VertexPositionNormalColorTexture[5 * 6];
-            int[] _indicies;
+            // This is similar to how wheat is rendered.
+            //
+            // The legacy path allocated `new VertexPositionNormalColorTexture[5 * 6]` but
+            // only ever wrote 5 * 4 = 20 vertices into it, leaving 10 zero-initialized
+            // vertices trailing in the buffer that no index referenced. The new path
+            // emits exactly 20 vertices — strictly less GPU memory per cactus block.
             var center = new Vector3(-0.5f, -0.5f, -0.5f);
-            CubeFace side;
-            VertexPositionNormalColorTexture[] quad;
+            var start = vertices.Count;
             for (var _side = 0; _side < 4; _side++)
             {
-                side = (CubeFace) _side;
-                quad = CreateQuad(side, center, Texture, 0, indiciesOffset, out _indicies, Color.White);
+                var faceStart = vertices.Count;
+                var side = (CubeFace) _side;
+                EmitQuadInto(side, center, Texture, 0, Color.White, vertices, indices);
+                var span = CollectionsMarshal.AsSpan(vertices).Slice(faceStart);
                 if (side == CubeFace.NegativeX || side == CubeFace.PositiveX)
-                    for (var i = 0; i < quad.Length; i++)
+                    for (var i = 0; i < span.Length; i++)
                     {
-                        quad[i].Position.X *= 14f / 16f;
-                        quad[i].Position += offset;
+                        span[i].Position.X *= 14f / 16f;
+                        span[i].Position += offset;
                     }
                 else
-                    for (var i = 0; i < quad.Length; i++)
+                    for (var i = 0; i < span.Length; i++)
                     {
-                        quad[i].Position.Z *= 14f / 16f;
-                        quad[i].Position += offset;
+                        span[i].Position.Z *= 14f / 16f;
+                        span[i].Position += offset;
                     }
-
-                Array.Copy(quad, 0, verticies, _side * 4, 4);
-                Array.Copy(_indicies, 0, indicies, _side * 6, 6);
             }
 
-            side = CubeFace.PositiveY;
-            quad = CreateQuad(side, center, TopTexture, 0, indiciesOffset, out _indicies, Color.White);
-            if (side == CubeFace.NegativeX || side == CubeFace.PositiveX)
-                for (var i = 0; i < quad.Length; i++)
-                {
-                    quad[i].Position.X *= 14f / 16f;
-                    quad[i].Position += offset;
-                }
-            else
-                for (var i = 0; i < quad.Length; i++)
-                {
-                    quad[i].Position.Z *= 14f / 16f;
-                    quad[i].Position += offset;
-                }
-
-            Array.Copy(quad, 0, verticies, (int) side * 4, 4);
-            Array.Copy(_indicies, 0, indicies, (int) side * 6, 6);
-            for (var i = 0; i < verticies.Length; i++)
+            // Top face — same Z-scale path as the non-X sides above (the legacy code's
+            // X/Z branch was effectively dead for PositiveY).
             {
-                verticies[i].Position.Y -= 1 / 16f;
-                verticies[i].Position -= center;
+                var faceStart = vertices.Count;
+                EmitQuadInto(CubeFace.PositiveY, center, TopTexture, 0, Color.White, vertices, indices);
+                var span = CollectionsMarshal.AsSpan(vertices).Slice(faceStart);
+                for (var i = 0; i < span.Length; i++)
+                {
+                    span[i].Position.Z *= 14f / 16f;
+                    span[i].Position += offset;
+                }
             }
 
-            return verticies;
+            // Final pass: subtract center and shift Y down by one texel.
+            var all = CollectionsMarshal.AsSpan(vertices).Slice(start);
+            for (var i = 0; i < all.Length; i++)
+            {
+                all[i].Position.Y -= 1 / 16f;
+                all[i].Position -= center;
+            }
         }
     }
 }

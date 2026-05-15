@@ -221,24 +221,12 @@ namespace TrueCraft.Client.Rendering
                     Chunk = chunk.Chunk
                 };
                 var provider = BlockRepository.GetBlockProvider(descriptor.ID);
-                if (provider.RenderOpaque)
-                {
-                    int[] i;
-                    var v = BlockRenderer.RenderBlock(provider, descriptor, coords.Value,
-                        new Vector3(chunk.X * Chunk.Width + c.X, c.Y, chunk.Z * Chunk.Depth + c.Z),
-                        state.Verticies.Count, out i);
-                    state.Verticies.AddRange(v);
-                    state.OpaqueIndicies.AddRange(i);
-                }
-                else
-                {
-                    int[] i;
-                    var v = BlockRenderer.RenderBlock(provider, descriptor, coords.Value,
-                        new Vector3(chunk.X * Chunk.Width + c.X, c.Y, chunk.Z * Chunk.Depth + c.Z),
-                        state.Verticies.Count, out i);
-                    state.Verticies.AddRange(v);
-                    state.TransparentIndicies.AddRange(i);
-                }
+                var indexTarget = provider.RenderOpaque
+                    ? state.OpaqueIndicies
+                    : state.TransparentIndicies;
+                BlockRenderer.RenderBlockInto(provider, descriptor, coords.Value,
+                    new Vector3(chunk.X * Chunk.Width + c.X, c.Y, chunk.Z * Chunk.Depth + c.Z),
+                    state.Verticies, indexTarget);
             }
         }
 

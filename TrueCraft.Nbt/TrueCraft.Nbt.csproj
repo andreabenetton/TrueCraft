@@ -7,10 +7,4 @@
     <Description>A library to read and write NBT files.</Description>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="fNbt.Serialization\**" />
-    <None Remove="fNbt.Serialization\**" />
-    <EmbeddedResource Remove="fNbt.Serialization\**" />
-  </ItemGroup>
-
 </Project>

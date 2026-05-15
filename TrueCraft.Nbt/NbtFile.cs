@@ -60,6 +60,13 @@ namespace TrueCraft.Nbt
         public bool BigEndian { get; set; }
 
         /// <summary>
+        ///     When <c>true</c>, strings are encoded as standard UTF-8 instead of Java's
+        ///     Modified UTF-8. Used by the network NBT framing introduced in the Java
+        ///     Edition 1.20.2 protocol; leave <c>false</c> (default) for on-disk NBT.
+        /// </summary>
+        public bool UseStandardUtf8 { get; set; }
+
+        /// <summary>
         ///     Gets or sets the default value of <c>BufferSize</c> property. Default is 8192.
         ///     Set to 0 to disable buffering by default.
         /// </summary>
@@ -602,7 +609,8 @@ namespace TrueCraft.Nbt
 
             var reader = new NbtBinaryReader(stream, BigEndian)
             {
-                Selector = tagSelector
+                Selector = tagSelector,
+                UseStandardUtf8 = UseStandardUtf8
             };
 
             var rootCompound = new NbtCompound(reader.ReadString());
@@ -819,7 +827,7 @@ namespace TrueCraft.Nbt
                     using (var compressStream = new ZLibStream(stream, CompressionMode.Compress, true))
                     {
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian));
+                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
                         bufferedStream.Flush();
                         checksum = compressStream.Checksum;
                     }
@@ -837,14 +845,14 @@ namespace TrueCraft.Nbt
                     {
                         // use a buffered stream to avoid GZipping in small increments (which has a lot of overhead)
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian));
+                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
                         bufferedStream.Flush();
                     }
 
                     break;
 
                 case NbtCompression.None:
-                    var writer = new NbtBinaryWriter(stream, BigEndian);
+                    var writer = new NbtBinaryWriter(stream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 };
                     RootTag.WriteTag(writer);
                     break;
 

@@ -15,6 +15,7 @@ namespace TrueCraft.Nbt
         private readonly byte[] _buffer = new byte[sizeof(double)];
         private readonly byte[] _stringConversionBuffer = new byte[64];
         private readonly bool _swapNeeded;
+        private readonly bool _bigEndian;
 
         private byte[] _seekBuffer;
 
@@ -23,10 +24,17 @@ namespace TrueCraft.Nbt
             : base(input)
         {
             _swapNeeded = BitConverter.IsLittleEndian == bigEndian;
+            _bigEndian = bigEndian;
         }
 
 
         [CanBeNull] public TagSelector Selector { get; set; }
+
+        /// <summary>
+        ///     When <c>true</c>, strings are decoded as standard UTF-8 instead of Java's
+        ///     Modified UTF-8. Used by the network-NBT framing (Java protocol 1.20.2+).
+        /// </summary>
+        public bool UseStandardUtf8 { get; set; }
 
 
         public NbtTagType ReadTagType()
@@ -92,10 +100,12 @@ namespace TrueCraft.Nbt
 
         public override string ReadString()
         {
-            var length = ReadInt16();
-            if (length < 0) throw new NbtFormatException("Negative string length given!");
+            // NBT string length prefix is unsigned 16-bit per spec. Read as unsigned to
+            // accept the full 0..65535 range Mojang's writer can produce.
+            var length = ReadUInt16Spec();
 
-            if (length < _stringConversionBuffer.Length)
+            byte[] stringData;
+            if (length <= _stringConversionBuffer.Length)
             {
                 var stringBytesRead = 0;
                 while (stringBytesRead < length)
@@ -103,17 +113,34 @@ namespace TrueCraft.Nbt
                     var bytesToRead = length - stringBytesRead;
                     var bytesReadThisTime = BaseStream.Read(_stringConversionBuffer, stringBytesRead, bytesToRead);
                     if (bytesReadThisTime == 0) throw new EndOfStreamException();
-
                     stringBytesRead += bytesReadThisTime;
                 }
-
-                return Encoding.UTF8.GetString(_stringConversionBuffer, 0, length);
+                stringData = _stringConversionBuffer;
+            }
+            else
+            {
+                stringData = ReadBytes(length);
+                if (stringData.Length < length) throw new EndOfStreamException();
             }
 
-            var stringData = ReadBytes(length);
-            if (stringData.Length < length) throw new EndOfStreamException();
+            return UseStandardUtf8
+                ? Encoding.UTF8.GetString(stringData, 0, length)
+                : JavaModifiedUtf8.Decode(stringData, 0, length);
+        }
 
-            return Encoding.UTF8.GetString(stringData);
+
+        // Read an unsigned 16-bit length prefix in the configured wire endianness.
+        // The base BinaryReader.ReadUInt16 is hard-coded little-endian; we want the
+        // big-endian wire form for vanilla Java NBT (and little-endian for Bedrock).
+        private ushort ReadUInt16Spec()
+        {
+            int a = BaseStream.ReadByte();
+            int b = BaseStream.ReadByte();
+            if (a < 0 || b < 0) throw new EndOfStreamException();
+            // Wire big-endian: a is MSB. Wire little-endian: a is LSB.
+            return _bigEndian
+                ? (ushort) ((a << 8) | b)
+                : (ushort) ((b << 8) | a);
         }
 
 
@@ -155,9 +182,7 @@ namespace TrueCraft.Nbt
 
         public void SkipString()
         {
-            var length = ReadInt16();
-            if (length < 0) throw new NbtFormatException("Negative string length given!");
-
+            var length = ReadUInt16Spec();
             Skip(length);
         }
 

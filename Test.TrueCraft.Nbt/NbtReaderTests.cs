@@ -599,13 +599,16 @@ namespace Test.TrueCraft.Nbt {
 
             byte[] badStringLength = {
                 0x0A, // Compound tag
-                0xFF, 0xFF, 0x66, // Root name 'f' (with string length given as "-1")
+                0xFF, 0xFF, 0x66, // Root name 'f' with string length given as 65535
                 0x00 // end tag
             };
-            Assert.Throws<NbtFormatException>(() => TryReadBadFile(badStringLength));
-            Assert.Throws<NbtFormatException>(
+            // NBT string length is unsigned 16-bit per spec, so 0xFFFF (= 65535) is a
+            // valid declared length. The actual stream is far shorter, so the parser
+            // hits end-of-stream before reading the declared bytes.
+            Assert.Throws<EndOfStreamException>(() => TryReadBadFile(badStringLength));
+            Assert.Throws<EndOfStreamException>(
                 () => new NbtFile().LoadFromBuffer(badStringLength, 0, badStringLength.Length, NbtCompression.None));
-            Assert.Throws<NbtFormatException>(
+            Assert.Throws<EndOfStreamException>(
                 () => NbtFile.ReadRootTagName(new MemoryStream(badStringLength), NbtCompression.None, true, 0));
 
             byte[] abruptStringEnd = {

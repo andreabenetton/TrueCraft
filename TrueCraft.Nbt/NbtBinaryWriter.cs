@@ -40,7 +40,16 @@ namespace TrueCraft.Nbt
             if (!input.CanWrite) throw new ArgumentException("Given stream must be writable", nameof(input));
             _stream = input;
             _swapNeeded = BitConverter.IsLittleEndian == bigEndian;
+            _bigEndian = bigEndian;
         }
+
+        /// <summary>
+        ///     When <c>true</c>, strings are encoded as standard UTF-8 instead of Java's
+        ///     Modified UTF-8. Used by the network-NBT framing (Java protocol 1.20.2+).
+        /// </summary>
+        public bool UseStandardUtf8 { get; set; }
+
+        private readonly bool _bigEndian;
 
         public Stream BaseStream
         {
@@ -198,47 +207,67 @@ namespace TrueCraft.Nbt
         }
 
 
-        // Based on BinaryWriter.Write(String)
+        // Strings on the wire are Java Modified UTF-8 by default (used by every
+        // disk-format NBT Mojang has written). Network NBT (Java 1.20.2+ protocol) uses
+        // standard UTF-8 — opt in via UseStandardUtf8.
         public void Write([NotNull] string value)
         {
             if (value == null) throw new ArgumentNullException(nameof(value));
 
-            // Write out string length (as number of bytes)
-            var numBytes = Encoding.GetByteCount(value);
-            Write((short) numBytes);
-
-            if (numBytes <= BufferSize)
+            int numBytes;
+            byte[] bytes;
+            if (UseStandardUtf8)
             {
-                // If the string fits entirely in the buffer, encode and write it as one
-                Encoding.GetBytes(value, 0, value.Length, _buffer, 0);
-                _stream.Write(_buffer, 0, numBytes);
+                numBytes = Encoding.GetByteCount(value);
+                bytes = null; // populated below if needed
             }
             else
             {
-                // Aggressively try to not allocate memory in this loop for runtime performance reasons.
-                // Use an Encoder to write out the string correctly (handling surrogates crossing buffer
-                // boundaries properly).  
-                var charStart = 0;
-                var numLeft = value.Length;
-                while (numLeft > 0)
-                {
-                    // Figure out how many chars to process this round.
-                    var charCount = numLeft > MaxBufferedStringLength ? MaxBufferedStringLength : numLeft;
-                    int byteLen;
-                    fixed (char* pChars = value)
-                    {
-                        fixed (byte* pBytes = _buffer)
-                        {
-                            byteLen = _encoder.GetBytes(pChars + charStart, charCount, pBytes, BufferSize,
-                                charCount == numLeft);
-                        }
-                    }
-
-                    _stream.Write(_buffer, 0, byteLen);
-                    charStart += charCount;
-                    numLeft -= charCount;
-                }
+                numBytes = JavaModifiedUtf8.GetByteCount(value);
+                bytes = null;
             }
+            if (numBytes > ushort.MaxValue)
+                throw new NbtFormatException(
+                    $"NBT string longer than {ushort.MaxValue} bytes ({numBytes} bytes)");
+
+            WriteUInt16Spec((ushort) numBytes);
+
+            if (numBytes <= BufferSize)
+            {
+                int written;
+                if (UseStandardUtf8)
+                    written = Encoding.GetBytes(value, 0, value.Length, _buffer, 0);
+                else
+                    written = JavaModifiedUtf8.Encode(value, _buffer, 0);
+                _stream.Write(_buffer, 0, written);
+            }
+            else
+            {
+                // Single allocation for the whole payload — sized exactly via GetByteCount.
+                bytes = new byte[numBytes];
+                if (UseStandardUtf8)
+                    Encoding.GetBytes(value, 0, value.Length, bytes, 0);
+                else
+                    JavaModifiedUtf8.Encode(value, bytes, 0);
+                _stream.Write(bytes, 0, numBytes);
+            }
+        }
+
+
+        // Write an unsigned 16-bit length prefix in the configured wire endianness.
+        private void WriteUInt16Spec(ushort value)
+        {
+            if (_bigEndian)
+            {
+                _buffer[0] = (byte) (value >> 8);
+                _buffer[1] = (byte) value;
+            }
+            else
+            {
+                _buffer[0] = (byte) value;
+                _buffer[1] = (byte) (value >> 8);
+            }
+            _stream.Write(_buffer, 0, 2);
         }
 
 

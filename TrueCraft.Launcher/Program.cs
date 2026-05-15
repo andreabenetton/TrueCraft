@@ -1,6 +1,7 @@
 using System;
 using Serilog;
 using TrueCraft.Core;
+using TrueCraft;
 
 namespace TrueCraft.Launcher
 {
@@ -9,8 +10,8 @@ namespace TrueCraft.Launcher
         [STAThread]
         public static void Main(string[] args)
         {
-            // Constructing LauncherConfiguration wires Serilog from launchersettings.json.
-            _ = new LauncherConfiguration();
+            var launcherConfig = new LauncherConfiguration();
+            _ = new LoggerService<LauncherConfiguration>(launcherConfig.Configuration);
             Log.Information("TrueCraft.Launcher starting");
 
             try

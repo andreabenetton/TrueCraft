@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using GeonBit.UI.Entities;
 using GeonBit.UI.Utils;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.Core;
 
 namespace TrueCraft.Launcher.Views
@@ -21,6 +22,7 @@ namespace TrueCraft.Launcher.Views
         private CheckBox _fullscreenCheckBox;
         private CheckBox _invertMouseCheckBox;
         private SelectList _texturePackList;
+        private Image _texturePackPreview;
         private Button _openFolderButton;
         private Button _officialAssetsButton;
         private ProgressBar _officialAssetsProgress;
@@ -88,6 +90,9 @@ namespace TrueCraft.Launcher.Views
             _texturePackList.OnValueChange = _ => OnTexturePackChanged();
             parent.AddChild(_texturePackList);
 
+            _texturePackPreview = new Image((Texture2D)null, new Vector2(96, 96), ImageDrawMode.Stretch, Anchor.AutoCenter);
+            parent.AddChild(_texturePackPreview);
+
             _openFolderButton = new Button("Open texture pack folder", ButtonSkin.Alternative, Anchor.Auto);
             _openFolderButton.OnClick = _ => OpenTexturePackFolder();
             parent.AddChild(_openFolderButton);
@@ -112,8 +117,26 @@ namespace TrueCraft.Launcher.Views
         {
             var idx = _texturePackList.SelectedIndex;
             if (idx < 0 || idx >= _texturePacks.Count) return;
-            UserSettings.Local.SelectedTexturePack = _texturePacks[idx].Name;
+            var pack = _texturePacks[idx];
+            UserSettings.Local.SelectedTexturePack = pack.Name;
             UserSettings.Local.Save();
+            UpdatePreview(pack);
+        }
+
+        private void UpdatePreview(TexturePack pack)
+        {
+            if (_texturePackPreview == null || pack?.Image == null) return;
+            try
+            {
+                // pack.Image is a Stream over pack.png; reset to start in case the
+                // previous reader advanced it.
+                if (pack.Image.CanSeek) pack.Image.Seek(0, SeekOrigin.Begin);
+                _texturePackPreview.Texture = Texture2D.FromStream(_game.GraphicsDevice, pack.Image);
+            }
+            catch
+            {
+                // best effort — leave the previous preview in place.
+            }
         }
 
         private void OpenTexturePackFolder()

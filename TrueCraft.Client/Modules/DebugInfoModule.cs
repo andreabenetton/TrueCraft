@@ -27,32 +27,63 @@ namespace TrueCraft.Client.Modules
         private SpriteBatch SpriteBatch { get; }
         private bool Enabled { get; set; }
 
+        private int _lastFps = int.MinValue;
+        private string _fpsLine;
+        private double _lastPosX = double.NaN, _lastPosY = double.NaN, _lastPosZ = double.NaN;
+        private string _positionLine;
+        private object _lastHighlightedBlock;
+        private BlockFace _lastHighlightedFace = (BlockFace) (-1);
+        private string _highlightLine;
+        private int _lastPendingChunks = int.MinValue;
+        private string _pendingChunksLine;
+
         public void Draw(GameTime gameTime)
         {
             if (!Enabled)
                 return;
 
             var fps = (int) (1 / gameTime.ElapsedGameTime.TotalSeconds) + 1;
+            if (fps != _lastFps)
+            {
+                _fpsLine = ChatFormat.Bold + "Running at " + GetFPSColor(fps) + fps + " FPS";
+                _lastFps = fps;
+            }
+
+            var pos = Game.Client.Position;
+            if (pos.X != _lastPosX || pos.Y != _lastPosY || pos.Z != _lastPosZ)
+            {
+                _positionLine = $"Standing at <{pos.X:N2}, {pos.Y:N2}, {pos.Z:N2}>";
+                _lastPosX = pos.X;
+                _lastPosY = pos.Y;
+                _lastPosZ = pos.Z;
+            }
+
+            var highlightedBlock = (object) Game.HighlightedBlock;
+            if (!Equals(highlightedBlock, _lastHighlightedBlock) ||
+                Game.HighlightedBlockFace != _lastHighlightedFace)
+            {
+                _highlightLine = ChatColor.Gray + "Looking at " + Game.HighlightedBlock +
+                                 " (" + Enum.GetName(typeof(BlockFace), Game.HighlightedBlockFace) + ")";
+                _lastHighlightedBlock = highlightedBlock;
+                _lastHighlightedFace = Game.HighlightedBlockFace;
+            }
+
+            var pending = Game.ChunkModule.ChunkRenderer.PendingChunks;
+            if (pending != _lastPendingChunks)
+            {
+                _pendingChunksLine = ChatColor.Gray + pending + " pending chunks";
+                _lastPendingChunks = pending;
+            }
 
             const int xOrigin = 10;
             const int yOrigin = 5;
             const int yOffset = 25;
 
             SpriteBatch.Begin();
-            Font.DrawText(SpriteBatch, xOrigin, yOrigin, string.Format(
-                ChatFormat.Bold + "Running at {0}{1} FPS", GetFPSColor(fps), fps));
-
-            Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 1,
-                $"Standing at <{Game.Client.Position.X:N2}, {Game.Client.Position.Y:N2}, {Game.Client.Position.Z:N2}>");
-
-            Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 2,
-                ChatColor.Gray +
-                $"Looking at {Game.HighlightedBlock} ({Enum.GetName(typeof(BlockFace), Game.HighlightedBlockFace)})");
-
-            Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 3,
-                ChatColor.Gray +
-                $"{Game.ChunkModule.ChunkRenderer.PendingChunks} pending chunks");
-
+            Font.DrawText(SpriteBatch, xOrigin, yOrigin, _fpsLine);
+            Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 1, _positionLine);
+            Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 2, _highlightLine);
+            Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 3, _pendingChunksLine);
             SpriteBatch.End();
         }
 

@@ -86,7 +86,7 @@ namespace TrueCraft.Client.Modules
         {
             if (!Editing)
             {
-                if (e.Key == Keys.T)
+                if (InputBindings.Matches(InputAction.OpenChat, e.Key))
                 {
                     Editing = true;
                     return true;

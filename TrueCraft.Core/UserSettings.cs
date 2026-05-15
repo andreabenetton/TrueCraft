@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -40,6 +41,13 @@ namespace TrueCraft.Core
         public bool IsFullscreen { get; set; }
         public bool InvertedMouse { get; set; }
         public WindowResolution WindowResolution { get; set; }
+
+        /// <summary>
+        ///     Optional custom keybindings. Map from <c>InputAction</c> enum name to
+        ///     <c>Microsoft.Xna.Framework.Input.Keys</c> enum name. Unset entries fall
+        ///     back to the defaults compiled into the client.
+        /// </summary>
+        public Dictionary<string, string> KeyBindings { get; set; }
 
         public static UserSettings Load()
         {

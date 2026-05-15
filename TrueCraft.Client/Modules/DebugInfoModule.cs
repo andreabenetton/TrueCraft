@@ -89,24 +89,18 @@ namespace TrueCraft.Client.Modules
 
         public override bool KeyDown(GameTime gameTime, KeyboardKeyEventArgs e)
         {
-            switch (e.Key)
-            {
-                case Keys.F3:
-                    return true;
-            }
-
+            if (InputBindings.Matches(InputAction.ToggleDebugOverlay, e.Key))
+                return true;
             return false;
         }
 
         public override bool KeyUp(GameTime gameTime, KeyboardKeyEventArgs e)
         {
-            switch (e.Key)
+            if (InputBindings.Matches(InputAction.ToggleDebugOverlay, e.Key))
             {
-                case Keys.F3:
-                    Enabled = !Enabled;
-                    return true;
+                Enabled = !Enabled;
+                return true;
             }
-
             return false;
         }
 

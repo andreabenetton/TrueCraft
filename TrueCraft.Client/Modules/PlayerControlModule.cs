@@ -39,57 +39,57 @@ namespace TrueCraft.Client.Modules
 
         public override bool KeyDown(GameTime gameTime, KeyboardKeyEventArgs e)
         {
+            if (InputBindings.Matches(InputAction.Exit, e.Key))
+            {
+                Game.Exit();
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.Screenshot, e.Key))
+            {
+                Game.TakeScreenshot();
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.MoveLeft, e.Key))
+            {
+                Delta += XVector3.Left;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.MoveRight, e.Key))
+            {
+                Delta += XVector3.Right;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.MoveForward, e.Key))
+            {
+                Delta += XVector3.Forward;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.MoveBack, e.Key))
+            {
+                Delta += XVector3.Backward;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.ToggleMouseCapture, e.Key))
+            {
+                Capture = !Capture;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.OpenInventory, e.Key))
+            {
+                Game.Client.CurrentWindow = Game.Client.Inventory;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.Jump, e.Key))
+            {
+                if (Math.Floor(Game.Client.Position.Y) == Game.Client.Position.Y)
+                    Game.Client.Velocity += TVector3.Up * 0.3;
+                return true;
+            }
+
             switch (e.Key)
             {
-                // Exit game
-                case Keys.Escape:
-                    Game.Exit();
-                    return true;
-
-                // Take a screenshot.
-                case Keys.F2:
-                    Game.TakeScreenshot();
-                    return true;
-
-                // Move to the left.
-                case Keys.A:
-                case Keys.Left:
-                    Delta += XVector3.Left;
-                    return true;
-
-                // Move to the right.
-                case Keys.D:
-                case Keys.Right:
-                    Delta += XVector3.Right;
-                    return true;
-
-                // Move forwards.
-                case Keys.W:
-                case Keys.Up:
-                    Delta += XVector3.Forward;
-                    return true;
-
-                // Move backwards.
-                case Keys.S:
-                case Keys.Down:
-                    Delta += XVector3.Backward;
-                    return true;
-
                 case Keys.I:
                     Game.Client.Position = Game.Client.Position.Floor();
-                    return true;
-
-                case Keys.Tab:
-                    Capture = !Capture;
-                    return true;
-
-                case Keys.E:
-                    Game.Client.CurrentWindow = Game.Client.Inventory;
-                    return true;
-
-                case Keys.Space:
-                    if (Math.Floor(Game.Client.Position.Y) == Game.Client.Position.Y)
-                        Game.Client.Velocity += TVector3.Up * 0.3;
                     return true;
 
                 case Keys.D1:
@@ -143,31 +143,25 @@ namespace TrueCraft.Client.Modules
 
         public override bool KeyUp(GameTime gameTime, KeyboardKeyEventArgs e)
         {
-            switch (e.Key)
+            if (InputBindings.Matches(InputAction.MoveLeft, e.Key))
             {
-                // Stop moving to the left.
-                case Keys.A:
-                case Keys.Left:
-                    Delta -= XVector3.Left;
-                    return true;
-
-                // Stop moving to the right.
-                case Keys.D:
-                case Keys.Right:
-                    Delta -= XVector3.Right;
-                    return true;
-
-                // Stop moving forwards.
-                case Keys.W:
-                case Keys.Up:
-                    Delta -= XVector3.Forward;
-                    return true;
-
-                // Stop moving backwards.
-                case Keys.S:
-                case Keys.Down:
-                    Delta -= XVector3.Backward;
-                    return true;
+                Delta -= XVector3.Left;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.MoveRight, e.Key))
+            {
+                Delta -= XVector3.Right;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.MoveForward, e.Key))
+            {
+                Delta -= XVector3.Forward;
+                return true;
+            }
+            if (InputBindings.Matches(InputAction.MoveBack, e.Key))
+            {
+                Delta -= XVector3.Backward;
+                return true;
             }
 
             return false;

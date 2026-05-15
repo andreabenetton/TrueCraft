@@ -75,7 +75,7 @@ namespace TrueCraft.Client.Rendering
                 _game.Invoke(() =>
                 {
                     _vertices = new VertexBuffer(_graphicsDevice, VertexPositionNormalColorTexture.VertexDeclaration,
-                        value.Length + 1, BufferUsage.WriteOnly);
+                        value.Length, BufferUsage.WriteOnly);
                     _vertices.SetData(value);
                     IsReady = true;
                 });
@@ -135,7 +135,7 @@ namespace TrueCraft.Client.Rendering
                 _game.Invoke(() =>
                 {
                     _indices[index] = new IndexBuffer(_graphicsDevice, typeof(int),
-                        indices.Length + 1, BufferUsage.WriteOnly);
+                        indices.Length, BufferUsage.WriteOnly);
                     _indices[index].SetData(indices);
                     if (index + 1 > Submeshes)
                         Submeshes = index + 1;

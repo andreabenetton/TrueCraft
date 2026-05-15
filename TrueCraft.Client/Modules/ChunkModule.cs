@@ -75,6 +75,9 @@ namespace TrueCraft.Client.Modules
         private ConcurrentBag<Mesh> IncomingChunks { get; }
         private WorldLighting WorldLighting { get; }
 
+        // Reused per-frame to avoid GC churn from rebuilding the visible-chunk list.
+        private readonly List<ChunkMesh> _visibleChunks = new List<ChunkMesh>();
+
         private BasicEffect OpaqueEffect { get; }
         private AlphaTestEffect TransparentEffect { get; }
 
@@ -115,28 +118,30 @@ namespace TrueCraft.Client.Modules
                                                                                   0.25f + Game.SkyModule
                                                                                       .BrightnessModifier);
 
-            var chunks = 0;
-            Game.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            // Classify visible chunks once, then run all three passes against the same list.
+            var frustum = Game.Camera.Frustum;
+            _visibleChunks.Clear();
             foreach (var chunkMesh in ChunkMeshes)
-                if (Game.Camera.Frustum.Intersects(chunkMesh.BoundingBox))
-                {
-                    chunks++;
-                    chunkMesh.Draw(OpaqueEffect, 0);
-                    if (!chunkMesh.IsReady || chunkMesh.Submeshes != 2)
-                        Console.WriteLine("Warning: rendered chunk that was not ready");
-                }
+                if (frustum.Intersects(chunkMesh.BoundingBox))
+                    _visibleChunks.Add(chunkMesh);
+
+            Game.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            foreach (var chunkMesh in _visibleChunks)
+            {
+                chunkMesh.Draw(OpaqueEffect, 0);
+                if (!chunkMesh.IsReady || chunkMesh.Submeshes != 2)
+                    Console.WriteLine("Warning: rendered chunk that was not ready");
+            }
 
             Game.GraphicsDevice.BlendState = ColorWriteDisable;
-            foreach (var chunkMesh in ChunkMeshes)
-                if (Game.Camera.Frustum.Intersects(chunkMesh.BoundingBox))
-                    chunkMesh.Draw(TransparentEffect, 1);
+            foreach (var chunkMesh in _visibleChunks)
+                chunkMesh.Draw(TransparentEffect, 1);
 
             Game.GraphicsDevice.BlendState = BlendState.NonPremultiplied;
-            foreach (var chunkMesh in ChunkMeshes)
-                if (Game.Camera.Frustum.Intersects(chunkMesh.BoundingBox))
-                    chunkMesh.Draw(TransparentEffect, 1);
+            foreach (var chunkMesh in _visibleChunks)
+                chunkMesh.Draw(TransparentEffect, 1);
 
-            ChunksRendered = chunks;
+            ChunksRendered = _visibleChunks.Count;
         }
 
         private void Game_Client_BlockChanged(object sender, BlockChangeEventArgs e)

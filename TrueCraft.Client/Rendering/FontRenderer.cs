@@ -56,12 +56,11 @@ namespace TrueCraft.Client.Rendering
             var height = 0;
             var font = Fonts[0];
             for (var i = 0; i < text.Length; i++)
-                if (text[i] == '§')
+                if (text[i] == '§' && i + 1 < text.Length)
                 {
                     i++;
-                    var code = $"§{text[i]}";
-                    if (ChatFormat.IsValid(code))
-                        font = GetFont(code);
+                    if (IsFormatChar(text[i]))
+                        font = GetFontForChar(text[i]);
                 }
                 else
                 {
@@ -85,14 +84,13 @@ namespace TrueCraft.Client.Rendering
             var font = Fonts[0];
 
             for (var i = 0; i < text.Length; i++)
-                if (text[i] == '§')
+                if (text[i] == '§' && i + 1 < text.Length)
                 {
                     i++;
-                    var code = $"§{text[i]}";
-                    if (ChatFormat.IsValid(code))
-                        font = GetFont(code);
+                    if (IsFormatChar(text[i]))
+                        font = GetFontForChar(text[i]);
                     else
-                        color = GetColor(code);
+                        color = GetColorForChar(text[i]);
                 }
                 else
                 {
@@ -120,99 +118,69 @@ namespace TrueCraft.Client.Rendering
                 }
         }
 
-        private Font GetFont(string formatCode)
+        private static bool IsFormatChar(char c)
+        {
+            switch (c)
+            {
+                case 'k': case 'K':
+                case 'l': case 'L':
+                case 'm': case 'M':
+                case 'n': case 'N':
+                case 'o': case 'O':
+                case 'r': case 'R':
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private Font GetFontForChar(char formatChar)
         {
             // If we are a mono-font renderer, we don't actually care about formatting codes.
             if (Fonts.Length == 1)
                 return Fonts[0];
 
-            // Otherwise, determine which font to switch to.
-            formatCode = formatCode.ToLowerInvariant();
-
-            switch (formatCode)
+            switch (formatChar)
             {
-                case ChatFormat.Obfuscated: // We don't support obfuscated text yet.
+                case 'k': case 'K': // Obfuscated — not supported yet.
+                case 'r': case 'R':
                     return Fonts[(int) FontStyle.Regular];
-
-                case ChatFormat.Bold:
+                case 'l': case 'L':
                     return Fonts[(int) FontStyle.Bold];
-
-                case ChatFormat.Strikethrough:
+                case 'm': case 'M':
                     return Fonts[(int) FontStyle.Strikethrough];
-
-                case ChatFormat.Underline:
+                case 'n': case 'N':
                     return Fonts[(int) FontStyle.Underline];
-
-                case ChatFormat.Italic:
+                case 'o': case 'O':
                     return Fonts[(int) FontStyle.Italic];
-
-                case ChatFormat.Reset:
-                    return Fonts[(int) FontStyle.Regular];
-
                 default:
                     return Fonts[0];
             }
         }
 
         // RGB values taken from http://minecraft.gamepedia.com/Formatting_codes
-        private static Color GetColor(string colorCode)
+        private static Color GetColorForChar(char colorChar)
         {
-            colorCode = colorCode.ToLowerInvariant();
-
-            switch (colorCode)
+            switch (colorChar)
             {
-                case ChatColor.Black:
-                    return new Color(0, 0, 0);
-
-                case ChatColor.DarkBlue:
-                    return new Color(0, 0, 170);
-
-                case ChatColor.DarkGreen:
-                    return new Color(0, 170, 0);
-
-                case ChatColor.DarkCyan:
-                    return new Color(0, 170, 170);
-
-                case ChatColor.DarkRed:
-                    return new Color(170, 0, 0);
-
-                case ChatColor.Purple:
-                    return new Color(170, 0, 170);
-
-                case ChatColor.Orange:
-                    return new Color(255, 170, 0);
-
-                case ChatColor.Gray:
-                    return new Color(170, 170, 170);
-
-                case ChatColor.DarkGray:
-                    return new Color(85, 85, 85);
-
-                case ChatColor.Blue:
-                    return new Color(85, 85, 255);
-
-                case ChatColor.BrightGreen:
-                    return new Color(85, 255, 85);
-
-                case ChatColor.Cyan:
-                    return new Color(85, 255, 255);
-
-                case ChatColor.Red:
-                    return new Color(255, 85, 85);
-
-                case ChatColor.Pink:
-                    return new Color(255, 85, 255);
-
-                case ChatColor.Yellow:
-                    return new Color(255, 255, 85);
-
-                case ChatColor.White:
-                    return new Color(255, 255, 255);
+                case '0': return new Color(0, 0, 0);          // Black
+                case '1': return new Color(0, 0, 170);        // DarkBlue
+                case '2': return new Color(0, 170, 0);        // DarkGreen
+                case '3': return new Color(0, 170, 170);      // DarkCyan
+                case '4': return new Color(170, 0, 0);        // DarkRed
+                case '5': return new Color(170, 0, 170);      // Purple
+                case '6': return new Color(255, 170, 0);      // Orange
+                case '7': return new Color(170, 170, 170);    // Gray
+                case '8': return new Color(85, 85, 85);       // DarkGray
+                case '9': return new Color(85, 85, 255);      // Blue
+                case 'a': case 'A': return new Color(85, 255, 85);
+                case 'b': case 'B': return new Color(85, 255, 255);
+                case 'c': case 'C': return new Color(255, 85, 85);
+                case 'd': case 'D': return new Color(255, 85, 255);
+                case 'e': case 'E': return new Color(255, 255, 85);
+                case 'f': case 'F': return new Color(255, 255, 255);
+                default: return Color.White;
             }
-
-            // Technically this means we have an invalid color code,
-            // should we throw an exception?
-            return Color.White;
         }
     }
 }

@@ -1,182 +1,220 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using TrueCraft.Core;
+using GeonBit.UI.Entities;
+using GeonBit.UI.Utils;
+using Microsoft.Xna.Framework;
 using TrueCraft.Launcher.Singleplayer;
-using Xwt;
 
 namespace TrueCraft.Launcher.Views
 {
-    public class SingleplayerView : VBox
+    public sealed class SingleplayerView : ILauncherView
     {
-        public SingleplayerView(LauncherWindow window)
+        private readonly LauncherGame _game;
+
+        private SelectList _worldList;
+        private Button _createButton;
+        private Button _deleteButton;
+        private Button _playButton;
+        private Button _backButton;
+        private Panel _createWorldPanel;
+        private TextInput _newWorldName;
+        private TextInput _newWorldSeed;
+        private Button _newWorldCommit;
+        private Button _newWorldCancel;
+        private Label _progressLabel;
+        private ProgressBar _progressBar;
+        private SingleplayerServer _server;
+
+        public SingleplayerView(LauncherGame game)
         {
+            _game = game;
             Worlds.Local = new Worlds();
             Worlds.Local.Load();
-
-            Window = window;
-            MinWidth = 250;
-
-            SingleplayerLabel = new Label("Singleplayer")
-            {
-                Font = Font.WithSize(16),
-                TextAlignment = Alignment.Center
-            };
-            WorldListView = new ListView
-            {
-                MinHeight = 200,
-                SelectionMode = SelectionMode.Single
-            };
-            CreateWorldButton = new Button("New world");
-            DeleteWorldButton = new Button("Delete") {Sensitive = false};
-            PlayButton = new Button("Play") {Sensitive = false};
-            BackButton = new Button("Back");
-            CreateWorldBox = new VBox {Visible = false};
-            NewWorldName = new TextEntry {PlaceholderText = "Name"};
-            NewWorldSeed = new TextEntry {PlaceholderText = "Seed (optional)"};
-            NewWorldCommit = new Button("Create") {Sensitive = false};
-            NewWorldCancel = new Button("Cancel");
-            NameField = new DataField<string>();
-            WorldListStore = new ListStore(NameField);
-            WorldListView.DataSource = WorldListStore;
-            WorldListView.HeadersVisible = false;
-            WorldListView.Columns.Add(new ListViewColumn("Name",
-                new TextCellView {TextField = NameField, Editable = false}));
-            ProgressLabel = new Label("Loading world...") {Visible = false};
-            ProgressBar = new ProgressBar {Visible = false, Indeterminate = true, Fraction = 0};
-
-            BackButton.Clicked += (sender, e) =>
-            {
-                Window.InteractionBox.Remove(this);
-                Window.InteractionBox.PackEnd(Window.MainMenuView);
-            };
-            CreateWorldButton.Clicked += (sender, e) => { CreateWorldBox.Visible = true; };
-            NewWorldCancel.Clicked += (sender, e) => { CreateWorldBox.Visible = false; };
-            NewWorldName.Changed += (sender, e) =>
-            {
-                NewWorldCommit.Sensitive = !string.IsNullOrEmpty(NewWorldName.Text);
-            };
-            NewWorldCommit.Clicked += NewWorldCommit_Clicked;
-            WorldListView.SelectionChanged += (sender, e) =>
-            {
-                PlayButton.Sensitive = DeleteWorldButton.Sensitive = WorldListView.SelectedRow != -1;
-            };
-            PlayButton.Clicked += PlayButton_Clicked;
-            DeleteWorldButton.Clicked += (sender, e) =>
-            {
-                var world = Worlds.Local.Saves[WorldListView.SelectedRow];
-                WorldListStore.RemoveRow(WorldListView.SelectedRow);
-                Worlds.Local.Saves = Worlds.Local.Saves.Where(s => s != world).ToArray();
-                Directory.Delete(world.BaseDirectory, true);
-            };
-
-            foreach (var world in Worlds.Local.Saves)
-            {
-                var row = WorldListStore.AddRow();
-                WorldListStore.SetValue(row, NameField, world.Name);
-            }
-
-            var createDeleteHbox = new HBox();
-            CreateWorldButton.WidthRequest = DeleteWorldButton.WidthRequest = 0.5;
-            createDeleteHbox.PackStart(CreateWorldButton, true);
-            createDeleteHbox.PackStart(DeleteWorldButton, true);
-
-            CreateWorldBox.PackStart(NewWorldName);
-            CreateWorldBox.PackStart(NewWorldSeed);
-            var newWorldHbox = new HBox();
-            NewWorldCommit.WidthRequest = NewWorldCancel.WidthRequest = 0.5;
-            newWorldHbox.PackStart(NewWorldCommit, true);
-            newWorldHbox.PackStart(NewWorldCancel, true);
-            CreateWorldBox.PackStart(newWorldHbox);
-
-            PackStart(SingleplayerLabel);
-            PackStart(WorldListView);
-            PackStart(createDeleteHbox);
-            PackStart(PlayButton);
-            PackStart(CreateWorldBox);
-            PackStart(ProgressLabel);
-            PackStart(ProgressBar);
-            PackEnd(BackButton);
         }
 
-        public LauncherWindow Window { get; set; }
-        public Label SingleplayerLabel { get; set; }
-        public ListView WorldListView { get; set; }
-        public Button CreateWorldButton { get; set; }
-        public Button DeleteWorldButton { get; set; }
-        public Button PlayButton { get; set; }
-        public Button BackButton { get; set; }
-        public VBox CreateWorldBox { get; set; }
-        public TextEntry NewWorldName { get; set; }
-        public TextEntry NewWorldSeed { get; set; }
-        public Button NewWorldCommit { get; set; }
-        public Button NewWorldCancel { get; set; }
-        public ListStore WorldListStore { get; set; }
-        public Label ProgressLabel { get; set; }
-        public ProgressBar ProgressBar { get; set; }
-        public SingleplayerServer Server { get; set; }
-        public DataField<string> NameField { get; set; }
-
-        public void PlayButton_Clicked(object sender, EventArgs e)
+        public void Mount(Panel parent)
         {
-            Server = new SingleplayerServer(Worlds.Local.Saves[WorldListView.SelectedRow]);
-            PlayButton.Sensitive = BackButton.Sensitive = CreateWorldButton.Sensitive =
-                CreateWorldBox.Visible = WorldListView.Sensitive = false;
-            ProgressBar.Visible = ProgressLabel.Visible = true;
-            Task.Factory.StartNew(() =>
+            parent.AddChild(new Header("Singleplayer"));
+            parent.AddChild(new HorizontalLine());
+
+            _worldList = new SelectList(new Vector2(0, 200));
+            foreach (var world in Worlds.Local.Saves)
+                _worldList.AddItem(world.Name);
+            _worldList.OnValueChange = _ => UpdateSelectionSensitive();
+            parent.AddChild(_worldList);
+
+            _createButton = new Button("New world", anchor: Anchor.AutoInline,
+                size: new Vector2(0.5f, -1));
+            _createButton.OnClick = _ => SetCreateWorldVisible(true);
+            parent.AddChild(_createButton);
+
+            _deleteButton = new Button("Delete", ButtonSkin.Alternative, Anchor.AutoInline,
+                new Vector2(0.5f, -1));
+            _deleteButton.Enabled = false;
+            _deleteButton.OnClick = _ => DeleteSelectedWorld();
+            parent.AddChild(_deleteButton);
+
+            _playButton = new Button("Play", anchor: Anchor.Auto);
+            _playButton.Enabled = false;
+            _playButton.OnClick = _ => PlaySelectedWorld();
+            parent.AddChild(_playButton);
+
+            _createWorldPanel = new Panel(new Vector2(0, 200), PanelSkin.None, Anchor.Auto)
             {
-                Server.Initialize((value, stage) =>
-                    Application.Invoke(() =>
-                    {
-                        ProgressBar.Indeterminate = false;
-                        ProgressLabel.Text = stage;
-                        ProgressBar.Fraction = value;
-                    }));
-                Server.Start();
-                Application.Invoke(() =>
+                Visible = false,
+            };
+            _newWorldName = new TextInput(false) { PlaceholderText = "Name" };
+            _createWorldPanel.AddChild(_newWorldName);
+            _newWorldSeed = new TextInput(false) { PlaceholderText = "Seed (optional)" };
+            _createWorldPanel.AddChild(_newWorldSeed);
+
+            _newWorldCommit = new Button("Create", anchor: Anchor.AutoInline,
+                size: new Vector2(0.5f, -1));
+            _newWorldCommit.OnClick = _ => CommitCreateWorld();
+            _createWorldPanel.AddChild(_newWorldCommit);
+
+            _newWorldCancel = new Button("Cancel", ButtonSkin.Alternative, Anchor.AutoInline,
+                new Vector2(0.5f, -1));
+            _newWorldCancel.OnClick = _ => SetCreateWorldVisible(false);
+            _createWorldPanel.AddChild(_newWorldCancel);
+            parent.AddChild(_createWorldPanel);
+
+            _progressLabel = new Label("Loading world...", Anchor.Auto) { Visible = false };
+            parent.AddChild(_progressLabel);
+            _progressBar = new ProgressBar(0, 100) { Visible = false };
+            parent.AddChild(_progressBar);
+
+            _backButton = new Button("Back", ButtonSkin.Alternative, Anchor.BottomCenter);
+            _backButton.OnClick = _ => _game.ShowView(new MainMenuView(_game));
+            parent.AddChild(_backButton);
+        }
+
+        private void UpdateSelectionSensitive()
+        {
+            var has = _worldList.SelectedIndex >= 0;
+            _playButton.Enabled = has;
+            _deleteButton.Enabled = has;
+        }
+
+        private void SetCreateWorldVisible(bool visible)
+        {
+            _createWorldPanel.Visible = visible;
+            if (visible)
+            {
+                _newWorldName.Value = string.Empty;
+                _newWorldSeed.Value = string.Empty;
+            }
+        }
+
+        private void CommitCreateWorld()
+        {
+            var name = _newWorldName.Value?.Trim();
+            if (string.IsNullOrEmpty(name))
+                return;
+            var world = Worlds.Local.CreateNewWorld(name, _newWorldSeed.Value);
+            SetCreateWorldVisible(false);
+            _worldList.AddItem(world.Name);
+        }
+
+        private void DeleteSelectedWorld()
+        {
+            var idx = _worldList.SelectedIndex;
+            if (idx < 0) return;
+            var world = Worlds.Local.Saves[idx];
+            _worldList.RemoveItem(idx);
+            Worlds.Local.Saves = Worlds.Local.Saves.Where(s => s != world).ToArray();
+            try
+            {
+                Directory.Delete(world.BaseDirectory, true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.ShowMsgBox("Delete failed", ex.Message);
+            }
+        }
+
+        private void PlaySelectedWorld()
+        {
+            var idx = _worldList.SelectedIndex;
+            if (idx < 0) return;
+
+            _server = new SingleplayerServer(Worlds.Local.Saves[idx]);
+            SetInteractive(false);
+            _progressBar.Visible = true;
+            _progressLabel.Visible = true;
+
+            Task.Run(() =>
+            {
+                try
                 {
-                    PlayButton.Sensitive = BackButton.Sensitive =
-                        CreateWorldButton.Sensitive = WorldListView.Sensitive = true;
-                    var launchParams = $"{Server.Server.EndPoint} {Window.User.Username} {Window.User.SessionId}";
-                    var process = new Process();
-                    if (RuntimeInfo.IsMono)
-                        process.StartInfo = new ProcessStartInfo("mono", "TrueCraft.Client.exe " + launchParams);
-                    else
-                        process.StartInfo = new ProcessStartInfo("TrueCraft.Client.exe", launchParams);
-                    process.EnableRaisingEvents = true;
-                    process.Exited += (s, a) => Application.Invoke(() =>
+                    _server.Initialize((value, stage) =>
+                        _game.Invoke(() =>
+                        {
+                            _progressLabel.Text = stage;
+                            _progressBar.Value = Math.Clamp((int) (value * 100), 0, 100);
+                        }));
+                    _server.Start();
+
+                    _game.Invoke(() => LaunchClient());
+                }
+                catch (Exception ex)
+                {
+                    _game.Invoke(() =>
                     {
-                        ProgressBar.Visible = ProgressLabel.Visible = false;
-                        Window.Show();
-                        Window.ShowInTaskbar = true;
-                        Server.Stop();
-                        Server.World.Save();
+                        MessageBox.ShowMsgBox("Error loading world",
+                            "It's possible that this world is corrupted.\n\n" + ex.Message);
+                        _progressBar.Visible = false;
+                        _progressLabel.Visible = false;
+                        SetInteractive(true);
                     });
-                    process.Start();
-                    Window.ShowInTaskbar = false;
-                    Window.Hide();
-                });
-            }).ContinueWith(task =>
-            {
-                if (task.IsFaulted)
-                    Application.Invoke(() =>
-                    {
-                        MessageDialog.ShowError("Error loading world", "It's possible that this world is corrupted.");
-                        ProgressBar.Visible = ProgressLabel.Visible = false;
-                        PlayButton.Sensitive = BackButton.Sensitive = CreateWorldButton.Sensitive =
-                            WorldListView.Sensitive = true;
-                    });
+                }
             });
         }
 
-        private void NewWorldCommit_Clicked(object sender, EventArgs e)
+        private void LaunchClient()
         {
-            var world = Worlds.Local.CreateNewWorld(NewWorldName.Text, NewWorldSeed.Text);
-            CreateWorldBox.Visible = false;
-            var row = WorldListStore.AddRow();
-            WorldListStore.SetValue(row, NameField, world.Name);
+            var endpoint = _server.Server.EndPoint;
+            var args = $"{endpoint} {_game.User.Username} {_game.User.SessionId}";
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo("TrueCraft.Client", args)
+                {
+                    UseShellExecute = false,
+                },
+                EnableRaisingEvents = true,
+            };
+            process.Exited += (_, _) => _game.Invoke(OnClientExited);
+            process.Start();
         }
+
+        private void OnClientExited()
+        {
+            _progressBar.Visible = false;
+            _progressLabel.Visible = false;
+            try
+            {
+                _server.Stop();
+                _server.World.Save();
+            }
+            catch
+            {
+                // Save best-effort.
+            }
+            SetInteractive(true);
+        }
+
+        private void SetInteractive(bool enabled)
+        {
+            _playButton.Enabled = enabled && _worldList.SelectedIndex >= 0;
+            _deleteButton.Enabled = enabled && _worldList.SelectedIndex >= 0;
+            _createButton.Enabled = enabled;
+            _backButton.Enabled = enabled;
+            _worldList.Enabled = enabled;
+        }
+
+        public void Dispose() { }
     }
 }

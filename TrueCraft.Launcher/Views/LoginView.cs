@@ -1,211 +1,193 @@
-﻿using System;
-using System.IO;
-using System.Net;
-using System.Reflection;
+using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Threading.Tasks;
+using GeonBit.UI.Entities;
+using Microsoft.Xna.Framework;
 using TrueCraft.Core;
-using Xwt;
-using Xwt.Drawing;
 
 namespace TrueCraft.Launcher.Views
 {
-    public class LoginView : VBox
+    public sealed class LoginView : ILauncherView
     {
-        public LoginView(LauncherWindow window)
+        private static readonly HttpClient HttpClient = new();
+
+        private readonly LauncherGame _game;
+        private Label _errorLabel;
+        private TextInput _usernameInput;
+        private TextInput _passwordInput;
+        private CheckBox _rememberCheckbox;
+        private Button _loginButton;
+        private Button _registerButton;
+        private Button _offlineButton;
+
+        public LoginView(LauncherGame game)
         {
-            Window = window;
-            MinWidth = 250;
-
-            ErrorLabel = new Label("Username or password incorrect")
-            {
-                TextColor = Color.FromBytes(255, 0, 0),
-                TextAlignment = Alignment.Center,
-                Visible = false
-            };
-            UsernameText = new TextEntry();
-            PasswordText = new PasswordEntry();
-            LogInButton = new Button("Log In");
-            RegisterButton = new Button("Register");
-            OfflineButton = new Button("Play Offline");
-            RememberCheckBox = new CheckBox("Remember Me");
-            UsernameText.Text = UserSettings.Local.Username;
-            if (UserSettings.Local.AutoLogin)
-            {
-                PasswordText.Password = UserSettings.Local.Password;
-                RememberCheckBox.Active = true;
-            }
-
-            using (var stream = Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("TrueCraft.Launcher.Content.truecraft_logo.png"))
-            {
-                TrueCraftLogoImage = new ImageView(Image.FromStream(stream).WithBoxSize(350, 75));
-            }
-
-            UsernameText.PlaceholderText = "Username";
-            PasswordText.PlaceholderText = "Password";
-            PasswordText.KeyReleased += (sender, e) =>
-            {
-                if (e.Key == Key.Return || e.Key == Key.NumPadEnter)
-                    LogInButton_Clicked(sender, e);
-            };
-            UsernameText.KeyReleased += (sender, e) =>
-            {
-                if (e.Key == Key.Return || e.Key == Key.NumPadEnter)
-                    LogInButton_Clicked(sender, e);
-            };
-            RegisterButton.Clicked += (sender, e) => { Window.WebView.Url = "https://truecraft.io/register"; };
-            OfflineButton.Clicked += (sender, e) =>
-            {
-                Window.User.Username = UsernameText.Text;
-                Window.User.SessionId = "-";
-                Window.InteractionBox.Remove(this);
-                Window.InteractionBox.PackEnd(Window.MainMenuView = new MainMenuView(Window));
-            };
-            var regoffbox = new HBox();
-            RegisterButton.WidthRequest = OfflineButton.WidthRequest = 0.5;
-            regoffbox.PackStart(RegisterButton, true);
-            regoffbox.PackStart(OfflineButton, true);
-            LogInButton.Clicked += LogInButton_Clicked;
-
-            PackEnd(regoffbox);
-            PackEnd(LogInButton);
-            PackEnd(RememberCheckBox);
-            PackEnd(PasswordText);
-            PackEnd(UsernameText);
-            PackEnd(ErrorLabel);
+            _game = game;
         }
 
-        public LauncherWindow Window { get; set; }
-
-        public TextEntry UsernameText { get; set; }
-        public PasswordEntry PasswordText { get; set; }
-        public Button LogInButton { get; set; }
-        public Button RegisterButton { get; set; }
-        public Button OfflineButton { get; set; }
-        public ImageView TrueCraftLogoImage { get; set; }
-        public Label ErrorLabel { get; set; }
-        public CheckBox RememberCheckBox { get; set; }
-
-        private void DisableForm()
+        public void Mount(Panel parent)
         {
-            UsernameText.Sensitive = PasswordText.Sensitive = LogInButton.Sensitive =
-                RegisterButton.Sensitive = OfflineButton.Sensitive = false;
-        }
+            parent.AddChild(new Header("Sign in"));
+            parent.AddChild(new HorizontalLine());
 
-        private void EnableForm()
-        {
-            UsernameText.Sensitive = PasswordText.Sensitive = LogInButton.Sensitive =
-                RegisterButton.Sensitive = OfflineButton.Sensitive = true;
-        }
-
-        private void LogInButton_Clicked(object sender, EventArgs e)
-        {
-            if (string.IsNullOrEmpty(UsernameText.Text) || string.IsNullOrEmpty(PasswordText.Password))
+            _errorLabel = new Label("", Anchor.Auto)
             {
-                ErrorLabel.Text = "Username and password are required";
-                ErrorLabel.Visible = true;
+                FillColor = Color.IndianRed,
+                Visible = false,
+            };
+            parent.AddChild(_errorLabel);
+
+            parent.AddChild(new Label("Username"));
+            _usernameInput = new TextInput(false)
+            {
+                Value = UserSettings.Local?.Username ?? string.Empty,
+            };
+            parent.AddChild(_usernameInput);
+
+            parent.AddChild(new Label("Password"));
+            _passwordInput = new TextInput(false)
+            {
+                HideInputWithChar = '*',
+                Value = UserSettings.Local?.AutoLogin == true ? UserSettings.Local.Password ?? string.Empty : string.Empty,
+            };
+            parent.AddChild(_passwordInput);
+
+            _rememberCheckbox = new CheckBox("Remember me", Anchor.Auto)
+            {
+                Checked = UserSettings.Local?.AutoLogin == true,
+            };
+            parent.AddChild(_rememberCheckbox);
+
+            parent.AddChild(new LineSpace());
+
+            _loginButton = new Button("Log in", anchor: Anchor.Auto);
+            _loginButton.OnClick = _ => BeginLogin();
+            parent.AddChild(_loginButton);
+
+            _offlineButton = new Button("Play offline", ButtonSkin.Alternative, Anchor.Auto);
+            _offlineButton.OnClick = _ => LoginOffline();
+            parent.AddChild(_offlineButton);
+
+            _registerButton = new Button("Register account", ButtonSkin.Alternative, Anchor.Auto);
+            _registerButton.OnClick = _ => OpenBrowser("https://truecraft.io/register");
+            parent.AddChild(_registerButton);
+        }
+
+        private void BeginLogin()
+        {
+            var username = _usernameInput.Value;
+            var password = _passwordInput.Value;
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            {
+                ShowError("Enter both a username and a password.");
                 return;
             }
 
-            ErrorLabel.Visible = false;
-            DisableForm();
+            SetInteractive(false);
+            ShowError(null);
 
-            Window.User.Username = UsernameText.Text;
-            var request = WebRequest.CreateHttp(TrueCraftUser.AuthServer + "/api/login");
-            request.Method = "POST";
-            request.ContentType = "application/x-www-form-urlencoded";
-            request.AllowAutoRedirect = false;
-            request.BeginGetRequestStream(HandleLoginRequestReady, new LogInAsyncState
+            Task.Run(async () =>
             {
-                Request = request,
-                Username = Window.User.Username,
-                Password = PasswordText.Password
+                try
+                {
+                    var content = new FormUrlEncodedContent(new[]
+                    {
+                        new System.Collections.Generic.KeyValuePair<string, string>("user", username),
+                        new System.Collections.Generic.KeyValuePair<string, string>("password", password),
+                        new System.Collections.Generic.KeyValuePair<string, string>("version", "12"),
+                    });
+                    var response = await HttpClient.PostAsync(
+                        TrueCraftUser.AuthServer + "/api/login", content);
+                    var body = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode || string.IsNullOrWhiteSpace(body))
+                    {
+                        _game.Invoke(() =>
+                        {
+                            ShowError("Username or password incorrect.");
+                            SetInteractive(true);
+                        });
+                        return;
+                    }
+
+                    // Response format historically: part0:part1:UUID:SessionId
+                    var parts = body.Split(':');
+                    var sessionId = parts.Length >= 4 ? parts[3] : body.Trim();
+
+                    _game.Invoke(() =>
+                    {
+                        _game.User.Username = username;
+                        _game.User.SessionId = sessionId;
+                        PersistSettings(username, password, _rememberCheckbox.Checked);
+                        _game.ShowView(new MainMenuView(_game));
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _game.Invoke(() =>
+                    {
+                        ShowError($"Login failed: {ex.Message}");
+                        SetInteractive(true);
+                    });
+                }
             });
         }
 
-        private void HandleLoginRequestReady(IAsyncResult asyncResult)
+        private void LoginOffline()
+        {
+            var username = string.IsNullOrWhiteSpace(_usernameInput.Value) ? "Player" : _usernameInput.Value;
+            _game.User.Username = username;
+            _game.User.SessionId = "-";
+            PersistSettings(username, password: null, remember: false);
+            _game.ShowView(new MainMenuView(_game));
+        }
+
+        private static void PersistSettings(string username, string password, bool remember)
+        {
+            if (UserSettings.Local == null)
+                return;
+            UserSettings.Local.Username = username;
+            UserSettings.Local.AutoLogin = remember && password != null;
+            UserSettings.Local.Password = remember && password != null ? password : string.Empty;
+            UserSettings.Local.Save();
+        }
+
+        private void SetInteractive(bool enabled)
+        {
+            if (_loginButton != null) _loginButton.Enabled = enabled;
+            if (_offlineButton != null) _offlineButton.Enabled = enabled;
+            if (_registerButton != null) _registerButton.Enabled = enabled;
+            if (_usernameInput != null) _usernameInput.Enabled = enabled;
+            if (_passwordInput != null) _passwordInput.Enabled = enabled;
+        }
+
+        private void ShowError(string message)
+        {
+            if (_errorLabel == null)
+                return;
+            if (string.IsNullOrEmpty(message))
+            {
+                _errorLabel.Visible = false;
+                _errorLabel.Text = string.Empty;
+                return;
+            }
+            _errorLabel.Text = message;
+            _errorLabel.Visible = true;
+        }
+
+        private static void OpenBrowser(string url)
         {
             try
             {
-                var state = (LogInAsyncState) asyncResult.AsyncState;
-                var request = state.Request;
-                var requestStream = request.EndGetRequestStream(asyncResult);
-                using (var writer = new StreamWriter(requestStream))
-                {
-                    writer.Write($"user={state.Username}&password={state.Password}&version=12");
-                }
-
-                request.BeginGetResponse(HandleLoginResponse, request);
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
             catch
             {
-                Application.Invoke(() =>
-                {
-                    EnableForm();
-                    ErrorLabel.Text = "Unable to log in";
-                    ErrorLabel.Visible = true;
-                    RegisterButton.Label = "Offline Mode";
-                });
+                // ignore — non-fatal
             }
         }
 
-        private void HandleLoginResponse(IAsyncResult asyncResult)
-        {
-            try
-            {
-                var request = (HttpWebRequest) asyncResult.AsyncState;
-                var response = request.EndGetResponse(asyncResult);
-                string session;
-                using (var reader =
-                    new StreamReader(response.GetResponseStream() ?? throw new InvalidOperationException()))
-                {
-                    session = reader.ReadToEnd();
-                }
-
-                if (session.Contains(":"))
-                {
-                    var parts = session.Split(new[] {':'}, StringSplitOptions.RemoveEmptyEntries);
-                    Application.Invoke(() =>
-                    {
-                        Window.User.Username = parts[2];
-                        Window.User.SessionId = parts[3];
-                        EnableForm();
-                        Window.InteractionBox.Remove(this);
-                        Window.InteractionBox.PackEnd(Window.MainMenuView = new MainMenuView(Window));
-                        UserSettings.Local.AutoLogin = RememberCheckBox.Active;
-                        UserSettings.Local.Username = Window.User.Username;
-                        UserSettings.Local.Password =
-                            UserSettings.Local.AutoLogin ? PasswordText.Password : string.Empty;
-                        UserSettings.Local.Save();
-                    });
-                }
-                else
-                {
-                    Application.Invoke(() =>
-                    {
-                        EnableForm();
-                        ErrorLabel.Text = session;
-                        ErrorLabel.Visible = true;
-                        RegisterButton.Label = "Offline Mode";
-                    });
-                }
-            }
-            catch
-            {
-                Application.Invoke(() =>
-                {
-                    EnableForm();
-                    ErrorLabel.Text = "Unable to log in.";
-                    ErrorLabel.Visible = true;
-                    RegisterButton.Label = "Offline Mode";
-                });
-            }
-        }
-
-        private class LogInAsyncState
-        {
-            public HttpWebRequest Request { get; set; }
-            public string Username { get; set; }
-            public string Password { get; set; }
-        }
+        public void Dispose() { }
     }
 }

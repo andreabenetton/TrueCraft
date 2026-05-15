@@ -1,5 +1,3 @@
-﻿using System.Collections.Generic;
-
 namespace TrueCraft.API
 {
     /// <summary>
@@ -8,18 +6,18 @@ namespace TrueCraft.API
     public interface IAccessConfiguration
     {
         /// <summary>
-        ///     Gets a list of blacklisted players for the configuration.
+        ///     Gets the list of blacklisted players.
         /// </summary>
-        IList<string> Blacklist { get; }
+        string[] Blacklist { get; }
 
         /// <summary>
-        ///     Gets a list of whitelisted players for the configuration.
+        ///     Gets the list of whitelisted players.
         /// </summary>
-        IList<string> Whitelist { get; }
+        string[] Whitelist { get; }
 
         /// <summary>
-        ///     Gets a list of opped players for the configuration.
+        ///     Gets the list of opped players.
         /// </summary>
-        IList<string> Oplist { get; }
+        string[] Oplist { get; }
     }
 }

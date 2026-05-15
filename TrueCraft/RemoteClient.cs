@@ -197,7 +197,7 @@ namespace TrueCraft
         public async Task<bool> LoadAsync(CancellationToken cancellationToken = default)
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "players", Username + ".nbt");
-            if (Program.ServerConfiguration.Singleplayer)
+            if (Program.NodeConfiguration.Singleplayer)
                 path = Path.Combine(((World)World).BaseDirectory, "player.nbt");
             if (!File.Exists(path))
                 return false;
@@ -221,7 +221,7 @@ namespace TrueCraft
         public async Task SaveAsync(CancellationToken cancellationToken = default)
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "players", Username + ".nbt");
-            if (Program.ServerConfiguration.Singleplayer)
+            if (Program.NodeConfiguration.Singleplayer)
                 path = Path.Combine(((World)World).BaseDirectory, "player.nbt");
             if (!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path));

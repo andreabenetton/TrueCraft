@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
+using Microsoft.Extensions.Configuration;
 using TrueCraft.API;
 using TrueCraft.API.Logging;
 using TrueCraft.Core.Logging;
@@ -14,10 +16,16 @@ namespace TrueCraft.Launcher.Singleplayer
         {
             World = world;
             Server = new MultiplayerServer();
-            TrueCraft.Program.ServerConfiguration = new ServerConfiguration
+            var inMemoryConfig = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["Configuration:Singleplayer"] = "true",
+                    ["Configuration:query-enabled"] = "false",
+                })
+                .Build();
+            TrueCraft.Program.NodeConfiguration = new NodeConfiguration(inMemoryConfig)
             {
                 MOTD = null,
-                Singleplayer = true
             };
             world.BlockRepository = Server.BlockRepository;
             Server.AddWorld(world);

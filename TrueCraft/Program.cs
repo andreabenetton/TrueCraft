@@ -17,7 +17,7 @@ namespace TrueCraft
 {
     public class Program
     {
-        public static ServerConfiguration ServerConfiguration;
+        public static NodeConfiguration NodeConfiguration;
 
         public static CommandManager CommandManager;
 
@@ -36,9 +36,9 @@ namespace TrueCraft
             Server.AddLogProvider(new FileLogProvider(new StreamWriter("packets.log", false), LogCategory.Packets));
 #endif
 
-            ServerConfiguration = Configuration.LoadConfiguration<ServerConfiguration>("config.yaml");
+            NodeConfiguration = new NodeConfiguration();
 
-            var buckets = ServerConfiguration.Debug?.Profiler?.Buckets?.Split(',');
+            var buckets = NodeConfiguration.Debug?.Profiler?.Buckets?.Split(',');
             if (buckets != null)
             {
                 foreach (var bucket in buckets)
@@ -47,12 +47,12 @@ namespace TrueCraft
                 }
             }
 
-            if (ServerConfiguration.Debug.DeleteWorldOnStartup)
+            if (NodeConfiguration.Debug.DeleteWorldOnStartup)
             {
                 if (Directory.Exists("world"))
                     Directory.Delete("world", true);
             }
-            if (ServerConfiguration.Debug.DeletePlayersOnStartup)
+            if (NodeConfiguration.Debug.DeletePlayersOnStartup)
             {
                 if (Directory.Exists("players"))
                     Directory.Delete("players", true);
@@ -111,10 +111,10 @@ namespace TrueCraft
             await world.SaveAsync();
             CommandManager = new CommandManager();
             Server.ChatMessageReceived += HandleChatMessageReceived;
-            Server.Start(new IPEndPoint(IPAddress.Parse(ServerConfiguration.ServerAddress), ServerConfiguration.ServerPort));
+            Server.Start(new IPEndPoint(IPAddress.Parse(NodeConfiguration.ServerAddress), NodeConfiguration.ServerPort));
             Console.CancelKeyPress += HandleCancelKeyPress;
             Server.Scheduler.ScheduleEvent("world.save", null,
-                TimeSpan.FromSeconds(ServerConfiguration.WorldSaveInterval),
+                TimeSpan.FromSeconds(NodeConfiguration.WorldSaveInterval),
                 (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
 
             // Park here until SIGINT (HandleCancelKeyPress) signals shutdown. Replaces the previous
@@ -136,7 +136,7 @@ namespace TrueCraft
                 Server.Log(LogCategory.Error, "World save failed: {0}", ex);
             }
             server.Scheduler.ScheduleEvent("world.save", null,
-                TimeSpan.FromSeconds(ServerConfiguration.WorldSaveInterval),
+                TimeSpan.FromSeconds(NodeConfiguration.WorldSaveInterval),
                 (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
         }
 

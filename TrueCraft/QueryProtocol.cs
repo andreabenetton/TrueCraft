@@ -33,7 +33,7 @@ namespace TrueCraft
         }
         public void Start()
         {
-            Port = Program.ServerConfiguration.QueryPort;
+            Port = Program.NodeConfiguration.QueryPort;
             Udp = new UdpClient(Port);
             UserList = new ConcurrentDictionary<IPEndPoint, QueryUser>();
             Timer = new Timer(ResetUserList, null, 0, 30000);
@@ -213,7 +213,7 @@ namespace TrueCraft
         {
             var stats = new Dictionary<string, string>
             {
-                {"hostname", Program.ServerConfiguration.MOTD},
+                {"hostname", Program.NodeConfiguration.MOTD},
                 {"gametype", "SMP"},
                 {"game_id", "TRUECRAFT"},
                 {"version", "1.0"},
@@ -221,8 +221,8 @@ namespace TrueCraft
                 {"map", Server.Worlds.First().Name},
                 {"numplayers", Server.Clients.Count.ToString()},
                 {"maxplayers", "64"},
-                {"hostport", Program.ServerConfiguration.ServerPort.ToString()},
-                {"hostip", Program.ServerConfiguration.ServerAddress}
+                {"hostport", Program.NodeConfiguration.ServerPort.ToString()},
+                {"hostip", Program.NodeConfiguration.ServerAddress}
             };
             return stats;
         }

@@ -1,25 +1,21 @@
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using System;
+using Microsoft.Extensions.Configuration;
 using TrueCraft.API;
 
 namespace TrueCraft
 {
-    public class AccessConfiguration : Configuration, IAccessConfiguration
+    public class AccessConfiguration : BaseConfiguration, IAccessConfiguration
     {
-        public AccessConfiguration()
+        public AccessConfiguration() : base("nodesettings.json")
         {
-            Blacklist = new List<string>();
-            Whitelist = new List<string>();
-            Oplist = new List<string>();
+            IConfiguration section = ConfigurationHolder.GetSection("Access");
+            Blacklist = section.GetValue("blacklist", Array.Empty<string>());
+            Whitelist = section.GetValue("whitelist", Array.Empty<string>());
+            Oplist = section.GetValue("ops", Array.Empty<string>());
         }
 
-        [JsonPropertyName("blacklist")]
-        public IList<string> Blacklist { get; private set; }
-
-        [JsonPropertyName("whitelist")]
-        public IList<string> Whitelist { get; private set; }
-
-        [JsonPropertyName("ops")]
-        public IList<string> Oplist { get; private set; }
+        public string[] Blacklist { get; }
+        public string[] Whitelist { get; }
+        public string[] Oplist { get; }
     }
 }

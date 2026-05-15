@@ -1,0 +1,42 @@
+{
+  "Configuration": {
+    "motd": "Welcome to TrueCraft!",
+    "bind-port": 25565,
+    "bind-endpoint": "0.0.0.0",
+    "save-interval": 30,
+    "Singleplayer": false,
+    "query-enabled": true,
+    "query-port": 25566,
+    "enable-lighting": true,
+    "enable-event-loading": true,
+    "disable-events": []
+  },
+  "debug": {
+    "deleteWorldOnStartup": false,
+    "deletePlayersOnStartup": false
+  },
+  "profiler": {
+    "buckets": "",
+    "lag": false
+  },
+  "Access": {
+    "blacklist": [],
+    "whitelist": [],
+    "ops": []
+  },
+  "Serilog": {
+    "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
+    "MinimumLevel": "Information",
+    "WriteTo": [
+      { "Name": "Console" },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/TrueCraft..log",
+          "rollingInterval": "Day"
+        }
+      }
+    ],
+    "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ]
+  }
+}

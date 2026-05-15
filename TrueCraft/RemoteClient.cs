@@ -34,11 +34,12 @@ namespace TrueCraft
     {
         // Named Logger (not Log) because the IRemoteClient.Log(string, params object[])
         // chat-broadcast method already occupies "Log" in this class.
-        private static ILogger Logger => App.LoggerFor<RemoteClient>();
+        private readonly ILogger<RemoteClient> Logger;
         private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
 
-        public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection)
+        public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection, ILogger<RemoteClient> logger)
         {
+            Logger = logger;
             LoadedChunks = new HashSet<Coordinates2D>();
             Server = server;
             Inventory = new InventoryWindow(server.CraftingRepository);

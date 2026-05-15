@@ -418,7 +418,8 @@ namespace TrueCraft
 
                 try
                 {
-                    var client = new RemoteClient(this, PacketReader, PacketHandlers, socket);
+                    var client = ActivatorUtilities.CreateInstance<RemoteClient>(
+                        App.Services, this, PacketReader, PacketHandlers, socket);
                     lock (ClientLock)
                         Clients.Add(client);
                 }

@@ -22,13 +22,12 @@ namespace TrueCraft
     {
         public static NodeConfiguration NodeConfiguration;
 
-        public static CommandManager CommandManager;
-
         // Resolved per-use so the property is safe to read before/after App.Services init
         // (Program's static field initializers run before Main, before App.Services is set).
         private static ILogger Log => App.LoggerFor<Program>();
         private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
         private static MultiplayerServer Server => App.Services.GetRequiredService<MultiplayerServer>();
+        private static CommandManager CommandManager => App.Services.GetRequiredService<CommandManager>();
 
         // Signaled by Ctrl-C / SIGINT to release the awaitable shutdown hold in Main.
         private static readonly TaskCompletionSource ShutdownSignal =
@@ -62,6 +61,7 @@ namespace TrueCraft
                 return repo;
             });
             services.AddSingleton<MultiplayerServer>();
+            services.AddSingleton<CommandManager>();
             App.Services = services.BuildServiceProvider();
 
             var buckets = NodeConfiguration.Debug?.Profiler?.Buckets?.Split(',');
@@ -135,7 +135,6 @@ namespace TrueCraft
                 }
             }
             await world.SaveAsync();
-            CommandManager = new CommandManager();
             Server.ChatMessageReceived += HandleChatMessageReceived;
             Server.Start(new IPEndPoint(IPAddress.Parse(NodeConfiguration.ServerAddress), NodeConfiguration.ServerPort));
             Console.CancelKeyPress += HandleCancelKeyPress;

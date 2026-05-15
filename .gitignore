@@ -10,6 +10,7 @@ out/
 .vs/
 .vscode/
 .idea/
+.settings/
 *.suo
 *.user
 *.userprefs

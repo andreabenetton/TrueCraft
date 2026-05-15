@@ -43,6 +43,7 @@ namespace TrueCraft.Launcher
                 repo.DiscoverRecipes();
                 return repo;
             });
+            services.AddSingleton<MultiplayerServer>();
             App.Services = services.BuildServiceProvider();
 
             Log.LogInformation("TrueCraft.Launcher starting");

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TrueCraft.API;
 using TrueCraft.Core.World;
@@ -16,7 +17,9 @@ namespace TrueCraft.Launcher.Singleplayer
         public SingleplayerServer(World world)
         {
             World = world;
-            Server = new MultiplayerServer();
+            // Set NodeConfiguration before resolving MultiplayerServer so any handler
+            // that reads Program.NodeConfiguration during server init sees the
+            // singleplayer overrides.
             var inMemoryConfig = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string>
                 {
@@ -28,6 +31,7 @@ namespace TrueCraft.Launcher.Singleplayer
             {
                 MOTD = null,
             };
+            Server = App.Services.GetRequiredService<MultiplayerServer>();
             world.BlockRepository = Server.BlockRepository;
             Server.AddWorld(world);
         }

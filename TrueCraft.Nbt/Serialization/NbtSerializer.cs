@@ -75,6 +75,8 @@ namespace TrueCraft.Nbt.Serialization
                     listType = NbtTagType.Int;
                 else if (elementType == typeof(int[]))
                     listType = NbtTagType.IntArray;
+                else if (elementType == typeof(long[]))
+                    listType = NbtTagType.LongArray;
                 else if (elementType == typeof(long) || elementType == typeof(ulong))
                     listType = NbtTagType.Long;
                 else if (elementType == typeof(short) || elementType == typeof(ushort))
@@ -194,6 +196,10 @@ namespace TrueCraft.Nbt.Serialization
                 else if (list.ListType == NbtTagType.IntArray)
                 {
                     type = typeof(int[]);
+                }
+                else if (list.ListType == NbtTagType.LongArray)
+                {
+                    type = typeof(long[]);
                 }
                 else if (list.ListType == NbtTagType.Long)
                 {

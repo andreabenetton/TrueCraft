@@ -34,7 +34,7 @@ namespace TrueCraft.Nbt
             int type = ReadByte();
             if (type < 0) throw new EndOfStreamException();
 
-            if (type > (int) NbtTagType.IntArray) throw new NbtFormatException("NBT tag type out of range: " + type);
+            if (type > (int) NbtTagType.LongArray) throw new NbtFormatException("NBT tag type out of range: " + type);
 
             return (NbtTagType) type;
         }

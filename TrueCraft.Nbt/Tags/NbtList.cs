@@ -157,7 +157,7 @@ namespace TrueCraft.Nbt.Tags
                     // Empty lists may have type "End", see: https://github.com/fragmer/fNbt/issues/12
                     if (_tags.Count > 0) throw new ArgumentException("Only empty list tags may have TagType of End.");
                 }
-                else if (value < NbtTagType.Byte || value > NbtTagType.IntArray && value != NbtTagType.Unknown)
+                else if (value < NbtTagType.Byte || value > NbtTagType.LongArray && value != NbtTagType.Unknown)
                 {
                     throw new ArgumentOutOfRangeException(nameof(value));
                 }
@@ -347,6 +347,9 @@ namespace TrueCraft.Nbt.Tags
                     case NbtTagType.IntArray:
                         newTag = new NbtIntArray();
                         break;
+                    case NbtTagType.LongArray:
+                        newTag = new NbtLongArray();
+                        break;
                     default:
                         // should never happen, since ListType is checked beforehand
                         throw new NbtFormatException("Unsupported tag type found in a list: " + ListType);
@@ -406,6 +409,9 @@ namespace TrueCraft.Nbt.Tags
                                 break;
                             case NbtTagType.IntArray:
                                 new NbtIntArray().SkipTag(readStream);
+                                break;
+                            case NbtTagType.LongArray:
+                                new NbtLongArray().SkipTag(readStream);
                                 break;
                         }
 

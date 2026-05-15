@@ -123,6 +123,7 @@ namespace TrueCraft.Nbt
                     case NbtTagType.List:
                     case NbtTagType.ByteArray:
                     case NbtTagType.IntArray:
+                    case NbtTagType.LongArray:
                         return true;
                     default:
                         return false;
@@ -353,6 +354,7 @@ namespace TrueCraft.Nbt
                     break;
 
                 case NbtTagType.IntArray:
+                case NbtTagType.LongArray:
                 case NbtTagType.ByteArray:
                     TagLength = reader.ReadInt32();
                     atValue = true;
@@ -448,6 +450,10 @@ namespace TrueCraft.Nbt
 
                 case NbtTagType.IntArray:
                     reader.Skip(sizeof(int) * TagLength);
+                    break;
+
+                case NbtTagType.LongArray:
+                    reader.Skip(sizeof(long) * TagLength);
                     break;
 
                 case NbtTagType.String:
@@ -727,6 +733,12 @@ namespace TrueCraft.Nbt
 
                     return new NbtIntArray(TagName, ints);
 
+                case NbtTagType.LongArray:
+                    var longs = new long[TagLength];
+                    for (var i = 0; i < TagLength; i++) longs[i] = reader.ReadInt64();
+
+                    return new NbtLongArray(TagName, longs);
+
                 default:
                     throw new InvalidOperationException(NonValueTagError);
             }
@@ -817,6 +829,13 @@ namespace TrueCraft.Nbt
                     for (var i = 0; i < TagLength; i++) intValue[i] = reader.ReadInt32();
 
                     value = intValue;
+                    break;
+
+                case NbtTagType.LongArray:
+                    var longValue = new long[TagLength];
+                    for (var i = 0; i < TagLength; i++) longValue[i] = reader.ReadInt64();
+
+                    value = longValue;
                     break;
 
                 case NbtTagType.String:
@@ -984,7 +1003,7 @@ namespace TrueCraft.Nbt
 
             sb.Append(' ').Append(TagName);
             if (includeValue && (atValue || HasValue && cacheTagValues) && TagType != NbtTagType.IntArray &&
-                TagType != NbtTagType.ByteArray)
+                TagType != NbtTagType.LongArray && TagType != NbtTagType.ByteArray)
                 sb.Append(" = ").Append(ReadValue());
 
             return sb.ToString();

@@ -231,7 +231,7 @@ namespace TrueCraft.Nbt
         {
             if (size < 0) throw new ArgumentOutOfRangeException(nameof(size), "List size may not be negative.");
 
-            if (elementType < NbtTagType.Byte || elementType > NbtTagType.IntArray)
+            if (elementType < NbtTagType.Byte || elementType > NbtTagType.LongArray)
                 throw new ArgumentOutOfRangeException(nameof(elementType));
 
             EnforceConstraints(null, NbtTagType.List);
@@ -260,7 +260,7 @@ namespace TrueCraft.Nbt
         {
             if (size < 0) throw new ArgumentOutOfRangeException(nameof(size), "List size may not be negative.");
 
-            if (elementType < NbtTagType.Byte || elementType > NbtTagType.IntArray)
+            if (elementType < NbtTagType.Byte || elementType > NbtTagType.LongArray)
                 throw new ArgumentOutOfRangeException(nameof(elementType));
 
             EnforceConstraints(tagName, NbtTagType.List);
@@ -814,6 +814,44 @@ namespace TrueCraft.Nbt
             CheckArray(data, offset, count);
             EnforceConstraints(tagName, NbtTagType.IntArray);
             _writer.Write((byte) NbtTagType.IntArray);
+            _writer.Write(tagName);
+            _writer.Write(count);
+            for (var i = offset; i < count; i++) _writer.Write(data[i]);
+        }
+
+
+        /// <summary> Writes an unnamed long array tag, copying the full array. </summary>
+        public void WriteLongArray([NotNull] long[] data)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            WriteLongArray(data, 0, data.Length);
+        }
+
+
+        /// <summary> Writes an unnamed long array tag, copying data from a range of the array. </summary>
+        public void WriteLongArray([NotNull] long[] data, int offset, int count)
+        {
+            CheckArray(data, offset, count);
+            EnforceConstraints(null, NbtTagType.LongArray);
+            _writer.Write(count);
+            for (var i = offset; i < count; i++) _writer.Write(data[i]);
+        }
+
+
+        /// <summary> Writes a named long array tag, copying the full array. </summary>
+        public void WriteLongArray([NotNull] string tagName, [NotNull] long[] data)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            WriteLongArray(tagName, data, 0, data.Length);
+        }
+
+
+        /// <summary> Writes a named long array tag, copying data from a range of the array. </summary>
+        public void WriteLongArray([NotNull] string tagName, [NotNull] long[] data, int offset, int count)
+        {
+            CheckArray(data, offset, count);
+            EnforceConstraints(tagName, NbtTagType.LongArray);
+            _writer.Write((byte) NbtTagType.LongArray);
             _writer.Write(tagName);
             _writer.Write(count);
             for (var i = offset; i < count; i++) _writer.Write(data[i]);

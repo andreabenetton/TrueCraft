@@ -148,6 +148,8 @@ namespace TrueCraft.Nbt.Tags
                     return "TAG_Int";
                 case NbtTagType.IntArray:
                     return "TAG_Int_Array";
+                case NbtTagType.LongArray:
+                    return "TAG_Long_Array";
                 case NbtTagType.List:
                     return "TAG_List";
                 case NbtTagType.Long:
@@ -395,6 +397,21 @@ namespace TrueCraft.Nbt.Tags
                 if (TagType == NbtTagType.IntArray) return ((NbtIntArray) this).Value;
 
                 throw new InvalidCastException("Cannot get IntArrayValue from " + GetCanonicalTagName(TagType));
+            }
+        }
+
+        /// <summary>
+        ///     Returns the value of this tag, cast as a long array (long[]).
+        ///     Only supported by NbtLongArray tags.
+        /// </summary>
+        /// <exception cref="InvalidCastException"> When used on a tag other than NbtLongArray. </exception>
+        public long[] LongArrayValue
+        {
+            get
+            {
+                if (TagType == NbtTagType.LongArray) return ((NbtLongArray) this).Value;
+
+                throw new InvalidCastException("Cannot get LongArrayValue from " + GetCanonicalTagName(TagType));
             }
         }
 

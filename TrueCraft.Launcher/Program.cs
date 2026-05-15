@@ -1,4 +1,5 @@
 using System;
+using Serilog;
 using TrueCraft.Core;
 
 namespace TrueCraft.Launcher
@@ -8,12 +9,28 @@ namespace TrueCraft.Launcher
         [STAThread]
         public static void Main(string[] args)
         {
-            UserSettings.Local = UserSettings.Load();
-            using (var game = new LauncherGame())
+            LauncherConfiguration.ConfigureSerilog(LauncherConfiguration.Build());
+            Log.Information("TrueCraft.Launcher starting");
+
+            try
             {
-                game.Run();
+                UserSettings.Local = UserSettings.Load();
+                using (var game = new LauncherGame())
+                {
+                    game.Run();
+                }
+                LauncherGame.CancelSessionKeepAlive();
             }
-            LauncherGame.CancelSessionKeepAlive();
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Launcher terminated unexpectedly");
+                throw;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
     }
 }
+

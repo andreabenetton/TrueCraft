@@ -76,8 +76,8 @@ namespace TrueCraft.Client
         public PlayerControlModule ControlModule { get; set; }
         public SkyModule SkyModule { get; set; }
 
-        private List<IGameplayModule> InputModules { get; set; }
-        private List<IGameplayModule> GraphicalModules { get; set; }
+        private List<IInputModule> InputModules { get; set; }
+        private List<IGraphicalModule> GraphicalModules { get; set; }
         private SpriteBatch SpriteBatch { get; set; }
         private KeyboardHandler KeyboardComponent { get; }
         private MouseHandler MouseComponent { get; }
@@ -117,8 +117,8 @@ namespace TrueCraft.Client
 
         protected override void Initialize()
         {
-            InputModules = new List<IGameplayModule>();
-            GraphicalModules = new List<IGameplayModule>();
+            InputModules = new List<IInputModule>();
+            GraphicalModules = new List<IGraphicalModule>();
 
             base.Initialize(); // (calls LoadContent)
 
@@ -149,7 +149,6 @@ namespace TrueCraft.Client
             InputModules.Add(windowModule);
             InputModules.Add(DebugInfoModule);
             InputModules.Add(ChatModule);
-            InputModules.Add(new HUDModule(this, Pixel));
             InputModules.Add(ControlModule = new PlayerControlModule(this));
 
             Client.MainThreadInvoke = Invoke;
@@ -229,65 +228,57 @@ namespace TrueCraft.Client
         private void OnKeyboardKeyDown(object sender, KeyboardKeyEventArgs e)
         {
             foreach (var module in InputModules)
-                if (module is IInputModule input)
-                    if (input.KeyDown(GameTime, e))
-                        break;
+                if (module.KeyDown(GameTime, e))
+                    break;
         }
 
         private void OnKeyboardKeyUp(object sender, KeyboardKeyEventArgs e)
         {
             foreach (var module in InputModules)
-                if (module is IInputModule input)
-                    if (input.KeyUp(GameTime, e))
-                        break;
+                if (module.KeyUp(GameTime, e))
+                    break;
         }
 
         private void OnGamePadButtonUp(object sender, GamePadButtonEventArgs e)
         {
             foreach (var module in InputModules)
-                if (module is IInputModule input)
-                    if (input.GamePadButtonUp(GameTime, e))
-                        break;
+                if (module.GamePadButtonUp(GameTime, e))
+                    break;
         }
 
         private void OnGamePadButtonDown(object sender, GamePadButtonEventArgs e)
         {
             foreach (var module in InputModules)
-                if (module is IInputModule input)
-                    if (input.GamePadButtonDown(GameTime, e))
-                        break;
+                if (module.GamePadButtonDown(GameTime, e))
+                    break;
         }
 
         private void OnMouseComponentScroll(object sender, MouseScrollEventArgs e)
         {
             foreach (var module in InputModules)
-                if (module is IInputModule input)
-                    if (input.MouseScroll(GameTime, e))
-                        break;
+                if (module.MouseScroll(GameTime, e))
+                    break;
         }
 
         private void OnMouseComponentButtonDown(object sender, MouseButtonEventArgs e)
         {
             foreach (var module in InputModules)
-                if (module is IInputModule input)
-                    if (input.MouseButtonDown(GameTime, e))
-                        break;
+                if (module.MouseButtonDown(GameTime, e))
+                    break;
         }
 
         private void OnMouseComponentButtonUp(object sender, MouseButtonEventArgs e)
         {
             foreach (var module in InputModules)
-                if (module is IInputModule input)
-                    if (input.MouseButtonUp(GameTime, e))
-                        break;
+                if (module.MouseButtonUp(GameTime, e))
+                    break;
         }
 
         private void OnMouseComponentMove(object sender, MouseMoveEventArgs e)
         {
             foreach (var module in InputModules)
-                if (module is IInputModule input)
-                    if (input.MouseMove(GameTime, e))
-                        break;
+                if (module.MouseMove(GameTime, e))
+                    break;
         }
 
         public void TakeScreenshot()
@@ -364,8 +355,7 @@ namespace TrueCraft.Client
 
             Mesh.ResetStats();
             foreach (var module in GraphicalModules)
-                if (module is IGraphicalModule drawable)
-                    drawable.Draw(gameTime);
+                module.Draw(gameTime);
 
             GraphicsDevice.SetRenderTarget(null);
 

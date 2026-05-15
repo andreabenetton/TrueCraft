@@ -1,20 +1,71 @@
+# --- Build output ---
 bin/
 obj/
+[Bb]uild/
+out/
+*.binlog
+*.tlog
+
+# --- IDE / editor metadata ---
+.vs/
+.vscode/
+.idea/
+*.suo
 *.user
 *.userprefs
-*.suo
-*.pidb
+*.userosscache
+*.sln.docstates
+*.sln.iml
+*.iws
+.metadata/
 _ReSharper*/
-TestResults/
+*.dotsettings.user
+
+# --- NuGet ---
+packages/
+*.nupkg
+*.snupkg
+
+# --- .NET tooling ---
+*.pidb
 *.mdf
 *.psess
 *.vsp
-packages/
-.vs/
+*.vspx
+project.lock.json
+project.fragment.lock.json
+artifacts/
 
-config.yaml
-
-packets.log
-
-world/manifest.nbt
+# --- Test output ---
 TestResult.xml
+TestResults/
+[Cc]overage*.xml
+[Cc]overage*.json
+[Cc]overage*.info
+*.coverage
+*.coveragexml
+coverage/
+lcov.info
+
+# --- MonoGame Content Pipeline intermediates ---
+Content/obj/
+Content/bin/
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# --- Editor backups / temp files ---
+*~
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+
+# --- TrueCraft runtime data ---
+config.yaml
+packets.log
+world/manifest.nbt

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using NVorbis;
@@ -9,18 +8,32 @@ using TrueCraft.Core;
 
 namespace TrueCraft.Client
 {
-    public class AudioManager
+    public class AudioManager : IDisposable
     {
         public AudioManager()
         {
             AudioPacks = new Dictionary<string, SoundEffect[]>();
+            EffectsByPath = new Dictionary<string, SoundEffect>(StringComparer.OrdinalIgnoreCase);
             EffectVolume = MusicVolume = 1;
         }
 
         private Dictionary<string, SoundEffect[]> AudioPacks { get; }
+        private Dictionary<string, SoundEffect> EffectsByPath { get; }
+        private bool _disposed;
 
         public float EffectVolume { get; set; }
         public float MusicVolume { get; set; }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            foreach (var effect in EffectsByPath.Values)
+                effect.Dispose();
+            EffectsByPath.Clear();
+            AudioPacks.Clear();
+            _disposed = true;
+        }
 
         public void LoadDefaultPacks(ContentManager content)
         {
@@ -76,7 +89,9 @@ namespace TrueCraft.Client
             foreach (var pack in packs)
             {
                 var name = pack[0];
-                LoadAudioPack(name, pack.Skip(1).ToArray());
+                var filenames = new string[pack.Length - 1];
+                Array.Copy(pack, 1, filenames, 0, filenames.Length);
+                LoadAudioPack(name, filenames);
             }
         }
 
@@ -104,15 +119,30 @@ namespace TrueCraft.Client
         {
             var effects = new SoundEffect[filenames.Length];
             for (var i = 0; i < filenames.Length; i++)
-                using (var f = File.OpenRead(Path.Combine("Content", "Audio", filenames[i])))
-                {
-                    if (filenames[i].EndsWith(".wav"))
-                        effects[i] = SoundEffect.FromStream(f);
-                    else if (filenames[i].EndsWith(".ogg"))
-                        effects[i] = LoadOgg(f);
-                }
+                effects[i] = LoadEffect(filenames[i]);
 
             AudioPacks[pack] = effects;
+        }
+
+        private SoundEffect LoadEffect(string filename)
+        {
+            if (EffectsByPath.TryGetValue(filename, out var cached))
+                return cached;
+
+            var path = Path.Combine("Content", "Audio", filename);
+            SoundEffect effect;
+            using (var f = File.OpenRead(path))
+            {
+                if (filename.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                    effect = SoundEffect.FromStream(f);
+                else if (filename.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
+                    effect = LoadOgg(f);
+                else
+                    throw new NotSupportedException($"Unsupported audio format: {filename}");
+            }
+
+            EffectsByPath[filename] = effect;
+            return effect;
         }
 
         public void PlayPack(string pack, float volume = 1.0f)

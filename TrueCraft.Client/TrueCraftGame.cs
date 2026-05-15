@@ -372,6 +372,7 @@ namespace TrueCraft.Client
             {
                 KeyboardComponent.Dispose();
                 MouseComponent.Dispose();
+                Audio?.Dispose();
             }
 
             base.Dispose(disposing);

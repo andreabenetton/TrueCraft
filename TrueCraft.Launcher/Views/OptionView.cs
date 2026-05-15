@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Ionic.Zip;
 using TrueCraft.Core;
@@ -176,13 +176,15 @@ namespace TrueCraft.Launcher.Views
                 {
                     try
                     {
-                        var stream =
-                            new WebClient().OpenRead(
-                                "http://s3.amazonaws.com/Minecraft.Download/versions/b1.7.3/b1.7.3.jar");
                         var ms = new MemoryStream();
-                        CopyStream(stream, ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        stream.Dispose();
+                        using (var httpClient = new HttpClient())
+                        using (var stream = httpClient.GetStreamAsync(
+                                   "http://s3.amazonaws.com/Minecraft.Download/versions/b1.7.3/b1.7.3.jar")
+                                   .GetAwaiter().GetResult())
+                        {
+                            CopyStream(stream, ms);
+                            ms.Seek(0, SeekOrigin.Begin);
+                        }
                         var jar = ZipFile.Read(ms);
                         var zip = new ZipFile();
                         zip.AddEntry("pack.txt", "Minecraft textures");

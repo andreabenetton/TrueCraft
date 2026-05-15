@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Net;
+using System.Net.Http;
 using System.Threading;
 using TrueCraft.Core;
 using Xwt;
@@ -8,6 +8,9 @@ namespace TrueCraft.Launcher
 {
     internal class Program
     {
+        private static readonly HttpClient SessionClient = new HttpClient();
+        private static readonly CancellationTokenSource SessionCancel = new CancellationTokenSource();
+
         public static LauncherWindow Window { get; set; }
 
         [STAThread]
@@ -32,21 +35,31 @@ namespace TrueCraft.Launcher
             Window.Closed += (sender, e) => Application.Exit();
             Application.Run();
             Window.Dispose();
-            thread.Abort();
+            SessionCancel.Cancel();
+            thread.Join(TimeSpan.FromSeconds(5));
+            SessionClient.Dispose();
         }
 
         private static void KeepSessionAlive()
         {
-            while (true)
+            var token = SessionCancel.Token;
+            while (!token.IsCancellationRequested)
             {
                 if (!string.IsNullOrEmpty(Window.User.SessionId))
                 {
-                    var wc = new WebClient();
-                    wc.DownloadString(string.Format(TrueCraftUser.AuthServer + "/session?name={0}&session={1}",
-                        Window.User.Username, Window.User.SessionId));
+                    try
+                    {
+                        var url = string.Format(TrueCraftUser.AuthServer + "/session?name={0}&session={1}",
+                            Window.User.Username, Window.User.SessionId);
+                        SessionClient.GetStringAsync(url).GetAwaiter().GetResult();
+                    }
+                    catch
+                    {
+                        // Network errors are not fatal — try again next interval.
+                    }
                 }
 
-                Thread.Sleep(60 * 5 * 1000);
+                token.WaitHandle.WaitOne(TimeSpan.FromMinutes(5));
             }
         }
     }

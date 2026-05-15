@@ -7,6 +7,7 @@ using GeonBit.UI.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.Core;
+using TrueCraft.Launcher.Entities;
 using TrueCraft.Launcher.Views;
 
 namespace TrueCraft.Launcher
@@ -65,6 +66,8 @@ namespace TrueCraft.Launcher
             }
             _currentView = view;
             view.Mount(InteractionPanel);
+            // The view just constructed MenuButtons; load their themed skin sprites.
+            MenuButton.LoadButtonsTexture();
         }
 
         protected override void Initialize()
@@ -77,6 +80,7 @@ namespace TrueCraft.Launcher
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
+            MenuButton.Initialize(this);
             BuildShell();
             ShowView(new LoginView(this));
             StartSessionKeepAlive();

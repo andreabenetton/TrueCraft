@@ -6,6 +6,7 @@ using GeonBit.UI.Entities;
 using GeonBit.UI.Entities.TextValidators;
 using Microsoft.Xna.Framework;
 using TrueCraft.Core;
+using TrueCraft.Launcher.Entities;
 
 namespace TrueCraft.Launcher.Views
 {
@@ -18,9 +19,9 @@ namespace TrueCraft.Launcher.Views
         private TextInput _usernameInput;
         private TextInput _passwordInput;
         private CheckBox _rememberCheckbox;
-        private Button _loginButton;
-        private Button _registerButton;
-        private Button _offlineButton;
+        private MenuButton _loginButton;
+        private MenuButton _registerButton;
+        private MenuButton _offlineButton;
 
         public LoginView(LauncherGame game)
         {
@@ -65,15 +66,15 @@ namespace TrueCraft.Launcher.Views
 
             parent.AddChild(new LineSpace());
 
-            _loginButton = new Button("Log in", anchor: Anchor.Auto);
+            _loginButton = new MenuButton("Log in", anchor: Anchor.Auto);
             _loginButton.OnClick = _ => BeginLogin();
             parent.AddChild(_loginButton);
 
-            _offlineButton = new Button("Play offline", ButtonSkin.Alternative, Anchor.Auto);
+            _offlineButton = new MenuButton("Play offline", Anchor.Auto);
             _offlineButton.OnClick = _ => LoginOffline();
             parent.AddChild(_offlineButton);
 
-            _registerButton = new Button("Register account", ButtonSkin.Alternative, Anchor.Auto);
+            _registerButton = new MenuButton("Register account", Anchor.Auto);
             _registerButton.OnClick = _ => OpenBrowser("https://truecraft.io/register");
             parent.AddChild(_registerButton);
         }

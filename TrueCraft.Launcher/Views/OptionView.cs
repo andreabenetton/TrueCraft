@@ -10,6 +10,7 @@ using GeonBit.UI.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.Core;
+using TrueCraft.Launcher.Entities;
 
 namespace TrueCraft.Launcher.Views
 {
@@ -23,10 +24,10 @@ namespace TrueCraft.Launcher.Views
         private CheckBox _invertMouseCheckBox;
         private SelectList _texturePackList;
         private Image _texturePackPreview;
-        private Button _openFolderButton;
-        private Button _officialAssetsButton;
+        private MenuButton _openFolderButton;
+        private MenuButton _officialAssetsButton;
         private ProgressBar _officialAssetsProgress;
-        private Button _backButton;
+        private MenuButton _backButton;
 
         public OptionView(LauncherGame game)
         {
@@ -93,20 +94,20 @@ namespace TrueCraft.Launcher.Views
             _texturePackPreview = new Image((Texture2D)null, new Vector2(96, 96), ImageDrawMode.Stretch, Anchor.AutoCenter);
             parent.AddChild(_texturePackPreview);
 
-            _openFolderButton = new Button("Open texture pack folder", ButtonSkin.Alternative, Anchor.Auto);
+            _openFolderButton = new MenuButton("Open texture pack folder", Anchor.Auto);
             _openFolderButton.OnClick = _ => OpenTexturePackFolder();
             parent.AddChild(_openFolderButton);
 
             _officialAssetsProgress = new ProgressBar(0, 100) { Visible = false };
             parent.AddChild(_officialAssetsProgress);
-            _officialAssetsButton = new Button("Download Minecraft assets", ButtonSkin.Alternative, Anchor.Auto)
+            _officialAssetsButton = new MenuButton("Download Minecraft assets", Anchor.Auto)
             {
                 Visible = false,
             };
             _officialAssetsButton.OnClick = _ => DownloadOfficialAssets();
             parent.AddChild(_officialAssetsButton);
 
-            _backButton = new Button("Back", ButtonSkin.Alternative, Anchor.BottomCenter);
+            _backButton = new MenuButton("Back", Anchor.BottomCenter);
             _backButton.OnClick = _ => _game.ShowView(new MainMenuView(_game));
             parent.AddChild(_backButton);
 

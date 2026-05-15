@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using GeonBit.UI.Entities;
 using GeonBit.UI.Utils;
 using Microsoft.Xna.Framework;
+using TrueCraft.Launcher.Entities;
 using TrueCraft.Launcher.Singleplayer;
 
 namespace TrueCraft.Launcher.Views
@@ -15,10 +16,10 @@ namespace TrueCraft.Launcher.Views
         private readonly LauncherGame _game;
 
         private SelectList _worldList;
-        private Button _createButton;
-        private Button _deleteButton;
-        private Button _playButton;
-        private Button _backButton;
+        private MenuButton _createButton;
+        private MenuButton _deleteButton;
+        private MenuButton _playButton;
+        private MenuButton _backButton;
         private Label _progressLabel;
         private ProgressBar _progressBar;
         private SingleplayerServer _server;
@@ -41,19 +42,19 @@ namespace TrueCraft.Launcher.Views
             _worldList.OnValueChange = _ => UpdateSelectionSensitive();
             parent.AddChild(_worldList);
 
-            _createButton = new Button("New world", anchor: Anchor.AutoInline,
+            _createButton = new MenuButton("New world", anchor: Anchor.AutoInline,
                 size: new Vector2(0.5f, -1));
             _createButton.OnClick = _ => _game.ShowView(
                 new NewWorldView(_game, world => _game.ShowView(new SingleplayerView(_game))));
             parent.AddChild(_createButton);
 
-            _deleteButton = new Button("Delete", ButtonSkin.Alternative, Anchor.AutoInline,
+            _deleteButton = new MenuButton("Delete", Anchor.AutoInline,
                 new Vector2(0.5f, -1));
             _deleteButton.Enabled = false;
             _deleteButton.OnClick = _ => DeleteSelectedWorld();
             parent.AddChild(_deleteButton);
 
-            _playButton = new Button("Play", anchor: Anchor.Auto);
+            _playButton = new MenuButton("Play", anchor: Anchor.Auto);
             _playButton.Enabled = false;
             _playButton.OnClick = _ => PlaySelectedWorld();
             parent.AddChild(_playButton);
@@ -63,7 +64,7 @@ namespace TrueCraft.Launcher.Views
             _progressBar = new ProgressBar(0, 100) { Visible = false };
             parent.AddChild(_progressBar);
 
-            _backButton = new Button("Back", ButtonSkin.Alternative, Anchor.BottomCenter);
+            _backButton = new MenuButton("Back", Anchor.BottomCenter);
             _backButton.OnClick = _ => _game.ShowView(new MainMenuView(_game));
             parent.AddChild(_backButton);
         }

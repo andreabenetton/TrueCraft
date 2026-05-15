@@ -3,6 +3,7 @@ using GeonBit.UI.Entities;
 using GeonBit.UI.Entities.TextValidators;
 using Microsoft.Xna.Framework;
 using TrueCraft.Core.World;
+using TrueCraft.Launcher.Entities;
 using TrueCraft.Launcher.Singleplayer;
 
 namespace TrueCraft.Launcher.Views
@@ -17,7 +18,7 @@ namespace TrueCraft.Launcher.Views
         private readonly Action<World> _onCreated;
         private TextInput _name;
         private TextInput _seed;
-        private Button _createButton;
+        private MenuButton _createButton;
 
         /// <param name="game"> Shared LauncherGame instance. </param>
         /// <param name="onCreated">
@@ -47,11 +48,11 @@ namespace TrueCraft.Launcher.Views
 
             parent.AddChild(new LineSpace());
 
-            _createButton = new Button("Create", anchor: Anchor.Auto) { Enabled = false };
+            _createButton = new MenuButton("Create", anchor: Anchor.Auto) { Enabled = false };
             _createButton.OnClick = _ => CommitCreate();
             parent.AddChild(_createButton);
 
-            var cancel = new Button("Cancel", ButtonSkin.Alternative, Anchor.Auto);
+            var cancel = new MenuButton("Cancel", Anchor.Auto);
             cancel.OnClick = _ => _game.ShowView(new SingleplayerView(_game));
             parent.AddChild(cancel);
 

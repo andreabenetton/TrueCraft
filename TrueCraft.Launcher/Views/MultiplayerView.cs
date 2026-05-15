@@ -4,6 +4,7 @@ using System.Linq;
 using GeonBit.UI.Entities;
 using Microsoft.Xna.Framework;
 using TrueCraft.Core;
+using TrueCraft.Launcher.Entities;
 
 namespace TrueCraft.Launcher.Views
 {
@@ -12,15 +13,15 @@ namespace TrueCraft.Launcher.Views
         private readonly LauncherGame _game;
         private TextInput _serverIPInput;
         private SelectList _serverList;
-        private Button _addServerButton;
-        private Button _removeServerButton;
-        private Button _connectButton;
-        private Button _backButton;
+        private MenuButton _addServerButton;
+        private MenuButton _removeServerButton;
+        private MenuButton _connectButton;
+        private MenuButton _backButton;
         private Panel _addServerPanel;
         private TextInput _newServerName;
         private TextInput _newServerAddress;
-        private Button _commitNewServer;
-        private Button _cancelNewServer;
+        private MenuButton _commitNewServer;
+        private MenuButton _cancelNewServer;
 
         public MultiplayerView(LauncherGame game)
         {
@@ -56,12 +57,12 @@ namespace TrueCraft.Launcher.Views
             };
             parent.AddChild(_serverList);
 
-            _addServerButton = new Button("Add server", anchor: Anchor.AutoInline,
+            _addServerButton = new MenuButton("Add server", anchor: Anchor.AutoInline,
                 size: new Vector2(0.5f, -1));
             _addServerButton.OnClick = _ => SetAddServerVisible(true);
             parent.AddChild(_addServerButton);
 
-            _removeServerButton = new Button("Remove", ButtonSkin.Alternative, Anchor.AutoInline,
+            _removeServerButton = new MenuButton("Remove", Anchor.AutoInline,
                 new Vector2(0.5f, -1));
             _removeServerButton.Enabled = false;
             _removeServerButton.OnClick = _ => RemoveSelectedServer();
@@ -76,21 +77,21 @@ namespace TrueCraft.Launcher.Views
             _addServerPanel.AddChild(_newServerName);
             _newServerAddress = new TextInput(false) { PlaceholderText = "Address" };
             _addServerPanel.AddChild(_newServerAddress);
-            _commitNewServer = new Button("Add", anchor: Anchor.AutoInline,
+            _commitNewServer = new MenuButton("Add", anchor: Anchor.AutoInline,
                 size: new Vector2(0.5f, -1));
             _commitNewServer.OnClick = _ => CommitAddServer();
             _addServerPanel.AddChild(_commitNewServer);
-            _cancelNewServer = new Button("Cancel", ButtonSkin.Alternative, Anchor.AutoInline,
+            _cancelNewServer = new MenuButton("Cancel", Anchor.AutoInline,
                 new Vector2(0.5f, -1));
             _cancelNewServer.OnClick = _ => SetAddServerVisible(false);
             _addServerPanel.AddChild(_cancelNewServer);
             parent.AddChild(_addServerPanel);
 
-            _connectButton = new Button("Connect", anchor: Anchor.Auto);
+            _connectButton = new MenuButton("Connect", anchor: Anchor.Auto);
             _connectButton.OnClick = _ => Connect();
             parent.AddChild(_connectButton);
 
-            _backButton = new Button("Back", ButtonSkin.Alternative, Anchor.BottomCenter);
+            _backButton = new MenuButton("Back", Anchor.BottomCenter);
             _backButton.OnClick = _ => _game.ShowView(new MainMenuView(_game));
             parent.AddChild(_backButton);
         }

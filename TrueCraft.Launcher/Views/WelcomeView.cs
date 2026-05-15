@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using GeonBit.UI.Entities;
 using Microsoft.Xna.Framework;
+using TrueCraft.Launcher.Entities;
 
 namespace TrueCraft.Launcher.Views
 {
@@ -42,11 +43,11 @@ namespace TrueCraft.Launcher.Views
             });
 
             parent.AddChild(new LineSpace());
-            var updates = new Button("View updates", anchor: Anchor.AutoCenter);
+            var updates = new MenuButton("View updates", anchor: Anchor.AutoCenter);
             updates.OnClick = _ => OpenInBrowser("https://truecraft.io/updates");
             parent.AddChild(updates);
 
-            var source = new Button("Source on GitHub", anchor: Anchor.AutoCenter);
+            var source = new MenuButton("Source on GitHub", anchor: Anchor.AutoCenter);
             source.OnClick = _ => OpenInBrowser("https://github.com/ddevault/TrueCraft");
             parent.AddChild(source);
         }

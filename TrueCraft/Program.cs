@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TrueCraft.API.Logic;
+using TrueCraft.Core.Logic;
 using TrueCraft.Core.World;
 using TrueCraft.Core.TerrainGen;
 using TrueCraft.API.Server;
@@ -42,6 +44,24 @@ namespace TrueCraft
             services.AddSingleton(NodeConfiguration);
             services.AddSingleton<IConfiguration>(NodeConfiguration.Configuration);
             services.AddSingleton<Profiler>();
+            services.AddSingleton<IBlockRepository>(_ =>
+            {
+                var repo = new BlockRepository();
+                repo.DiscoverBlockProviders();
+                return repo;
+            });
+            services.AddSingleton<IItemRepository>(_ =>
+            {
+                var repo = new ItemRepository();
+                repo.DiscoverItemProviders();
+                return repo;
+            });
+            services.AddSingleton<ICraftingRepository>(_ =>
+            {
+                var repo = new CraftingRepository();
+                repo.DiscoverRecipes();
+                return repo;
+            });
             App.Services = services.BuildServiceProvider();
 
             Server = new MultiplayerServer();

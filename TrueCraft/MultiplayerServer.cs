@@ -91,7 +91,16 @@ namespace TrueCraft
 
         internal bool ShuttingDown { get; private set; }
         
-        public MultiplayerServer()
+        // Parameterless ctor delegates to the DI-style ctor by resolving repositories
+        // from App.Services. Keeps existing `new MultiplayerServer()` call sites working.
+        public MultiplayerServer() : this(
+            App.Services.GetRequiredService<IBlockRepository>(),
+            App.Services.GetRequiredService<IItemRepository>(),
+            App.Services.GetRequiredService<ICraftingRepository>())
+        {
+        }
+
+        public MultiplayerServer(IBlockRepository blockRepository, IItemRepository itemRepository, ICraftingRepository craftingRepository)
         {
             var reader = new PacketReader();
             PacketReader = reader;
@@ -100,16 +109,10 @@ namespace TrueCraft
             Worlds = new List<IWorld>();
             EntityManagers = new List<IEntityManager>();
             Scheduler = new EventScheduler(this);
-            var blockRepository = new BlockRepository();
-            blockRepository.DiscoverBlockProviders();
             BlockRepository = blockRepository;
-            var itemRepository = new ItemRepository();
-            itemRepository.DiscoverItemProviders();
             ItemRepository = itemRepository;
             BlockProvider.ItemRepository = ItemRepository;
             BlockProvider.BlockRepository = BlockRepository;
-            var craftingRepository = new CraftingRepository();
-            craftingRepository.DiscoverRecipes();
             CraftingRepository = craftingRepository;
             PendingBlockUpdates = new Queue<BlockUpdate>();
             EnableClientLogging = false;

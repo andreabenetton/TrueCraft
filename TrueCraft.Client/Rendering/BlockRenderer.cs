@@ -163,12 +163,11 @@ namespace TrueCraft.Client.Rendering
                 }
 
                 var lightColor = LightColor.ToVector3() * CubeBrightness[lighting[_side]];
-
                 var side = (CubeFace) _side;
-                var quad = CreateQuad(side, offset, texture, textureIndex % texture.Length, indexesOffset,
-                    out var _indexes, new Color(lightColor * color.ToVector3()));
-                Array.Copy(quad, 0, vertexes, sidesSoFar * 4, 4);
-                Array.Copy(_indexes, 0, indexes, sidesSoFar * 6, 6);
+                EmitQuad(side, offset, texture, textureIndex % texture.Length, indexesOffset,
+                    new Color(lightColor * color.ToVector3()),
+                    vertexes, sidesSoFar * 4,
+                    indexes, sidesSoFar * 6);
                 textureIndex += 4;
                 sidesSoFar++;
             }
@@ -176,19 +175,46 @@ namespace TrueCraft.Client.Rendering
             return vertexes;
         }
 
+        /// <summary>
+        ///     Writes one quad directly into the provided destination arrays, with no
+        ///     intermediate allocations. Replaces <see cref="CreateQuad"/> on the hot
+        ///     chunk-meshing path; the array-returning form is retained below for any
+        ///     external callers that still want a free-standing quad.
+        /// </summary>
+        private static void EmitQuad(CubeFace face, Vector3 offset, Vector2[] texture,
+            int textureOffset, int indicesOffset, Color color,
+            VertexPositionNormalColorTexture[] vertexDest, int vertexDestStart,
+            int[] indexDest, int indexDestStart)
+        {
+            var faceIndex = (int) face;
+            var baseIndex = faceIndex * 4 + indicesOffset;
+            indexDest[indexDestStart + 0] = 0 + baseIndex;
+            indexDest[indexDestStart + 1] = 1 + baseIndex;
+            indexDest[indexDestStart + 2] = 3 + baseIndex;
+            indexDest[indexDestStart + 3] = 1 + baseIndex;
+            indexDest[indexDestStart + 4] = 2 + baseIndex;
+            indexDest[indexDestStart + 5] = 3 + baseIndex;
+
+            var unit = CubeMesh[faceIndex];
+            var normal = CubeNormals[faceIndex];
+            var faceColor = new Color(FaceBrightness[faceIndex] * color.ToVector3());
+
+            vertexDest[vertexDestStart + 0] = new VertexPositionNormalColorTexture(
+                offset + unit[0], normal, faceColor, texture[textureOffset + 0]);
+            vertexDest[vertexDestStart + 1] = new VertexPositionNormalColorTexture(
+                offset + unit[1], normal, faceColor, texture[textureOffset + 1]);
+            vertexDest[vertexDestStart + 2] = new VertexPositionNormalColorTexture(
+                offset + unit[2], normal, faceColor, texture[textureOffset + 2]);
+            vertexDest[vertexDestStart + 3] = new VertexPositionNormalColorTexture(
+                offset + unit[3], normal, faceColor, texture[textureOffset + 3]);
+        }
+
         protected static VertexPositionNormalColorTexture[] CreateQuad(CubeFace face, Vector3 offset,
             Vector2[] texture, int textureOffset, int indiciesOffset, out int[] indicies, Color color)
         {
-            indicies = new[] {0, 1, 3, 1, 2, 3};
-            for (var i = 0; i < indicies.Length; i++)
-                indicies[i] += (int) face * 4 + indiciesOffset;
             var quad = new VertexPositionNormalColorTexture[4];
-            var unit = CubeMesh[(int) face];
-            var normal = CubeNormals[(int) face];
-            var faceColor = new Color(FaceBrightness[(int) face] * color.ToVector3());
-            for (var i = 0; i < 4; i++)
-                quad[i] = new VertexPositionNormalColorTexture(offset + unit[i], normal, faceColor,
-                    texture[textureOffset + i]);
+            indicies = new int[6];
+            EmitQuad(face, offset, texture, textureOffset, indiciesOffset, color, quad, 0, indicies, 0);
             return quad;
         }
 

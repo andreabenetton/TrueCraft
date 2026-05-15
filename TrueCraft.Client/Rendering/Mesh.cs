@@ -94,10 +94,12 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public BoundingBox BoundingBox { get; private set; }
 
+        private bool _disposed;
+
         /// <summary>
         ///     Gets whether this mesh is disposed of.
         /// </summary>
-        public bool IsDisposed => false;
+        public bool IsDisposed => _disposed;
 
         /// <summary>
         ///     Disposes of this mesh.
@@ -252,6 +254,9 @@ namespace TrueCraft.Client.Rendering
         /// <param name="disposing">Whether Dispose() called the method.</param>
         protected virtual void Dispose(bool disposing)
         {
+            if (_disposed)
+                return;
+
             if (disposing)
             {
                 _graphicsDevice = null; // Lose the reference to our graphics device.
@@ -259,6 +264,8 @@ namespace TrueCraft.Client.Rendering
                 _vertices?.Dispose();
                 foreach (var element in _indices) element?.Dispose();
             }
+
+            _disposed = true;
         }
 
         /// <summary>

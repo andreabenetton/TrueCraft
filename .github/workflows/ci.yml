@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [master]
 
+# Cancel in-flight runs for the same branch/PR when a new commit lands.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+
 jobs:
   build:
     strategy:
@@ -16,10 +26,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET 9
+      - name: Setup .NET SDK (from global.json)
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore
         run: dotnet restore TrueCraft.sln
@@ -28,4 +46,18 @@ jobs:
         run: dotnet build TrueCraft.sln -c Release --no-restore
 
       - name: Test
-        run: dotnet test TrueCraft.sln -c Release --no-build --verbosity normal
+        run: >-
+          dotnet test TrueCraft.sln
+          -c Release
+          --no-build
+          --verbosity normal
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: '**/TestResults/*.trx'
+          retention-days: 14

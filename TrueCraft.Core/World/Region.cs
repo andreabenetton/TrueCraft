@@ -48,7 +48,7 @@ namespace TrueCraft.Core.World
             if (File.Exists(file))
             {
                 regionFile = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
-                regionFile.Read(HeaderCache, 0, 8192);
+                regionFile.ReadExactly(HeaderCache, 0, 8192);
             }
             else
             {

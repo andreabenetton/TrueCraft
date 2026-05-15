@@ -29,7 +29,7 @@ namespace Test.TrueCraft.Nbt {
             loadedFile.LoadFromFile("TestFiles/bigtest.nbt",
                                     NbtCompression.None,
                                     tag => false);
-            Assert.Equal(0, loadedFile.RootTag.Count);
+            Assert.Empty(loadedFile.RootTag);
         }
 
 
@@ -40,7 +40,7 @@ namespace Test.TrueCraft.Nbt {
                 byte[] savedFile = file.SaveToBuffer(NbtCompression.None);
                 file.LoadFromBuffer(savedFile, 0, savedFile.Length, NbtCompression.None,
                                     tag => tag.TagType != NbtTagType.List);
-                Assert.Equal(0, file.RootTag.Count);
+                Assert.Empty(file.RootTag);
             }
             {
                 // Check list-compound interaction
@@ -57,7 +57,7 @@ namespace Test.TrueCraft.Nbt {
                 byte[] savedFile = file.SaveToBuffer(NbtCompression.None);
                 file.LoadFromBuffer(savedFile, 0, savedFile.Length, NbtCompression.None,
                                     tag => tag.TagType != NbtTagType.List);
-                Assert.Equal(1, file.RootTag.Count);
+                Assert.Single(file.RootTag);
             }
         }
 
@@ -72,7 +72,7 @@ namespace Test.TrueCraft.Nbt {
             var file = new NbtFile(root);
             byte[] savedFile = file.SaveToBuffer(NbtCompression.None);
             file.LoadFromBuffer(savedFile, 0, savedFile.Length, NbtCompression.None, tag => false);
-            Assert.Equal(0, file.RootTag.Count);
+            Assert.Empty(file.RootTag);
         }
     }
 }

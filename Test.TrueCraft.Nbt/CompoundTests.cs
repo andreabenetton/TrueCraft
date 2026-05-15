@@ -194,7 +194,7 @@ namespace Test.TrueCraft.Nbt {
 
             // contains existing name/object
             Assert.True(test.Contains("Foo"));
-            Assert.True(test.Contains(foo));
+            Assert.Contains(foo, test);
             Assert.Throws<ArgumentNullException>(() => test.Contains((string)null));
             Assert.Throws<ArgumentNullException>(() => test.Contains((NbtTag)null));
 
@@ -202,7 +202,7 @@ namespace Test.TrueCraft.Nbt {
             Assert.False(test.Contains("Bar"));
 
             // contains existing name / different object
-            Assert.False(test.Contains(new NbtInt("Foo")));
+            Assert.DoesNotContain(new NbtInt("Foo"), test);
 
             // removing non-existent name
             Assert.Throws<ArgumentNullException>(() => test.Remove((string)null));
@@ -223,16 +223,16 @@ namespace Test.TrueCraft.Nbt {
             Assert.False(test.Remove(foo));
 
             // clearing an empty NbtCompound
-            Assert.Equal(0, test.Count);
+            Assert.Empty(test);
             test.Clear();
 
             // re-adding after clearing
             test.Add(foo);
-            Assert.Equal(1, test.Count);
+            Assert.Single(test);
 
             // clearing a non-empty NbtCompound
             test.Clear();
-            Assert.Equal(0, test.Count);
+            Assert.Empty(test);
         }
 
 

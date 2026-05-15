@@ -117,7 +117,7 @@ namespace Test.TrueCraft.Nbt {
             Assert.False(reader.HasLength);
             Assert.Equal(0, reader.ListIndex);
             Assert.Equal(1, reader.Depth);
-            Assert.Equal(null, reader.ParentName);
+            Assert.Null(reader.ParentName);
             Assert.Equal(NbtTagType.Unknown, reader.ParentTagType);
             Assert.Equal(0, reader.ParentTagLength);
             Assert.Equal(0, reader.TagLength);
@@ -158,7 +158,7 @@ namespace Test.TrueCraft.Nbt {
             Assert.Equal(8, reader.TagsRead);
 
             Assert.True(reader.ReadToFollowing()); // first list element, itself a list
-            Assert.Equal(null, reader.TagName);
+            Assert.Null(reader.TagName);
             Assert.Equal(NbtTagType.List, reader.TagType);
             Assert.Equal(NbtTagType.Compound, reader.ListType);
             Assert.False(reader.HasValue);
@@ -175,7 +175,7 @@ namespace Test.TrueCraft.Nbt {
             Assert.Equal(9, reader.TagsRead);
 
             Assert.True(reader.ReadToFollowing()); // first nested list element, compound
-            Assert.Equal(null, reader.TagName);
+            Assert.Null(reader.TagName);
             Assert.Equal(NbtTagType.Compound, reader.TagType);
             Assert.Equal(NbtTagType.Unknown, reader.ListType);
             Assert.False(reader.HasValue);
@@ -185,7 +185,7 @@ namespace Test.TrueCraft.Nbt {
             Assert.False(reader.HasLength);
             Assert.Equal(0, reader.ListIndex);
             Assert.Equal(4, reader.Depth);
-            Assert.Equal(null, reader.ParentName);
+            Assert.Null(reader.ParentName);
             Assert.Equal(NbtTagType.List, reader.ParentTagType);
             Assert.Equal(1, reader.ParentTagLength);
             Assert.Equal(0, reader.TagLength);

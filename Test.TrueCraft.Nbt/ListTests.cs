@@ -77,7 +77,7 @@ namespace Test.TrueCraft.Nbt {
 
             // check IList.Clear
             iList.Clear();
-            Assert.Equal(0, iList.Count);
+            Assert.Empty(iList);
             Assert.True(iList.IndexOf(testTag) < 0);
         }
 
@@ -95,7 +95,7 @@ namespace Test.TrueCraft.Nbt {
 
             // Make sure that setting did not affect ListType
             Assert.Equal(NbtTagType.Unknown, testList.ListType);
-            Assert.Equal(0, testList.Count);
+            Assert.Empty(testList);
             testList.Add(ourTag);
 
             // set a tag to null
@@ -178,7 +178,7 @@ namespace Test.TrueCraft.Nbt {
             // testing enumerator, indexer, Contains, and IndexOf
             int j = 0;
             foreach (NbtTag tag in list) {
-                Assert.True(list.Contains(sameTags[j]));
+                Assert.Contains(sameTags[j], list);
                 Assert.Equal(sameTags[j], tag);
                 Assert.Equal(j, list.IndexOf(tag));
                 j++;
@@ -220,7 +220,7 @@ namespace Test.TrueCraft.Nbt {
             Assert.Throws<ArgumentNullException>(() => loopList.Add(null));
 
             // make sure that all those failed adds didn't affect the tag
-            Assert.Equal(0, loopList.Count);
+            Assert.Empty(loopList);
             Assert.Equal(NbtTagType.Unknown, loopList.ListType);
 
             // try creating a list with invalid tag type
@@ -242,15 +242,15 @@ namespace Test.TrueCraft.Nbt {
 
             // changing the type of an empty list to "End" is allowed, see https://github.com/fragmer/fNbt/issues/12
             XAssert.DoesNotThrow(() => list.ListType = NbtTagType.End);
-            Assert.Equal(list.ListType, NbtTagType.End);
+            Assert.Equal(NbtTagType.End, list.ListType);
 
             // changing the type of an empty list back to "Unknown" is allowed too!
             XAssert.DoesNotThrow(() => list.ListType = NbtTagType.Unknown);
-            Assert.Equal(list.ListType, NbtTagType.Unknown);
+            Assert.Equal(NbtTagType.Unknown, list.ListType);
 
             // adding the first element should set the tag type
             list.Add(new NbtInt());
-            Assert.Equal(list.ListType, NbtTagType.Int);
+            Assert.Equal(NbtTagType.Int, list.ListType);
 
             // setting correct type for a non-empty list
             XAssert.DoesNotThrow(() => list.ListType = NbtTagType.Int);
@@ -342,14 +342,14 @@ namespace Test.TrueCraft.Nbt {
             testFile.LoadFromBuffer(buffer, 0, buffer.Length, NbtCompression.None);
 
             NbtList list1 = testFile.RootTag.Get<NbtList>("emptyList");
-            Assert.Equal(list1.Count,0);
-            Assert.Equal(list1.ListType, NbtTagType.End);
+            Assert.Empty(list1);
+            Assert.Equal(NbtTagType.End, list1.ListType);
 
             NbtList list2 = testFile.RootTag.Get<NbtList>("listyList");
-            Assert.Equal(list2.Count,1);
-            Assert.Equal(list2.ListType, NbtTagType.List);
-            Assert.Equal(list2.Get<NbtList>(0).Count, 0);
-            Assert.Equal(list2.Get<NbtList>(0).ListType, NbtTagType.End);
+            Assert.Single(list2);
+            Assert.Equal(NbtTagType.List, list2.ListType);
+            Assert.Empty(list2.Get<NbtList>(0));
+            Assert.Equal(NbtTagType.End, list2.Get<NbtList>(0).ListType);
         }
 
 
@@ -375,15 +375,12 @@ namespace Test.TrueCraft.Nbt {
                 var file = new NbtFile();
                 long bytesRead = file.LoadFromBuffer(data, 0, data.Length, NbtCompression.None);
                 Assert.Equal(bytesRead, data.Length);
-                Assert.Equal(1, file.RootTag.Get<NbtList>("OuterList").Count);
-                Assert.Equal(null, file.RootTag.Get<NbtList>("OuterList").Get<NbtCompound>(0).Name);
-                Assert.Equal(1,
-                                file.RootTag.Get<NbtList>("OuterList")
-                                    .Get<NbtCompound>(0)
-                                    .Get<NbtList>("InnerList")
-                                    .Count);
-                Assert.Equal(null,
-                                file.RootTag.Get<NbtList>("OuterList")
+                Assert.Single(file.RootTag.Get<NbtList>("OuterList"));
+                Assert.Null(file.RootTag.Get<NbtList>("OuterList").Get<NbtCompound>(0).Name);
+                Assert.Single(file.RootTag.Get<NbtList>("OuterList")
+                                  .Get<NbtCompound>(0)
+                                  .Get<NbtList>("InnerList"));
+                Assert.Null(file.RootTag.Get<NbtList>("OuterList")
                                     .Get<NbtCompound>(0)
                                     .Get<NbtList>("InnerList")
                                     .Get<NbtCompound>(0)

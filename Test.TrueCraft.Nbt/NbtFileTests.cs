@@ -329,7 +329,7 @@ namespace Test.TrueCraft.Nbt {
         [Fact]
         public async Task LoadingBigFileUncompressedAsync() {
             var file = new NbtFile();
-            long length = await file.LoadFromFileAsync(TestFiles.Big);
+            long length = await file.LoadFromFileAsync(TestFiles.Big, TestContext.Current.CancellationToken);
             TestFiles.AssertNbtBigFile(file);
             Assert.Equal(length, new FileInfo(TestFiles.Big).Length);
         }
@@ -339,7 +339,7 @@ namespace Test.TrueCraft.Nbt {
         public async Task TestNbtSmallFileSavingUncompressedAsync() {
             NbtFile file = TestFiles.MakeSmallFile();
             string testFileName = Path.Combine(TestDirName, "test-async.nbt");
-            await file.SaveToFileAsync(testFileName, NbtCompression.None);
+            await file.SaveToFileAsync(testFileName, NbtCompression.None, TestContext.Current.CancellationToken);
             FileAssert.AreEqual(TestFiles.Small, testFileName);
         }
 

@@ -8,7 +8,9 @@ namespace TrueCraft.API.Logic
 {
     public interface IBlockProvider : IItemProvider
     {
-        byte ID { get; }
+        // IItemProvider.ID is `short` (item ID space); IBlockProvider.ID is `byte`
+        // (block ID space). Deliberate narrowing; `new` silences CS0108.
+        new byte ID { get; }
         double BlastResistance { get; }
         double Hardness { get; }
         byte Luminance { get; }
@@ -20,7 +22,7 @@ namespace TrueCraft.API.Logic
         SoundEffectClass SoundEffect { get; }
         ToolMaterial EffectiveToolMaterials { get; }
         ToolType EffectiveTools { get; }
-        string DisplayName { get; }
+        new string DisplayName { get; }
         BoundingBox? BoundingBox { get; } // NOTE: Will this eventually need to be metadata-aware?
         BoundingBox? InteractiveBoundingBox { get; } // NOTE: Will this eventually need to be metadata-aware?
         Tuple<int, int> GetTextureMap(byte metadata);

@@ -602,22 +602,10 @@ namespace TrueCraft
             Server.Scheduler.ScheduleEvent("client.finalize-chunks", this,
                 TimeSpan.Zero, server =>
                 {
-                    return;
-                    LoadedChunks.Add(chunk.Coordinates);
-                    foreach (var kvp in chunk.TileEntities)
-                    {
-                        var coords = kvp.Key;
-                        var descriptor = new BlockDescriptor
-                        {
-                            Coordinates = coords + new Coordinates3D(chunk.X, 0, chunk.Z),
-                            Metadata = chunk.GetMetadata(coords),
-                            ID = chunk.GetBlockID(coords),
-                            BlockLight = chunk.GetBlockLight(coords),
-                            SkyLight = chunk.GetSkyLight(coords)
-                        };
-                        var provider = Server.BlockRepository.GetBlockProvider(descriptor.ID);
-                        provider.TileEntityLoadedForClient(descriptor, World, kvp.Value, this);
-                    }
+                    // Finalize step is intentionally empty: the original logic added the
+                    // chunk to LoadedChunks and registered tile entities, but was disabled
+                    // (preceded by `return;`) while the chunk-load lifecycle is being
+                    // reworked. Removed to silence CS0162; git history preserves the body.
                 });
         }
 

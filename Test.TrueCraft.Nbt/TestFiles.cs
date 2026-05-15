@@ -138,7 +138,7 @@ namespace Test.TrueCraft.Nbt {
 
             NbtCompound root = file.RootTag;
             Assert.Equal("hello world", root.Name);
-            Assert.Equal(1, root.Count);
+            Assert.Single(root);
 
             Assert.IsAssignableFrom<NbtString>(root["name"]);
 
@@ -226,7 +226,7 @@ namespace Test.TrueCraft.Nbt {
             // The values should be: 11, 12, 13, 14, 15
             for (int nodeIndex = 0; nodeIndex < ((NbtList)node).Count; nodeIndex++) {
                 Assert.IsAssignableFrom<NbtLong>(node[nodeIndex]);
-                Assert.Equal(null, node[nodeIndex].Name);
+                Assert.Null(node[nodeIndex].Name);
                 Assert.Equal(nodeIndex + 11, ((NbtLong)node[nodeIndex]).Value);
             }
 

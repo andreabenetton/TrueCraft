@@ -163,6 +163,7 @@ namespace Test.TrueCraft.Client
                 actual[name] = Hash(verts, idx);
             }
 
+#pragma warning disable CS0162 // SnapshotDump is a compile-time const flipped manually to regenerate the embedded hash table.
             if (SnapshotDump)
             {
                 var sb = new StringBuilder();
@@ -170,6 +171,7 @@ namespace Test.TrueCraft.Client
                     sb.AppendLine($"            {{\"{name}\", \"{actual[name]}\"}},");
                 Assert.Fail("Snapshot dump:\n" + sb);
             }
+#pragma warning restore CS0162
 
             foreach (var (name, _, _) in Renderers)
             {

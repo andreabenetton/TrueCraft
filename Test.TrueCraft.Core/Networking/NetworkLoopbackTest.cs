@@ -72,7 +72,7 @@ namespace Test.TrueCraft.Core.Networking
                 }
                 catch (OperationCanceledException) { }
                 finally { await pipe.Writer.CompleteAsync().ConfigureAwait(false); }
-            });
+            }, cancellationToken);
 
             try
             {
@@ -187,7 +187,10 @@ namespace Test.TrueCraft.Core.Networking
             // sends them over a loopback socket. The other side drains and parses.
             var reader = new PacketReader();
             reader.RegisterCorePackets();
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            // Combine the test's local timeout with the xUnit framework cancellation
+            // token so dotnet test --blame-hang etc. can interrupt the loop.
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(10));
 
             var (client, serverSocket, _) = await ConnectLoopbackAsync();
             using (client)
@@ -212,6 +215,7 @@ namespace Test.TrueCraft.Core.Networking
                 queue.Writer.Complete();
 
                 // Consumer: drain queue and send on the client socket; return buffers.
+                // cts is already linked to TestContext.Current.CancellationToken above.
                 var sendTask = Task.Run(async () =>
                 {
                     while (await queue.Reader.WaitToReadAsync(cts.Token).ConfigureAwait(false))
@@ -231,7 +235,7 @@ namespace Test.TrueCraft.Core.Networking
                             }
                         }
                     }
-                });
+                }, cts.Token);
 
                 var packets = await DrainAsync(serverSocket, reader, expectedCount: messages.Length, serverbound: true, cts.Token);
                 await sendTask; // ensure the send loop finished

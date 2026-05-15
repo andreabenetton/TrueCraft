@@ -100,16 +100,16 @@ namespace Test.TrueCraft.Nbt {
                 file.LoadFromStream(ms, NbtCompression.None);
                 CollectionAssert.AreEqual(data, file.RootTag["byteArray1"].ByteArrayValue);
                 CollectionAssert.AreEqual(data, file.RootTag["byteArray2"].ByteArrayValue);
-                Assert.Equal(1, file.RootTag["byteArray3"].ByteArrayValue.Length);
+                Assert.Single(file.RootTag["byteArray3"].ByteArrayValue);
                 Assert.Equal(data[0], file.RootTag["byteArray3"].ByteArrayValue[0]);
-                Assert.Equal(1, file.RootTag["byteArray4"].ByteArrayValue.Length);
+                Assert.Single(file.RootTag["byteArray4"].ByteArrayValue);
                 Assert.Equal(data[0], file.RootTag["byteArray4"].ByteArrayValue[0]);
 
                 CollectionAssert.AreEqual(data, file.RootTag["innerLists"][0].ByteArrayValue);
                 CollectionAssert.AreEqual(data, file.RootTag["innerLists"][1].ByteArrayValue);
-                Assert.Equal(1, file.RootTag["innerLists"][2].ByteArrayValue.Length);
+                Assert.Single(file.RootTag["innerLists"][2].ByteArrayValue);
                 Assert.Equal(data[0], file.RootTag["innerLists"][2].ByteArrayValue[0]);
-                Assert.Equal(1, file.RootTag["innerLists"][3].ByteArrayValue.Length);
+                Assert.Single(file.RootTag["innerLists"][3].ByteArrayValue);
                 Assert.Equal(data[0], file.RootTag["innerLists"][3].ByteArrayValue[0]);
             }
         }

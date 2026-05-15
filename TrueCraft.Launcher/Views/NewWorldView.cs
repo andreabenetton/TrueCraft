@@ -1,5 +1,6 @@
 using System;
 using GeonBit.UI.Entities;
+using GeonBit.UI.Entities.TextValidators;
 using Microsoft.Xna.Framework;
 using TrueCraft.Core.World;
 using TrueCraft.Launcher.Singleplayer;
@@ -36,6 +37,8 @@ namespace TrueCraft.Launcher.Views
 
             parent.AddChild(new Label("Name"));
             _name = new TextInput(false) { PlaceholderText = "World name" };
+            _name.Validators.Add(new EnglishCharactersOnly(true));
+            _name.Validators.Add(new OnlySingleSpaces());
             parent.AddChild(_name);
 
             parent.AddChild(new Label("Seed (optional)"));

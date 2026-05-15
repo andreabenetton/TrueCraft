@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
 using GeonBit.UI.Entities;
+using GeonBit.UI.Entities.TextValidators;
 using Microsoft.Xna.Framework;
 using TrueCraft.Core;
 
@@ -43,6 +44,9 @@ namespace TrueCraft.Launcher.Views
             {
                 Value = UserSettings.Local?.Username ?? string.Empty,
             };
+            // Match Mojang conventions: ASCII letters/digits, no double spaces.
+            _usernameInput.Validators.Add(new EnglishCharactersOnly(true));
+            _usernameInput.Validators.Add(new OnlySingleSpaces());
             parent.AddChild(_usernameInput);
 
             parent.AddChild(new Label("Password"));

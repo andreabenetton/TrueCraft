@@ -1,4 +1,6 @@
 using System;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using TrueCraft.Core;
 using TrueCraft;
@@ -11,7 +13,13 @@ namespace TrueCraft.Launcher
         public static void Main(string[] args)
         {
             var launcherConfig = new LauncherConfiguration();
-            _ = new LoggerService<LauncherConfiguration>(launcherConfig.Configuration);
+
+            var services = new ServiceCollection();
+            services.AddSerilogLogging(launcherConfig.Configuration);
+            services.AddSingleton(launcherConfig);
+            services.AddSingleton<IConfiguration>(launcherConfig.Configuration);
+            App.Services = services.BuildServiceProvider();
+
             Log.Information("TrueCraft.Launcher starting");
 
             try
@@ -35,4 +43,3 @@ namespace TrueCraft.Launcher
         }
     }
 }
-

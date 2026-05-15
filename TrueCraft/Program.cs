@@ -1,6 +1,8 @@
 ﻿using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using TrueCraft.Core.World;
 using TrueCraft.Core.TerrainGen;
@@ -29,7 +31,12 @@ namespace TrueCraft
         public static async Task Main(string[] args)
         {
             NodeConfiguration = new NodeConfiguration();
-            _ = new LoggerService<Program>(NodeConfiguration.Configuration);
+
+            var services = new ServiceCollection();
+            services.AddSerilogLogging(NodeConfiguration.Configuration);
+            services.AddSingleton(NodeConfiguration);
+            services.AddSingleton<IConfiguration>(NodeConfiguration.Configuration);
+            App.Services = services.BuildServiceProvider();
 
             Server = new MultiplayerServer();
 

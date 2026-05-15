@@ -151,11 +151,13 @@ namespace TrueCraft.Client
 
     public class FontLoader
     {
+        // XmlSerializer emits a runtime-generated assembly on first construction; only
+        // the (Type) overload caches it. Build once and reuse across every .fnt load.
+        private static readonly XmlSerializer Deserializer = new XmlSerializer(typeof(FontFile));
+
         public static FontFile Load(Stream stream)
         {
-            var deserializer = new XmlSerializer(typeof(FontFile));
-            var file = (FontFile) deserializer.Deserialize(stream);
-            return file;
+            return (FontFile) Deserializer.Deserialize(stream);
         }
     }
 }

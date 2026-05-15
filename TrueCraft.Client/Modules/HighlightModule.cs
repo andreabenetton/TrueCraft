@@ -51,6 +51,8 @@ namespace TrueCraft.Client.Modules
             };
         }
 
+        private const int ProgressLevels = 10; // matches vanilla destruction stages 0..9
+
         public HighlightModule(TrueCraftGame game)
         {
             Game = game;
@@ -60,15 +62,16 @@ namespace TrueCraft.Client.Modules
             DestructionEffect.Texture = game.TextureMapper.GetTexture("terrain.png");
             DestructionEffect.ReferenceAlpha = 1;
 
-            GenerateProgressMesh();
+            ProgressMeshes = new Mesh[ProgressLevels];
+            for (var i = 0; i < ProgressLevels; i++)
+                ProgressMeshes[i] = BuildProgressMesh(i);
         }
 
         public TrueCraftGame Game { get; set; }
 
         private BasicEffect HighlightEffect { get; }
         private AlphaTestEffect DestructionEffect { get; }
-        private Mesh ProgressMesh { get; set; }
-        private int Progress { get; set; }
+        private Mesh[] ProgressMeshes { get; }
 
         public void Update(GameTime gameTime)
         {
@@ -131,25 +134,19 @@ namespace TrueCraft.Client.Modules
                 var total = Game.EndDigging - Game.StartDigging;
                 var progress = (int) (diff.TotalMilliseconds / total.TotalMilliseconds * 10);
                 progress = -(progress - 5) + 5;
-                if (progress > 9)
-                    progress = 9;
-
-                if (progress != Progress)
-                {
-                    Progress = progress;
-                    GenerateProgressMesh();
-                }
+                if (progress < 0) progress = 0;
+                if (progress > ProgressLevels - 1) progress = ProgressLevels - 1;
 
                 Game.GraphicsDevice.BlendState = DestructionBlendState;
-                ProgressMesh.Draw(DestructionEffect);
+                ProgressMeshes[progress].Draw(DestructionEffect);
                 Game.GraphicsDevice.BlendState = BlendState.AlphaBlend;
                 Game.GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
             }
         }
 
-        private void GenerateProgressMesh()
+        private Mesh BuildProgressMesh(int progress)
         {
-            var texCoords = new Vector2(Progress, 15);
+            var texCoords = new Vector2(progress, 15);
             var texture = new[]
             {
                 texCoords + Vector2.UnitX + Vector2.UnitY,
@@ -161,7 +158,7 @@ namespace TrueCraft.Client.Modules
                 texture[i] *= new Vector2(16f / 256f);
             var vertexes = BlockRenderer.CreateUniformCube(XVector3.Zero,
                 texture, VisibleFaces.All, 0, out var indexes, Color.White);
-            ProgressMesh = new Mesh(Game, vertexes, indexes);
+            return new Mesh(Game, vertexes, indexes);
         }
     }
 }

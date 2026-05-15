@@ -97,7 +97,7 @@ namespace TrueCraft.Nbt.Tags
         internal override bool ReadTag(NbtBinaryReader readStream)
         {
             var length = readStream.ReadInt32();
-            if (length < 0) throw new NbtFormatException("Negative length given in TAG_Int_Array");
+            readStream.CheckArrayLength(length, "TAG_Int_Array");
 
             if (readStream.Selector != null && !readStream.Selector(this))
             {
@@ -115,7 +115,7 @@ namespace TrueCraft.Nbt.Tags
         internal override void SkipTag(NbtBinaryReader readStream)
         {
             var length = readStream.ReadInt32();
-            if (length < 0) throw new NbtFormatException("Negative length given in TAG_Int_Array");
+            readStream.CheckArrayLength(length, "TAG_Int_Array");
 
             readStream.Skip(length * sizeof(int));
         }

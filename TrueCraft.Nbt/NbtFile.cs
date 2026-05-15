@@ -74,6 +74,13 @@ namespace TrueCraft.Nbt
         public int MaxDepth { get; set; } = 512;
 
         /// <summary>
+        ///     Maximum allowed element count for any single TAG_Byte_Array, TAG_Int_Array,
+        ///     TAG_Long_Array, or TAG_List during a load. Defaults to 16 * 1024 * 1024
+        ///     (~16 M elements; 128 MiB for a TAG_Long_Array). Set to 0 to disable.
+        /// </summary>
+        public int MaxArrayElements { get; set; } = 16 * 1024 * 1024;
+
+        /// <summary>
         ///     Gets or sets the default value of <c>BufferSize</c> property. Default is 8192.
         ///     Set to 0 to disable buffering by default.
         /// </summary>
@@ -618,7 +625,8 @@ namespace TrueCraft.Nbt
             {
                 Selector = tagSelector,
                 UseStandardUtf8 = UseStandardUtf8,
-                MaxDepth = MaxDepth
+                MaxDepth = MaxDepth,
+                MaxArrayElements = MaxArrayElements
             };
 
             var rootCompound = new NbtCompound(reader.ReadString());

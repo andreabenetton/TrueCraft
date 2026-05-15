@@ -320,7 +320,7 @@ namespace TrueCraft.Nbt.Tags
             ListType = readStream.ReadTagType();
 
             var length = readStream.ReadInt32();
-            if (length < 0) throw new NbtFormatException("Negative list size given.");
+            readStream.CheckArrayLength(length, "TAG_List");
 
             for (var i = 0; i < length; i++)
             {
@@ -395,7 +395,7 @@ namespace TrueCraft.Nbt.Tags
             ListType = readStream.ReadTagType();
 
             var length = readStream.ReadInt32();
-            if (length < 0) throw new NbtFormatException("Negative list size given.");
+            readStream.CheckArrayLength(length, "TAG_List");
 
             switch (ListType)
             {

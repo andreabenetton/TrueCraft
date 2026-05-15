@@ -47,6 +47,29 @@ namespace TrueCraft.Nbt
         public int Depth { get; private set; }
 
         /// <summary>
+        ///     Maximum allowed element count for any single TAG_Byte_Array, TAG_Int_Array,
+        ///     TAG_Long_Array, or TAG_List payload. Adversarial NBT can declare an array
+        ///     length of <c>int.MaxValue</c>, which would attempt to allocate up to 16 GiB
+        ///     for a TAG_Long_Array. Defaults to 16 * 1024 * 1024 (~16 million elements).
+        ///     Set to 0 to disable.
+        /// </summary>
+        public int MaxArrayElements { get; set; } = 16 * 1024 * 1024;
+
+        /// <summary>
+        ///     Validate an on-the-wire array length: reject negative values, reject
+        ///     allocations beyond <see cref="MaxArrayElements"/>.
+        /// </summary>
+        public void CheckArrayLength(int length, string tagName)
+        {
+            if (length < 0)
+                throw new NbtFormatException(
+                    $"Negative length given in {tagName}: {length}");
+            if (MaxArrayElements > 0 && length > MaxArrayElements)
+                throw new NbtFormatException(
+                    $"Array length {length} for {tagName} exceeds MaxArrayElements = {MaxArrayElements}");
+        }
+
+        /// <summary>
         ///     Increment recursion depth; throws <see cref="NbtFormatException"/> if the
         ///     configured <see cref="MaxDepth"/> is exceeded.
         /// </summary>

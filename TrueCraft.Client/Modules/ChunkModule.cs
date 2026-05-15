@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Serilog;
 using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.Client.Events;
@@ -130,7 +131,7 @@ namespace TrueCraft.Client.Modules
             {
                 chunkMesh.Draw(OpaqueEffect, 0);
                 if (!chunkMesh.IsReady || chunkMesh.Submeshes != 2)
-                    Console.WriteLine("Warning: rendered chunk that was not ready");
+                    Log.Warning("Rendered chunk that was not ready");
             }
 
             Game.GraphicsDevice.BlendState = ColorWriteDisable;

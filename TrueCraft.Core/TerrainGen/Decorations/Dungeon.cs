@@ -1,4 +1,5 @@
 ﻿using System;
+using Serilog;
 using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.Core.Logic.Blocks;
@@ -23,7 +24,7 @@ namespace TrueCraft.Core.TerrainGen.Decorations
 
         public override bool GenerateAt(IWorld world, IChunk chunk, Coordinates3D location)
         {
-            Console.WriteLine("Dungeon in chunk {0}", chunk.Coordinates);
+            Log.Debug("Dungeon in chunk {ChunkCoordinates}", chunk.Coordinates);
             if (!ValidLocation(location))
                 return false;
 

@@ -29,7 +29,7 @@ namespace TrueCraft.Launcher.Singleplayer
             };
             world.BlockRepository = Server.BlockRepository;
             Server.AddWorld(world);
-            Server.AddLogProvider(new ConsoleLogProvider());
+            Server.AddLogProvider(new SerilogLogProvider());
         }
 
         public MultiplayerServer Server { get; set; }

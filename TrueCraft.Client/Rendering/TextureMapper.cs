@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using Microsoft.Xna.Framework.Graphics;
+using Serilog;
 using TrueCraft.Core;
 
 namespace TrueCraft.Client.Rendering
@@ -123,8 +124,7 @@ namespace TrueCraft.Client.Rendering
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine("Exception occured while loading {0} from texture pack:\n\n{1}", key,
-                                    ex);
+                                Log.Error(ex, "Failed to load {Key} from texture pack", key);
                             }
                         }
                 }

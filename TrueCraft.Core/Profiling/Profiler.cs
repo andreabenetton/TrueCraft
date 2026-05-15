@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
+using Serilog;
 
 namespace TrueCraft.Core.Profiling
 {
@@ -62,13 +62,13 @@ namespace TrueCraft.Core.Profiling
                     foreach (var bucket in EnabledBuckets)
                         if (Match(bucket, timer.Bucket))
                         {
-                            Console.WriteLine("[@{0:0.00}s] {1} took {2}ms",
+                            Log.Information("[@{Elapsed:0.00}s] {Bucket} took {Took}ms",
                                 Stopwatch.ElapsedMilliseconds / 1000.0, timer.Bucket, elapsed);
                             break;
                         }
 
                     if (LogLag && lag != -1 && elapsed > lag)
-                        Console.WriteLine("{0} is lagging by {1}ms", timer.Bucket, elapsed);
+                        Log.Warning("{Bucket} is lagging by {Elapsed}ms", timer.Bucket, elapsed);
                 }
             }
         }

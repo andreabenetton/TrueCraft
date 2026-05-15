@@ -29,14 +29,11 @@ namespace TrueCraft
 
         public static async Task Main(string[] args)
         {
-            Server = new MultiplayerServer();
-
-            Server.AddLogProvider(new ConsoleLogProvider(LogCategory.Notice | LogCategory.Warning | LogCategory.Error | LogCategory.Debug));
-#if DEBUG
-            Server.AddLogProvider(new FileLogProvider(new StreamWriter("packets.log", false), LogCategory.Packets));
-#endif
-
             NodeConfiguration = new NodeConfiguration();
+            _ = new LoggerService<Program>(NodeConfiguration.Configuration);
+
+            Server = new MultiplayerServer();
+            Server.AddLogProvider(new SerilogLogProvider());
 
             var buckets = NodeConfiguration.Debug?.Profiler?.Buckets?.Split(',');
             if (buckets != null)

@@ -8,6 +8,10 @@
 
 
   <ItemGroup>
+    <PackageReference Include="Serilog" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TrueCraft.API\TrueCraft.API.csproj" />
     <ProjectReference Include="..\TrueCraft.Nbt\TrueCraft.Nbt.csproj" />
   </ItemGroup>

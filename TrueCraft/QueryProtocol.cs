@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Threading;
+using Serilog;
 using TrueCraft.API.Server;
 
 namespace TrueCraft
@@ -65,7 +66,10 @@ namespace TrueCraft
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Query protocol packet handling failed");
+            }
             if (CToken.IsCancellationRequested) return;
 
             Udp.BeginReceive(HandleReceive, null);

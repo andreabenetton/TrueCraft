@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using TrueCraft.Core;
 using TrueCraft.Core.Logic;
 using TrueCraft.Core.TerrainGen;
@@ -12,6 +12,8 @@ namespace TrueCraft.Launcher.Singleplayer
 {
     public class Worlds
     {
+        private static ILogger Log => App.LoggerFor<Worlds>();
+
         public static Worlds Local { get; set; }
 
         public BlockRepository BlockRepository { get; set; }
@@ -33,7 +35,7 @@ namespace TrueCraft.Launcher.Singleplayer
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Failed to load world from {Path}", d);
+                    Log.LogError(e, "Failed to load world from {Path}", d);
                 }
 
             Saves = saves.ToArray();

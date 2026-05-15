@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.Logging;
 using TrueCraft.API.Networking;
 using System.Buffers;
 using System.IO.Pipelines;
@@ -30,6 +31,10 @@ namespace TrueCraft
 {
     public class RemoteClient : IRemoteClient, IEventSubject, IDisposable
     {
+        // Named Logger (not Log) because the IRemoteClient.Log(string, params object[])
+        // chat-broadcast method already occupies "Log" in this class.
+        private static ILogger Logger => App.LoggerFor<RemoteClient>();
+
         public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection)
         {
             LoadedChunks = new HashSet<Coordinates2D>();
@@ -337,7 +342,7 @@ namespace TrueCraft
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "Send loop failed");
+                Logger.LogError(ex, "Send loop failed");
             }
             finally
             {
@@ -411,7 +416,7 @@ namespace TrueCraft
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "Receive pump failed");
+                Logger.LogError(ex, "Receive pump failed");
             }
             finally
             {
@@ -460,7 +465,7 @@ namespace TrueCraft
                             }
                             catch (Exception ex)
                             {
-                                Serilog.Log.Debug(ex, "Disconnecting client due to exception in network worker");
+                                Logger.LogDebug(ex, "Disconnecting client due to exception in network worker");
                                 Server.DisconnectClient(this);
                                 return;
                             }
@@ -468,7 +473,7 @@ namespace TrueCraft
                     }
                     catch (NotSupportedException)
                     {
-                        Serilog.Log.Debug("Disconnecting client due to unsupported packet received.");
+                        Logger.LogDebug("Disconnecting client due to unsupported packet received.");
                         Server.DisconnectClient(this);
                         return;
                     }

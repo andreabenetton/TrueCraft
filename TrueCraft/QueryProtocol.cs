@@ -7,13 +7,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Threading;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using TrueCraft.API.Server;
 
 namespace TrueCraft
 {
     public class QueryProtocol
     {
+        private static ILogger Log => App.LoggerFor<QueryProtocol>();
+
         private UdpClient Udp;
         private int Port;
         private Timer Timer;
@@ -68,7 +70,7 @@ namespace TrueCraft
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Query protocol packet handling failed");
+                Log.LogDebug(ex, "Query protocol packet handling failed");
             }
             if (CToken.IsCancellationRequested) return;
 

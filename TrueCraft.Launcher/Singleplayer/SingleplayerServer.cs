@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Configuration;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using TrueCraft.API;
 using TrueCraft.Core.World;
 
@@ -9,6 +9,8 @@ namespace TrueCraft.Launcher.Singleplayer
 {
     public class SingleplayerServer
     {
+        private static ILogger Log => App.LoggerFor<SingleplayerServer>();
+
         public delegate void ProgressNotification(double progress, string stage);
 
         public SingleplayerServer(World world)
@@ -35,7 +37,7 @@ namespace TrueCraft.Launcher.Singleplayer
 
         public void Initialize(ProgressNotification progressNotification = null)
         {
-            Log.Information("Generating world around spawn point...");
+            Log.LogInformation("Generating world around spawn point...");
             for (var x = -5; x < 5; x++)
             {
                 for (var z = -5; z < 5; z++)
@@ -43,10 +45,10 @@ namespace TrueCraft.Launcher.Singleplayer
                 var progress = (int) ((x + 5) / 10.0 * 100);
                 progressNotification?.Invoke(progress / 100.0, "Generating world...");
                 if (progress % 10 == 0)
-                    Log.Information("{Progress}% complete", progress + 10);
+                    Log.LogInformation("{Progress}% complete", progress + 10);
             }
 
-            Log.Information("Simulating the world for a moment...");
+            Log.LogInformation("Simulating the world for a moment...");
             for (var x = -5; x < 5; x++)
             {
                 for (var z = -5; z < 5; z++)
@@ -66,7 +68,7 @@ namespace TrueCraft.Launcher.Singleplayer
                 var progress = (int) ((x + 5) / 10.0 * 100);
                 progressNotification?.Invoke(progress / 100.0, "Simulating world...");
                 if (progress % 10 == 0)
-                    Log.Information("{Progress}% complete", progress + 10);
+                    Log.LogInformation("{Progress}% complete", progress + 10);
             }
 
             World.Save();

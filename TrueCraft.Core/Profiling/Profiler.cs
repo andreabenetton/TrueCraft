@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace TrueCraft.Core.Profiling
 {
     public static class Profiler
     {
+        private static ILogger Log => App.LoggerFor("TrueCraft.Core.Profiling.Profiler");
+
         private static readonly object Lock = new object();
 
         static Profiler()
@@ -62,13 +64,13 @@ namespace TrueCraft.Core.Profiling
                     foreach (var bucket in EnabledBuckets)
                         if (Match(bucket, timer.Bucket))
                         {
-                            Log.Information("[@{Elapsed:0.00}s] {Bucket} took {Took}ms",
+                            Log.LogInformation("[@{Elapsed:0.00}s] {Bucket} took {Took}ms",
                                 Stopwatch.ElapsedMilliseconds / 1000.0, timer.Bucket, elapsed);
                             break;
                         }
 
                     if (LogLag && lag != -1 && elapsed > lag)
-                        Log.Warning("{Bucket} is lagging by {Elapsed}ms", timer.Bucket, elapsed);
+                        Log.LogWarning("{Bucket} is lagging by {Elapsed}ms", timer.Bucket, elapsed);
                 }
             }
         }

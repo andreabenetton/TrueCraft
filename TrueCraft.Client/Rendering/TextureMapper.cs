@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework.Graphics;
-using Serilog;
 using TrueCraft.Core;
 
 namespace TrueCraft.Client.Rendering
@@ -13,6 +13,8 @@ namespace TrueCraft.Client.Rendering
     /// </summary>
     public sealed class TextureMapper : IDisposable
     {
+        private static ILogger Log => App.LoggerFor<TextureMapper>();
+
         /// <summary>
         /// </summary>
         public static readonly IDictionary<string, Texture2D> Defaults =
@@ -124,7 +126,7 @@ namespace TrueCraft.Client.Rendering
                             }
                             catch (Exception ex)
                             {
-                                Log.Error(ex, "Failed to load {Key} from texture pack", key);
+                                Log.LogError(ex, "Failed to load {Key} from texture pack", key);
                             }
                         }
                 }

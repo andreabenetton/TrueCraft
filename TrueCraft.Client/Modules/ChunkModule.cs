@@ -2,9 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Serilog;
 using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.Client.Events;
@@ -18,6 +18,8 @@ namespace TrueCraft.Client.Modules
 {
     public class ChunkModule : IGraphicalModule
     {
+        private static ILogger Log => App.LoggerFor<ChunkModule>();
+
         private static readonly Coordinates2D[] AdjacentCoordinates =
         {
             Coordinates2D.North, Coordinates2D.South,
@@ -131,7 +133,7 @@ namespace TrueCraft.Client.Modules
             {
                 chunkMesh.Draw(OpaqueEffect, 0);
                 if (!chunkMesh.IsReady || chunkMesh.Submeshes != 2)
-                    Log.Warning("Rendered chunk that was not ready");
+                    Log.LogWarning("Rendered chunk that was not ready");
             }
 
             Game.GraphicsDevice.BlendState = ColorWriteDisable;

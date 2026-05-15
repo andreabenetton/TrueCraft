@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using TrueCraft.Core.World;
 using TrueCraft.Core.TerrainGen;
 using TrueCraft.API.Server;
@@ -23,6 +23,10 @@ namespace TrueCraft
         public static CommandManager CommandManager;
 
         public static MultiplayerServer Server;
+
+        // Resolved per-use so the property is safe to read before/after App.Services init
+        // (Program's static field initializers run before Main, before App.Services is set).
+        private static ILogger Log => App.LoggerFor<Program>();
 
         // Signaled by Ctrl-C / SIGINT to release the awaitable shutdown hold in Main.
         private static readonly TaskCompletionSource ShutdownSignal =
@@ -71,16 +75,16 @@ namespace TrueCraft
                 world.BlockRepository = Server.BlockRepository;
                 await world.SaveAsync("world");
                 Server.AddWorld(world);
-                Log.Information("Generating world around spawn point...");
+                Log.LogInformation("Generating world around spawn point...");
                 for (int x = -5; x < 5; x++)
                 {
                     for (int z = -5; z < 5; z++)
                         world.GetChunk(new Coordinates2D(x, z));
                     int progress = (int)(((x + 5) / 10.0) * 100);
                     if (progress % 10 == 0)
-                        Log.Information("{Progress}% complete", progress + 10);
+                                Log.LogInformation("{Progress}% complete", progress + 10);
                 }
-                Log.Information("Simulating the world for a moment...");
+                Log.LogInformation("Simulating the world for a moment...");
                 for (int x = -5; x < 5; x++)
                 {
                     for (int z = -5; z < 5; z++)
@@ -102,9 +106,9 @@ namespace TrueCraft
                     }
                     int progress = (int)(((x + 5) / 10.0) * 100);
                     if (progress % 10 == 0)
-                        Log.Information("{Progress}% complete", progress + 10);
+                                Log.LogInformation("{Progress}% complete", progress + 10);
                 }
-                Log.Information("Lighting the world (this will take a moment)...");
+                Log.LogInformation("Lighting the world (this will take a moment)...");
                 foreach (var lighter in Server.WorldLighters)
                 {
                     while (lighter.TryLightNext()) ;
@@ -126,16 +130,16 @@ namespace TrueCraft
 
         static async Task SaveWorldsAsync(IMultiplayerServer server)
         {
-            Log.Information("Saving world...");
+            Log.LogInformation("Saving world...");
             try
             {
                 foreach (var w in Server.Worlds)
                     await w.SaveAsync().ConfigureAwait(false);
-                Log.Information("Done.");
+                Log.LogInformation("Done.");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "World save failed");
+                Log.LogError(ex, "World save failed");
             }
             server.Scheduler.ScheduleEvent("world.save", null,
                 TimeSpan.FromSeconds(NodeConfiguration.WorldSaveInterval),

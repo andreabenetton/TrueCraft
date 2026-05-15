@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using TrueCraft.Core;
 using TrueCraft;
 
@@ -9,6 +9,9 @@ namespace TrueCraft.Launcher
 {
     public static class Program
     {
+        // Resolved per-use so it's safe to read before/after App.Services init.
+        private static ILogger Log => App.LoggerFor("TrueCraft.Launcher.Program");
+
         [STAThread]
         public static void Main(string[] args)
         {
@@ -20,7 +23,7 @@ namespace TrueCraft.Launcher
             services.AddSingleton<IConfiguration>(launcherConfig.Configuration);
             App.Services = services.BuildServiceProvider();
 
-            Log.Information("TrueCraft.Launcher starting");
+            Log.LogInformation("TrueCraft.Launcher starting");
 
             try
             {
@@ -33,12 +36,13 @@ namespace TrueCraft.Launcher
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "Launcher terminated unexpectedly");
+                Log.LogCritical(ex, "Launcher terminated unexpectedly");
                 throw;
             }
             finally
             {
-                Log.CloseAndFlush();
+                // Serilog-only API; no MEL equivalent.
+                Serilog.Log.CloseAndFlush();
             }
         }
     }

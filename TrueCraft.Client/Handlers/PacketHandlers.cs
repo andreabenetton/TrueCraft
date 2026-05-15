@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using Serilog;
+using Microsoft.Extensions.Logging;
+using TrueCraft;
 using TrueCraft.API;
 using TrueCraft.API.Networking;
 using TrueCraft.Client.Events;
@@ -11,6 +12,8 @@ namespace TrueCraft.Client.Handlers
 {
     internal static class PacketHandlers
     {
+        private static ILogger Log => App.LoggerFor("TrueCraft.Client.Handlers.PacketHandlers");
+
         public static void RegisterHandlers(MultiplayerClient client)
         {
             client.RegisterPacketHandler(new HandshakeResponsePacket().ID, HandleHandshake);
@@ -41,7 +44,7 @@ namespace TrueCraft.Client.Handlers
             var handshakeResponsePacket = (HandshakeResponsePacket) packet;
             if (handshakeResponsePacket.ConnectionHash != "-")
             {
-                Log.Error("Online mode is not supported");
+                Log.LogError("Online mode is not supported");
                 Process.GetCurrentProcess().Kill();
             }
 

@@ -9,7 +9,7 @@ using System.Net;
 using System.Collections.Generic;
 using System.Linq;
 using TrueCraft.API.World;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
@@ -80,6 +80,7 @@ namespace TrueCraft
         private Task AcceptLoopTask;
         private TcpListener Listener;
         private readonly PacketHandler[] PacketHandlers;
+        private static ILogger Log => App.LoggerFor<MultiplayerServer>();
         private Stopwatch Time;
         private ConcurrentBag<Tuple<IWorld, IChunk>> ChunksToSchedule;
         internal object ClientLock = new object();
@@ -142,7 +143,7 @@ namespace TrueCraft
             AcceptCts = new CancellationTokenSource();
             AcceptLoopTask = Task.Run(() => RunAcceptLoopAsync(AcceptCts.Token));
 
-            Log.Information("Running TrueCraft server on {EndPoint}", EndPoint);
+            Log.LogInformation("Running TrueCraft server on {EndPoint}", EndPoint);
             EnvironmentCts = new CancellationTokenSource();
             EnvironmentTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(MillisecondsPerTick));
             EnvironmentLoopTask = Task.Run(() => RunEnvironmentLoopAsync(EnvironmentCts.Token));
@@ -329,7 +330,7 @@ namespace TrueCraft
                 foreach (var part in parts)
                     client.SendMessage(part);
             }
-            Log.Information("{Message}", ChatColor.RemoveColors(compiled));
+            Log.LogInformation("{Message}", ChatColor.RemoveColors(compiled));
         }
 
         protected internal void OnChatMessageReceived(ChatMessageEventArgs e)
@@ -401,12 +402,12 @@ namespace TrueCraft
                 {
                     // Transient errors (file descriptor exhaustion, peer aborted before accept, etc.).
                     // Log and continue accepting; don't bring the whole server down on a single accept failure.
-                    Log.Error(ex, "Accept failed");
+                    Log.LogError(ex, "Accept failed");
                     continue;
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Accept failed unexpectedly");
+                    Log.LogError(ex, "Accept failed unexpectedly");
                     continue;
                 }
 
@@ -418,7 +419,7 @@ namespace TrueCraft
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Client setup failed for {RemoteEndPoint}",
+                    Log.LogError(ex, "Client setup failed for {RemoteEndPoint}",
                         socket.RemoteEndPoint?.ToString() ?? "<unknown>");
                     try { socket.Close(); } catch (ObjectDisposedException) { }
                 }
@@ -439,7 +440,7 @@ namespace TrueCraft
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Environment tick raised");
+                        Log.LogError(ex, "Environment tick raised");
                     }
                 }
             }
@@ -477,7 +478,7 @@ namespace TrueCraft
                         // This space intentionally left blank
                     }
                     if (Time.ElapsedMilliseconds >= limit)
-                        Log.Warning("Lighting queue is backed up");
+                        Log.LogWarning("Lighting queue is backed up");
                 }
                 Profiler.Done();
             }

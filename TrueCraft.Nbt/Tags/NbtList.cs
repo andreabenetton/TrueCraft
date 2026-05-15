@@ -457,10 +457,17 @@ namespace TrueCraft.Nbt.Tags
 
         internal override void WriteData(NbtBinaryWriter writeStream)
         {
-            if (ListType == NbtTagType.Unknown)
-                throw new NbtFormatException("NbtList had no elements and an Unknown ListType");
+            // An empty list with no declared type is written as TAG_End, matching
+            // Mojang's bit-for-bit output (see fNbt issue #12).
+            var typeToWrite = ListType;
+            if (typeToWrite == NbtTagType.Unknown)
+            {
+                if (_tags.Count > 0)
+                    throw new NbtFormatException("NbtList had elements and an Unknown ListType");
+                typeToWrite = NbtTagType.End;
+            }
 
-            writeStream.Write(ListType);
+            writeStream.Write(typeToWrite);
             writeStream.Write(_tags.Count);
             foreach (var tag in _tags) tag.WriteData(writeStream);
         }

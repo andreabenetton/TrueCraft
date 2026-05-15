@@ -291,6 +291,19 @@ namespace TrueCraft.Nbt.Tags
                 return false;
             }
 
+            readStream.EnterNested();
+            try
+            {
+                return ReadTagBody(readStream);
+            }
+            finally
+            {
+                readStream.ExitNested();
+            }
+        }
+
+        private bool ReadTagBody(NbtBinaryReader readStream)
+        {
             while (true)
             {
                 var nextTag = readStream.ReadTagType();
@@ -364,6 +377,19 @@ namespace TrueCraft.Nbt.Tags
 
 
         internal override void SkipTag(NbtBinaryReader readStream)
+        {
+            readStream.EnterNested();
+            try
+            {
+                SkipTagBody(readStream);
+            }
+            finally
+            {
+                readStream.ExitNested();
+            }
+        }
+
+        private static void SkipTagBody(NbtBinaryReader readStream)
         {
             while (true)
             {

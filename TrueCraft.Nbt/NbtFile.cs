@@ -67,6 +67,13 @@ namespace TrueCraft.Nbt
         public bool UseStandardUtf8 { get; set; }
 
         /// <summary>
+        ///     Maximum allowed nesting depth of compounds and lists during a load.
+        ///     Defaults to 512 to match Mojang's parser limit and to protect against
+        ///     stack-overflow on adversarial input. Set to 0 to disable.
+        /// </summary>
+        public int MaxDepth { get; set; } = 512;
+
+        /// <summary>
         ///     Gets or sets the default value of <c>BufferSize</c> property. Default is 8192.
         ///     Set to 0 to disable buffering by default.
         /// </summary>
@@ -610,7 +617,8 @@ namespace TrueCraft.Nbt
             var reader = new NbtBinaryReader(stream, BigEndian)
             {
                 Selector = tagSelector,
-                UseStandardUtf8 = UseStandardUtf8
+                UseStandardUtf8 = UseStandardUtf8,
+                MaxDepth = MaxDepth
             };
 
             var rootCompound = new NbtCompound(reader.ReadString());

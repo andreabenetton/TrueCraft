@@ -304,6 +304,19 @@ namespace TrueCraft.Nbt.Tags
                 return false;
             }
 
+            readStream.EnterNested();
+            try
+            {
+                return ReadTagBody(readStream);
+            }
+            finally
+            {
+                readStream.ExitNested();
+            }
+        }
+
+        private bool ReadTagBody(NbtBinaryReader readStream)
+        {
             ListType = readStream.ReadTagType();
 
             var length = readStream.ReadInt32();
@@ -364,6 +377,19 @@ namespace TrueCraft.Nbt.Tags
 
 
         internal override void SkipTag(NbtBinaryReader readStream)
+        {
+            readStream.EnterNested();
+            try
+            {
+                SkipTagBody(readStream);
+            }
+            finally
+            {
+                readStream.ExitNested();
+            }
+        }
+
+        private void SkipTagBody(NbtBinaryReader readStream)
         {
             // read list type, and make sure it's defined
             ListType = readStream.ReadTagType();

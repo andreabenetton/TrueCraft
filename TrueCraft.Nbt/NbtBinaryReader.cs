@@ -36,6 +36,34 @@ namespace TrueCraft.Nbt
         /// </summary>
         public bool UseStandardUtf8 { get; set; }
 
+        /// <summary>
+        ///     Maximum allowed nesting depth of compounds and lists during a recursive
+        ///     read. Defaults to 512 to match Mojang's parser limit. Set higher to allow
+        ///     deeper structures; set to 0 to disable.
+        /// </summary>
+        public int MaxDepth { get; set; } = 512;
+
+        /// <summary> Current recursion depth — incremented on entry into a compound or list. </summary>
+        public int Depth { get; private set; }
+
+        /// <summary>
+        ///     Increment recursion depth; throws <see cref="NbtFormatException"/> if the
+        ///     configured <see cref="MaxDepth"/> is exceeded.
+        /// </summary>
+        public void EnterNested()
+        {
+            Depth++;
+            if (MaxDepth > 0 && Depth > MaxDepth)
+                throw new NbtFormatException(
+                    $"NBT nesting depth exceeded MaxDepth = {MaxDepth}");
+        }
+
+        /// <summary> Decrement recursion depth at the matching end of a compound or list. </summary>
+        public void ExitNested()
+        {
+            if (Depth > 0) Depth--;
+        }
+
 
         public NbtTagType ReadTagType()
         {

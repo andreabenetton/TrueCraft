@@ -21,7 +21,6 @@ using System.Threading;
 using TrueCraft.Core.Entities;
 using System.IO;
 using TrueCraft.Nbt;
-using TrueCraft.API.Logging;
 using TrueCraft.API.Logic;
 using TrueCraft.Exceptions;
 using TrueCraft.Nbt.Tags;
@@ -338,7 +337,7 @@ namespace TrueCraft
             }
             catch (Exception ex)
             {
-                Server.Log(LogCategory.Error, "Send loop failed: {0}", ex);
+                Serilog.Log.Error(ex, "Send loop failed");
             }
             finally
             {
@@ -412,7 +411,7 @@ namespace TrueCraft
             }
             catch (Exception ex)
             {
-                Server.Log(LogCategory.Error, "Receive pump failed: {0}", ex);
+                Serilog.Log.Error(ex, "Receive pump failed");
             }
             finally
             {
@@ -461,8 +460,7 @@ namespace TrueCraft
                             }
                             catch (Exception ex)
                             {
-                                Server.Log(LogCategory.Debug, "Disconnecting client due to exception in network worker");
-                                Server.Log(LogCategory.Debug, ex.ToString());
+                                Serilog.Log.Debug(ex, "Disconnecting client due to exception in network worker");
                                 Server.DisconnectClient(this);
                                 return;
                             }
@@ -470,7 +468,7 @@ namespace TrueCraft
                     }
                     catch (NotSupportedException)
                     {
-                        Server.Log(LogCategory.Debug, "Disconnecting client due to unsupported packet received.");
+                        Serilog.Log.Debug("Disconnecting client due to unsupported packet received.");
                         Server.DisconnectClient(this);
                         return;
                     }

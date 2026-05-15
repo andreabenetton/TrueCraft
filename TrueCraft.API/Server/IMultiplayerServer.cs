@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
-using TrueCraft.API.Logging;
 using TrueCraft.API.Logic;
 using TrueCraft.API.Networking;
 using TrueCraft.API.World;
@@ -36,8 +35,6 @@ namespace TrueCraft.API.Server
         void Stop();
         void RegisterPacketHandler(byte packetId, PacketHandler handler);
         void AddWorld(IWorld world);
-        void AddLogProvider(ILogProvider provider);
-        void Log(LogCategory category, string text, params object[] parameters);
         IEntityManager GetEntityManagerForWorld(IWorld world);
         void SendMessage(string message, params object[] parameters);
 

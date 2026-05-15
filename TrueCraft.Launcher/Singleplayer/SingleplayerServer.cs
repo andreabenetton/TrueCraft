@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Configuration;
+using Serilog;
 using TrueCraft.API;
-using TrueCraft.API.Logging;
-using TrueCraft.Core.Logging;
 using TrueCraft.Core.World;
 
 namespace TrueCraft.Launcher.Singleplayer
@@ -29,7 +28,6 @@ namespace TrueCraft.Launcher.Singleplayer
             };
             world.BlockRepository = Server.BlockRepository;
             Server.AddWorld(world);
-            Server.AddLogProvider(new SerilogLogProvider());
         }
 
         public MultiplayerServer Server { get; set; }
@@ -37,7 +35,7 @@ namespace TrueCraft.Launcher.Singleplayer
 
         public void Initialize(ProgressNotification progressNotification = null)
         {
-            Server.Log(LogCategory.Notice, "Generating world around spawn point...");
+            Log.Information("Generating world around spawn point...");
             for (var x = -5; x < 5; x++)
             {
                 for (var z = -5; z < 5; z++)
@@ -45,10 +43,10 @@ namespace TrueCraft.Launcher.Singleplayer
                 var progress = (int) ((x + 5) / 10.0 * 100);
                 progressNotification?.Invoke(progress / 100.0, "Generating world...");
                 if (progress % 10 == 0)
-                    Server.Log(LogCategory.Notice, "{0}% complete", progress + 10);
+                    Log.Information("{Progress}% complete", progress + 10);
             }
 
-            Server.Log(LogCategory.Notice, "Simulating the world for a moment...");
+            Log.Information("Simulating the world for a moment...");
             for (var x = -5; x < 5; x++)
             {
                 for (var z = -5; z < 5; z++)
@@ -68,7 +66,7 @@ namespace TrueCraft.Launcher.Singleplayer
                 var progress = (int) ((x + 5) / 10.0 * 100);
                 progressNotification?.Invoke(progress / 100.0, "Simulating world...");
                 if (progress % 10 == 0)
-                    Server.Log(LogCategory.Notice, "{0}% complete", progress + 10);
+                    Log.Information("{Progress}% complete", progress + 10);
             }
 
             World.Save();

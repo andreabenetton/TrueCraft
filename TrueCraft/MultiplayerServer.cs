@@ -9,7 +9,7 @@ using System.Net;
 using System.Collections.Generic;
 using System.Linq;
 using TrueCraft.API.World;
-using TrueCraft.API.Logging;
+using Serilog;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
@@ -80,7 +80,6 @@ namespace TrueCraft
         private Task AcceptLoopTask;
         private TcpListener Listener;
         private readonly PacketHandler[] PacketHandlers;
-        private IList<ILogProvider> LogProviders;
         private Stopwatch Time;
         private ConcurrentBag<Tuple<IWorld, IChunk>> ChunksToSchedule;
         internal object ClientLock = new object();
@@ -97,7 +96,6 @@ namespace TrueCraft
             PacketHandlers = new PacketHandler[0x100];
             Worlds = new List<IWorld>();
             EntityManagers = new List<IEntityManager>();
-            LogProviders = new List<ILogProvider>();
             Scheduler = new EventScheduler(this);
             var blockRepository = new BlockRepository();
             blockRepository.DiscoverBlockProviders();
@@ -144,7 +142,7 @@ namespace TrueCraft
             AcceptCts = new CancellationTokenSource();
             AcceptLoopTask = Task.Run(() => RunAcceptLoopAsync(AcceptCts.Token));
 
-            Log(LogCategory.Notice, "Running TrueCraft server on {0}", EndPoint);
+            Log.Information("Running TrueCraft server on {EndPoint}", EndPoint);
             EnvironmentCts = new CancellationTokenSource();
             EnvironmentTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(MillisecondsPerTick));
             EnvironmentLoopTask = Task.Run(() => RunEnvironmentLoopAsync(EnvironmentCts.Token));
@@ -311,20 +309,6 @@ namespace TrueCraft
             }
         }
 
-        public void AddLogProvider(ILogProvider provider)
-        {
-            LogProviders.Add(provider);
-        }
-
-        public void Log(LogCategory category, string text, params object[] parameters)
-        {
-            for (int i = 0, LogProvidersCount = LogProviders.Count; i < LogProvidersCount; i++)
-            {
-                var provider = LogProviders[i];
-                provider.Log(category, text, parameters);
-            }
-        }
-
         public IEntityManager GetEntityManagerForWorld(IWorld world)
         {
             for (int i = 0; i < EntityManagers.Count; i++)
@@ -345,7 +329,7 @@ namespace TrueCraft
                 foreach (var part in parts)
                     client.SendMessage(part);
             }
-            Log(LogCategory.Notice, ChatColor.RemoveColors(compiled));
+            Log.Information("{Message}", ChatColor.RemoveColors(compiled));
         }
 
         protected internal void OnChatMessageReceived(ChatMessageEventArgs e)
@@ -417,12 +401,12 @@ namespace TrueCraft
                 {
                     // Transient errors (file descriptor exhaustion, peer aborted before accept, etc.).
                     // Log and continue accepting; don't bring the whole server down on a single accept failure.
-                    Log(LogCategory.Error, "Accept failed: {0}", ex);
+                    Log.Error(ex, "Accept failed");
                     continue;
                 }
                 catch (Exception ex)
                 {
-                    Log(LogCategory.Error, "Accept failed unexpectedly: {0}", ex);
+                    Log.Error(ex, "Accept failed unexpectedly");
                     continue;
                 }
 
@@ -434,8 +418,8 @@ namespace TrueCraft
                 }
                 catch (Exception ex)
                 {
-                    Log(LogCategory.Error, "Client setup failed for {0}: {1}",
-                        socket.RemoteEndPoint?.ToString() ?? "<unknown>", ex);
+                    Log.Error(ex, "Client setup failed for {RemoteEndPoint}",
+                        socket.RemoteEndPoint?.ToString() ?? "<unknown>");
                     try { socket.Close(); } catch (ObjectDisposedException) { }
                 }
             }
@@ -455,7 +439,7 @@ namespace TrueCraft
                     }
                     catch (Exception ex)
                     {
-                        Log(LogCategory.Error, "Environment tick raised: {0}", ex);
+                        Log.Error(ex, "Environment tick raised");
                     }
                 }
             }
@@ -493,7 +477,7 @@ namespace TrueCraft
                         // This space intentionally left blank
                     }
                     if (Time.ElapsedMilliseconds >= limit)
-                        Log(LogCategory.Warning, "Lighting queue is backed up");
+                        Log.Warning("Lighting queue is backed up");
                 }
                 Profiler.Done();
             }

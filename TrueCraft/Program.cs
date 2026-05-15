@@ -1,10 +1,9 @@
 ﻿using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 using TrueCraft.Core.World;
 using TrueCraft.Core.TerrainGen;
-using TrueCraft.Core.Logging;
-using TrueCraft.API.Logging;
 using TrueCraft.API.Server;
 using System.IO;
 using TrueCraft.Commands;
@@ -33,7 +32,6 @@ namespace TrueCraft
             _ = new LoggerService<Program>(NodeConfiguration.Configuration);
 
             Server = new MultiplayerServer();
-            Server.AddLogProvider(new SerilogLogProvider());
 
             var buckets = NodeConfiguration.Debug?.Profiler?.Buckets?.Split(',');
             if (buckets != null)
@@ -66,16 +64,16 @@ namespace TrueCraft
                 world.BlockRepository = Server.BlockRepository;
                 await world.SaveAsync("world");
                 Server.AddWorld(world);
-                Server.Log(LogCategory.Notice, "Generating world around spawn point...");
+                Log.Information("Generating world around spawn point...");
                 for (int x = -5; x < 5; x++)
                 {
                     for (int z = -5; z < 5; z++)
                         world.GetChunk(new Coordinates2D(x, z));
                     int progress = (int)(((x + 5) / 10.0) * 100);
                     if (progress % 10 == 0)
-                        Server.Log(LogCategory.Notice, "{0}% complete", progress + 10);
+                        Log.Information("{Progress}% complete", progress + 10);
                 }
-                Server.Log(LogCategory.Notice, "Simulating the world for a moment...");
+                Log.Information("Simulating the world for a moment...");
                 for (int x = -5; x < 5; x++)
                 {
                     for (int z = -5; z < 5; z++)
@@ -97,9 +95,9 @@ namespace TrueCraft
                     }
                     int progress = (int)(((x + 5) / 10.0) * 100);
                     if (progress % 10 == 0)
-                        Server.Log(LogCategory.Notice, "{0}% complete", progress + 10);
+                        Log.Information("{Progress}% complete", progress + 10);
                 }
-                Server.Log(LogCategory.Notice, "Lighting the world (this will take a moment)...");
+                Log.Information("Lighting the world (this will take a moment)...");
                 foreach (var lighter in Server.WorldLighters)
                 {
                     while (lighter.TryLightNext()) ;
@@ -121,16 +119,16 @@ namespace TrueCraft
 
         static async Task SaveWorldsAsync(IMultiplayerServer server)
         {
-            Server.Log(LogCategory.Notice, "Saving world...");
+            Log.Information("Saving world...");
             try
             {
                 foreach (var w in Server.Worlds)
                     await w.SaveAsync().ConfigureAwait(false);
-                Server.Log(LogCategory.Notice, "Done.");
+                Log.Information("Done.");
             }
             catch (Exception ex)
             {
-                Server.Log(LogCategory.Error, "World save failed: {0}", ex);
+                Log.Error(ex, "World save failed");
             }
             server.Scheduler.ScheduleEvent("world.save", null,
                 TimeSpan.FromSeconds(NodeConfiguration.WorldSaveInterval),

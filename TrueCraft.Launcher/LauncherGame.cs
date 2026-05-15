@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.Core;
 using TrueCraft.Launcher.Entities;
+using TrueCraft.Launcher.Panels;
 using TrueCraft.Launcher.Views;
 
 namespace TrueCraft.Launcher
@@ -47,6 +48,10 @@ namespace TrueCraft.Launcher
         public Panel WelcomePanel { get; private set; }
         public Panel InteractionPanel { get; private set; }
 
+        public SpriteBatch Sprites => _spriteBatch;
+        public int ScreenWidth => _graphics.PreferredBackBufferWidth;
+        public int ScreenHeight => _graphics.PreferredBackBufferHeight;
+
         public static LauncherGame Current => _instance
             ?? throw new InvalidOperationException("LauncherGame not yet constructed");
 
@@ -82,6 +87,7 @@ namespace TrueCraft.Launcher
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             MenuButton.Initialize(this);
             BuildShell();
+            BackgroundManagingPanel.LoadPanelsBackgroundTexture();
             ShowView(new LoginView(this));
             StartSessionKeepAlive();
         }
@@ -89,14 +95,11 @@ namespace TrueCraft.Launcher
         private void BuildShell()
         {
             // Two-column shell: welcome panel on the left, interaction panel on the right.
-            WelcomePanel = new Panel(new Vector2(450, 540), PanelSkin.Default, Anchor.CenterLeft)
-            {
-                Offset = new Vector2(20, 0),
-            };
-            InteractionPanel = new Panel(new Vector2(500, 540), PanelSkin.Default, Anchor.CenterRight)
-            {
-                Offset = new Vector2(20, 0),
-            };
+            // Both are BackgroundManagingPanels so the tiled options_background renders behind them.
+            WelcomePanel = new BackgroundManagingPanel(this, new Vector2(450, 540), PanelSkin.Default,
+                Anchor.CenterLeft, new Vector2(20, 0));
+            InteractionPanel = new BackgroundManagingPanel(this, new Vector2(500, 540), PanelSkin.Default,
+                Anchor.CenterRight, new Vector2(20, 0));
             UserInterface.Active.AddEntity(WelcomePanel);
             UserInterface.Active.AddEntity(InteractionPanel);
             new WelcomeView(this).Mount(WelcomePanel);
@@ -112,9 +115,11 @@ namespace TrueCraft.Launcher
 
         protected override void Draw(GameTime gameTime)
         {
-            // Render the UI to its internal target, clear the backbuffer, blit, draw cursor.
+            // Render the UI to its internal target, clear the backbuffer, tile the panel
+            // backgrounds onto the screen, blit the UI on top, draw cursor.
             UserInterface.Active.Draw(_spriteBatch);
             GraphicsDevice.Clear(new Color(20, 20, 30));
+            BackgroundManagingPanel.DrawPanelsBackground();
             UserInterface.Active.DrawMainRenderTarget(_spriteBatch);
             UserInterface.Active.DrawCursor(_spriteBatch);
             base.Draw(gameTime);

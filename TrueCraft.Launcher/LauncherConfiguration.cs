@@ -1,32 +1,33 @@
-using System.IO;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using TrueCraft.API;
 
 namespace TrueCraft.Launcher
 {
     /// <summary>
-    ///     Reads <c>launchersettings.json</c> from the application directory and
-    ///     configures the global <see cref="Log.Logger"/> from its <c>Serilog</c>
-    ///     section. Designed to run once at startup, before <see cref="LauncherGame"/>
-    ///     is constructed, so every component logs through the same sinks.
+    ///     Strongly-typed launcher configuration, read from <c>launchersettings.json</c>
+    ///     next to the executable. Wires Serilog's global <see cref="Log.Logger"/> from
+    ///     the <c>Serilog</c> section of that file via
+    ///     <see cref="Serilog.Settings.Configuration"/>.
     /// </summary>
-    internal static class LauncherConfiguration
+    public sealed class LauncherConfiguration : BaseConfiguration
     {
         public const string SettingsFileName = "launchersettings.json";
 
-        public static IConfiguration Build()
+        public LauncherConfiguration() : base(SettingsFileName)
         {
-            return new ConfigurationBuilder()
-                .SetBasePath(Path.GetDirectoryName(typeof(LauncherConfiguration).Assembly.Location)
-                             ?? Directory.GetCurrentDirectory())
-                .AddJsonFile(SettingsFileName, optional: true, reloadOnChange: false)
-                .Build();
+            Initialize();
         }
 
-        public static void ConfigureSerilog(IConfiguration configuration)
+        public LauncherConfiguration(IConfiguration configuration) : base(configuration)
+        {
+            Initialize();
+        }
+
+        private void Initialize()
         {
             Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(configuration)
+                .ReadFrom.Configuration(ConfigurationHolder)
                 .CreateLogger();
         }
     }

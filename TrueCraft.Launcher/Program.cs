@@ -9,7 +9,8 @@ namespace TrueCraft.Launcher
         [STAThread]
         public static void Main(string[] args)
         {
-            LauncherConfiguration.ConfigureSerilog(LauncherConfiguration.Build());
+            // Constructing LauncherConfiguration wires Serilog from launchersettings.json.
+            _ = new LauncherConfiguration();
             Log.Information("TrueCraft.Launcher starting");
 
             try

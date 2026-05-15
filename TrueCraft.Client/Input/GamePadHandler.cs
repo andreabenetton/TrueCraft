@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -7,6 +6,8 @@ namespace TrueCraft.Client.Input
 {
     public class GamePadHandler : GameComponent
     {
+        private static readonly Buttons[] AllButtons = (Buttons[]) Enum.GetValues(typeof(Buttons));
+
         public GamePadHandler(Game game) : base(game)
         {
             PlayerIndex = PlayerIndex.One;
@@ -40,19 +41,15 @@ namespace TrueCraft.Client.Input
                 return;
             if (newState.Buttons != oldState.Buttons)
             {
-                var newButtons = Enum.GetValues(typeof(Buttons))
-                    .Cast<Buttons>()
-                    .Where(newState.IsButtonDown);
-                var oldButtons = Enum.GetValues(typeof(Buttons))
-                    .Cast<Buttons>()
-                    .Where(oldState.IsButtonDown);
-
-                var pressed = newButtons.Except(oldButtons).ToArray();
-                var unpressed = oldButtons.Except(newButtons).ToArray();
-
-                foreach (var button in pressed) ButtonDown?.Invoke(this, new GamePadButtonEventArgs {Button = button});
-
-                foreach (var button in unpressed) ButtonUp?.Invoke(this, new GamePadButtonEventArgs {Button = button});
+                foreach (var button in AllButtons)
+                {
+                    var wasDown = oldState.IsButtonDown(button);
+                    var isDown = newState.IsButtonDown(button);
+                    if (isDown && !wasDown)
+                        ButtonDown?.Invoke(this, new GamePadButtonEventArgs { Button = button });
+                    else if (!isDown && wasDown)
+                        ButtonUp?.Invoke(this, new GamePadButtonEventArgs { Button = button });
+                }
             }
         }
     }

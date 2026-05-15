@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Test.TrueCraft.Client" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TrueCraft.API\TrueCraft.API.csproj" />
     <ProjectReference Include="..\TrueCraft.Core\TrueCraft.Core.csproj" />
   </ItemGroup>

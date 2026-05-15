@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -224,9 +223,27 @@ namespace TrueCraft.Client.Rendering
         /// <returns></returns>
         protected virtual BoundingBox RecalculateBounds(VertexPositionNormalColorTexture[] vertices)
         {
-            return new BoundingBox(
-                vertices.Select(v => v.Position).OrderBy(v => v.Length()).First(),
-                vertices.Select(v => v.Position).OrderByDescending(v => v.Length()).First());
+            return ComputeAxisAlignedBounds(vertices);
+        }
+
+        internal static BoundingBox ComputeAxisAlignedBounds(VertexPositionNormalColorTexture[] vertices)
+        {
+            if (vertices == null || vertices.Length == 0)
+                return default;
+
+            var first = vertices[0].Position;
+            float minX = first.X, minY = first.Y, minZ = first.Z;
+            float maxX = first.X, maxY = first.Y, maxZ = first.Z;
+
+            for (var i = 1; i < vertices.Length; i++)
+            {
+                var p = vertices[i].Position;
+                if (p.X < minX) minX = p.X; else if (p.X > maxX) maxX = p.X;
+                if (p.Y < minY) minY = p.Y; else if (p.Y > maxY) maxY = p.Y;
+                if (p.Z < minZ) minZ = p.Z; else if (p.Z > maxZ) maxZ = p.Z;
+            }
+
+            return new BoundingBox(new Vector3(minX, minY, minZ), new Vector3(maxX, maxY, maxZ));
         }
 
         /// <summary>

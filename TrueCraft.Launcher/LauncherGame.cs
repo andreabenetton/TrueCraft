@@ -6,6 +6,7 @@ using GeonBit.UI;
 using GeonBit.UI.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Media;
 using TrueCraft.Core;
 using TrueCraft.Launcher.Entities;
 using TrueCraft.Launcher.Panels;
@@ -28,6 +29,7 @@ namespace TrueCraft.Launcher
         private readonly ConcurrentQueue<Action> _mainThreadActions = new();
         private SpriteBatch _spriteBatch;
         private ILauncherView _currentView;
+        private Song _song;
 
         public LauncherGame()
         {
@@ -90,6 +92,19 @@ namespace TrueCraft.Launcher
             BackgroundManagingPanel.LoadPanelsBackgroundTexture();
             ShowView(new LoginView(this));
             StartSessionKeepAlive();
+
+            // Background music. Content pipeline asset; runtime depends on Beginning_2.xnb
+            // which is part of the deferred MGCB .xnb gap.
+            try
+            {
+                _song = Content.Load<Song>("Beginning_2");
+                MediaPlayer.IsRepeating = true;
+                MediaPlayer.Play(_song);
+            }
+            catch
+            {
+                // No .xnb yet — silent until the content pipeline gap is closed.
+            }
         }
 
         private void BuildShell()

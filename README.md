@@ -1,51 +1,96 @@
-<p align="center">
-    <img src="https://sr.ht/3O-k.png" width="728" />
-</p>
+# TrueCraft
 
-A completely [clean-room](https://en.wikipedia.org/wiki/Clean_room_design) implementation of Minecraft beta 1.7.3 (circa September 2011). No decompiled code has been used in the development of this software. This is an **implementation** - not a clone. TrueCraft is compatible with Minecraft beta 1.7.3 clients and servers.
+A completely [clean-room](https://en.wikipedia.org/wiki/Clean_room_design)
+implementation of Minecraft beta 1.7.3 (circa September 2011). No decompiled
+code has been used in the development of this software. This is an
+**implementation** — not a clone. TrueCraft is compatible with Minecraft beta
+1.7.3 clients and servers.
 
-[![Build Status](https://travis-ci.org/SirCmpwn/TrueCraft.svg?branch=master)](https://travis-ci.org/SirCmpwn/TrueCraft) [![Donate with fosspay](https://drewdevault.com/donate/static/donate-with-fosspay.png)](https://drewdevault.com/donate?project=1)
+> I miss the old days of Minecraft, when it was a simple game. It was nearly
+> perfect. Most of what Mojang has added since beta 1.7.3 is fluff, life
+> support for a game that was "done" years ago. This is my attempt to get back
+> to the original spirit of Minecraft, before there were things like the End,
+> or all-in-one redstone devices, or village gift shops. A simple sandbox where
+> you can build and explore and fight with your friends. I miss that.
+>
+> The goal of this project is effectively to fork Minecraft. Your contribution
+> is welcome, but keep in mind that changes will be evaluated against that
+> vision. If you like the new Minecraft, please feel free to keep playing it.
+> If you miss the old Minecraft, join us.
 
-![](https://sr.ht/87Ov.png)
+— *Drew DeVault, original author*
 
-*Screenshot taken with [Eldpack](http://eldpack.com/)*
+## Repository layout
 
-I miss the old days of Minecraft, when it was a simple game. It was nearly perfect. Most of what Mojang has added since beta 1.7.3 is fluff, life support for a game that was "done" years ago. This is my attempt to get back to the original spirit of Minecraft, before there were things like the End, or all-in-one redstone devices, or village gift shops. A simple sandbox where you can build and explore and fight with your friends. I miss that.
+| Project              | Role                                                                |
+|----------------------|---------------------------------------------------------------------|
+| `TrueCraft`          | The dedicated server.                                               |
+| `TrueCraft.API`      | Public interfaces and value types shared by every other project.    |
+| `TrueCraft.Core`     | Block / item / entity logic, terrain generation, world I/O.         |
+| `TrueCraft.Client`   | MonoGame-based game client (rendering, input, audio, HUD).          |
+| `TrueCraft.Launcher` | MonoGame + [GeonBit.UI](https://github.com/RonenNess/GeonBit.UI) login / world-select shell that spawns the client. |
+| `TrueCraft.Nbt`      | Spec-compliant Java NBT library — see [its README](TrueCraft.Nbt/README.md). |
+| `Test.*`             | xUnit v3 test suites (`Test.TrueCraft.API`, `.Core`, `.Nbt`, `.Client`). |
 
-The goal of this project is effectively to fork Minecraft. Your contribution is welcome, but keep in mind that I will mercilessly reject changes that aren't in line with the vision. If you like the new Minecraft, please feel free to keep playing it. If you miss the old Minecraft, join me.
+## Building
 
-## Compiling
+Requires the [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
+The whole solution is SDK-style; everything else is restored from NuGet.
 
-**Use a recursive git clone.**
+```bash
+git clone https://github.com/andreabenetton/TrueCraft.git
+cd TrueCraft
+dotnet build TrueCraft.sln
+```
 
-    git clone --recursive git://github.com/SirCmpwn/TrueCraft.git
+Run the dedicated server:
 
-You need to restore Nuget packages. The easiest way is to open the solution up in monodevelop or visual studio or the like and build from there. You can alternatively acquire Nuget yourself and run this:
+```bash
+dotnet run --project TrueCraft
+```
 
-    mono path/to/nuget.exe restore
+Run the launcher (which spawns the client when you connect to a world or server):
 
-From the root directory of the git repository. Then run:
+```bash
+dotnet run --project TrueCraft.Launcher
+```
 
-    xbuild
+Run a specific server directly without the launcher:
 
-To compile it and you'll receive binaries in `TrueCraft.Launcher/bin/Debug/`. Run `[mono] TrueCraft.Launcher.exe` to run the client and connect to servers and play singleplayer and so on. Run `[mono] TrueCraft.Server.exe` to host a server for others to play on.
+```bash
+dotnet run --project TrueCraft.Client -- 127.0.0.1:25565 PlayerName -
+```
 
-Note: if you have a problem with nuget connecting, run `mozroots --import --sync`.
+(The three positional args are `<host:port> <username> <sessionId>`. Use `-`
+for an offline session token.)
 
-Note: TrueCraft requires mono 4.0 or newer.
+## Testing
 
-## Get Involved
+```bash
+dotnet test TrueCraft.sln
+```
 
-If you are not a developer, you can keep up with TrueCraft updates and participate in the community on [/r/truecraft](https://reddit.com/r/truecraft), or by joining us to chat in [#truecraft on irc.esper.net](http://webchat.esper.net/?nick=&channels=truecraft).
+xUnit v3 (3.2.2). At the time of writing the suite reports **378 tests** across
+four projects (TrueCraft.API, .Core, .Client, .Nbt).
 
-If you are a developer, you have two paths. If you *have not* read the Minecraft source code, you are what we call a "clean dev", and you should stay that way. If you *have* read the source code, you are what we call a "dirty dev", and the way you can contribute is different. If you are a clean dev, you're welcome to contribute to this repository by adding features and functionality from Minecraft Beta 1.7.3, fixing bugs, refactoring, etc - the usual. [Send pull requests](https://help.github.com/articles/using-pull-requests/) with your work.
+## Contributing
 
-If you are a dirty dev, you are more limited in how you can help. You can work on projects that are related to TrueCraft, but not on TrueCraft itself. Direct contributions that you can participate in includes [the website](https://github.com/SirCmpwn/truecraft.io) and the [artwork](https://github.com/SirCmpwn/TrueCraft/tree/master/TrueCraft.Client/Content). You can also work on things like helping to build a community by spreading the word, participating in IRC or the subreddit, etc. You may also work on reverse engineering Minecraft to provide documentation for clean devs to use - see [reverse engineering guidelines](https://github.com/SirCmpwn/TrueCraft/wiki/Reverse-engineering-guidelines) on the wiki for details on how you can do this. **Under no circumstances may you ever share any code with a clean dev, decompiled or otherwise**.
+Whether you've ever read the Minecraft source code matters: if you *haven't*,
+you are a **clean dev** and may contribute to this repository directly. If you
+*have*, you are a **dirty dev** — please limit yourself to surrounding work
+(community, website, art, reverse-engineering notes) and never share
+decompiled code with a clean dev.
+
+Pull requests are welcome. Prefer small, scoped commits with a clear message;
+do not bundle unrelated fixes (see [CLAUDE.md](CLAUDE.md) for the local commit
+discipline this repository follows).
 
 ## Assets
 
-TrueCraft is compatible with Minecraft beta 1.7.3 texture packs. We ship the Pixeludi Pack (by Wojtek Mroczek) by default. You can install the Mojang assets through the TrueCraft launcher if you wish.
+TrueCraft is compatible with Minecraft beta 1.7.3 texture packs. The default
+pack is the Pixeludi Pack by Wojtek Mroczek. The launcher can also download
+the official Mojang assets if you accept their asset guidelines.
 
-## Blah blah blah
+## Disclaimer
 
-TrueCraft is not associated with Mojang or Minecraft in any sort of official capacity.
+TrueCraft is not associated with Mojang or Minecraft in any official capacity.

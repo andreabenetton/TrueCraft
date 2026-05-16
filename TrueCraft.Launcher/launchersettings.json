@@ -1,14 +1,21 @@
 {
   "Serilog": {
-    "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
+    "Using": [ "Serilog.Sinks.Async", "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
     "MinimumLevel": "Debug",
     "WriteTo": [
-      { "Name": "Console" },
       {
-        "Name": "File",
+        "Name": "Async",
         "Args": {
-          "path": "logs/Truecraft.Launcher..log",
-          "rollingInterval": "Day"
+          "configure": [
+            { "Name": "Console" },
+            {
+              "Name": "File",
+              "Args": {
+                "path": "logs/Truecraft.Launcher..log",
+                "rollingInterval": "Day"
+              }
+            }
+          ]
         }
       }
     ],

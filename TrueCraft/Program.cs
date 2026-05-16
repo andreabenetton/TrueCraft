@@ -15,6 +15,7 @@ using TrueCraft.API.World;
 using System;
 using TrueCraft.API;
 using TrueCraft.Core.Profiling;
+using TrueCraft.Options;
 
 namespace TrueCraft
 {
@@ -41,6 +42,16 @@ namespace TrueCraft
             services.AddSerilogLogging(NodeConfiguration.Configuration);
             services.AddSingleton(NodeConfiguration);
             services.AddSingleton<IConfiguration>(NodeConfiguration.Configuration);
+
+            services.AddOptions<NodeOptions>()
+                .Bind(NodeConfiguration.Configuration.GetSection(NodeOptions.SectionName));
+            services.AddOptions<DebugOptions>()
+                .Bind(NodeConfiguration.Configuration.GetSection(DebugOptions.SectionName));
+            services.AddOptions<ProfilerOptions>()
+                .Bind(NodeConfiguration.Configuration.GetSection(ProfilerOptions.SectionName));
+            services.AddOptions<AccessOptions>()
+                .Bind(NodeConfiguration.Configuration.GetSection(AccessOptions.SectionName));
+
             services.AddSingleton<Profiler>();
             services.AddSingleton<IBlockRepository>(_ =>
             {

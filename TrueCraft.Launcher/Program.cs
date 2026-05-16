@@ -7,6 +7,7 @@ using TrueCraft.Core;
 using TrueCraft.Core.Logic;
 using TrueCraft.Core.Profiling;
 using TrueCraft;
+using TrueCraft.Options;
 
 namespace TrueCraft.Launcher
 {
@@ -24,6 +25,20 @@ namespace TrueCraft.Launcher
             services.AddSerilogLogging(launcherConfig.Configuration);
             services.AddSingleton(launcherConfig);
             services.AddSingleton<IConfiguration>(launcherConfig.Configuration);
+
+            // Launcher runs an embedded singleplayer server — bake the singleplayer
+            // overrides into NodeOptions directly. No file source needed since
+            // launchersettings.json has no Configuration section.
+            services.AddOptions<NodeOptions>().Configure(opts =>
+            {
+                opts.Singleplayer = true;
+                opts.Query = false;
+                opts.MOTD = null;
+            });
+            services.AddOptions<DebugOptions>();
+            services.AddOptions<ProfilerOptions>();
+            services.AddOptions<AccessOptions>();
+
             services.AddSingleton<Profiler>();
             services.AddSingleton<IBlockRepository>(_ =>
             {

@@ -93,6 +93,7 @@ public sealed class LauncherGame : Game
 
         var assetsPath = Path.Combine(AppContext.BaseDirectory, ThemeFolder);
         _renderer = new MonoGameRenderer(Content, GraphicsDevice, _spriteBatch, assetsPath);
+        RegisterThemeFonts(assetsPath);
         _input = new MonoGameInput();
         _ui = new UISystem(Path.Combine(assetsPath, "system_style.json"), _renderer, _input);
 
@@ -124,6 +125,23 @@ public sealed class LauncherGame : Game
         catch
         {
             // Music failure is non-fatal — launcher continues silently.
+        }
+    }
+
+    /// <summary>
+    ///     Load every TTF in the theme's Fonts/ subdirectory and register it with
+    ///     the renderer under its file stem (e.g. "AnonymousPro-Regular"). Theme
+    ///     stylesheets that set <c>FontIdentifier</c> to one of these stems then
+    ///     render with the matching font; unknown ids fall back to the renderer's
+    ///     embedded default (Open Sans).
+    /// </summary>
+    private void RegisterThemeFonts(string assetsPath)
+    {
+        var fontDir = Path.Combine(assetsPath, "Fonts");
+        if (!Directory.Exists(fontDir)) return;
+        foreach (var ttf in Directory.EnumerateFiles(fontDir, "*.ttf"))
+        {
+            _renderer.RegisterFont(Path.GetFileNameWithoutExtension(ttf), ttf);
         }
     }
 

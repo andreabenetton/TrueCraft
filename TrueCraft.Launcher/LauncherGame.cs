@@ -59,6 +59,12 @@ public sealed class LauncherGame : Game
     public Panel InteractionPanel { get; private set; }
     public UISystem UI => _ui;
 
+    /// <summary>
+    ///     Exposed so views can register runtime-decoded textures (e.g. texture-pack
+    ///     previews) by id before drawing them via an <see cref="Iguina.Entities.Image"/>.
+    /// </summary>
+    public MonoGameRenderer Renderer => _renderer;
+
     public SpriteBatch Sprites => _spriteBatch;
     public int ScreenWidth => _graphics.PreferredBackBufferWidth;
     public int ScreenHeight => _graphics.PreferredBackBufferHeight;

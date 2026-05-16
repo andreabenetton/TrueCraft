@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Iguina.Defs;
 using Iguina.Entities;
+using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.Core;
 
 namespace TrueCraft.Launcher.Views;
@@ -16,10 +17,14 @@ public sealed class OptionView : ILauncherView
     private readonly LauncherGame _game;
     private readonly List<TexturePack> _texturePacks = new();
 
+    private const string PreviewTextureId = "tcraft:texturepack:preview";
+
     private DropDown _resolutionDropDown;
     private Checkbox _fullscreenCheckBox;
     private Checkbox _invertMouseCheckBox;
     private ListBox _texturePackList;
+    private Image _texturePackPreview;
+    private Texture2D _currentPreview;
     private Button _openFolderButton;
     private Button _officialAssetsButton;
     private ProgressBar _officialAssetsProgress;
@@ -90,6 +95,12 @@ public sealed class OptionView : ILauncherView
         _texturePackList.Events.OnValueChanged = _ => OnTexturePackChanged();
         parent.AddChild(_texturePackList);
 
+        _texturePackPreview = new Image(_game.UI, PreviewTextureId) { Anchor = Anchor.AutoCenter };
+        _texturePackPreview.Size.X.SetPixels(96);
+        _texturePackPreview.Size.Y.SetPixels(96);
+        _texturePackPreview.Visible = false;
+        parent.AddChild(_texturePackPreview);
+
         _openFolderButton = new Button(_game.UI, "Open texture pack folder")
         {
             Anchor = Anchor.AutoCenter,
@@ -128,6 +139,31 @@ public sealed class OptionView : ILauncherView
         var pack = _texturePacks[idx];
         UserSettings.Local.SelectedTexturePack = pack.Name;
         UserSettings.Local.Save();
+        UpdatePreview(pack);
+    }
+
+    private void UpdatePreview(TexturePack pack)
+    {
+        if (pack?.Image is null)
+        {
+            _texturePackPreview.Visible = false;
+            return;
+        }
+        try
+        {
+            // pack.Image is a shared stream — reset before reading.
+            if (pack.Image.CanSeek) pack.Image.Seek(0, SeekOrigin.Begin);
+            var next = Texture2D.FromStream(_game.GraphicsDevice, pack.Image);
+            _game.Renderer.RegisterTexture(PreviewTextureId, next);
+            _currentPreview?.Dispose();
+            _currentPreview = next;
+            _texturePackPreview.Visible = true;
+        }
+        catch
+        {
+            // best effort — hide the preview rather than show a stale texture.
+            _texturePackPreview.Visible = false;
+        }
     }
 
     private void OpenTexturePackFolder()
@@ -258,5 +294,10 @@ public sealed class OptionView : ILauncherView
         }
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        _game.Renderer.UnregisterTexture(PreviewTextureId);
+        _currentPreview?.Dispose();
+        _currentPreview = null;
+    }
 }

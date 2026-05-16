@@ -74,6 +74,35 @@ namespace Iguina.Demo.MonoGame
         }
 
         /// <summary>
+        /// Register a runtime-loaded <see cref="Texture2D"/> under a texture id so
+        /// subsequent <c>DrawTexture(null, id, ...)</c> calls find it without going
+        /// to disk. The caller retains ownership; replacing an existing id does
+        /// not dispose the previous texture.
+        /// </summary>
+        public void RegisterTexture(string id, Texture2D texture)
+        {
+            _textures[id] = texture;
+        }
+
+        /// <summary>
+        /// Remove a texture id from the cache. Does not dispose the underlying
+        /// <see cref="Texture2D"/> — that remains the caller's responsibility.
+        /// </summary>
+        public void UnregisterTexture(string id)
+        {
+            _textures.Remove(id);
+        }
+
+        /// <summary>
+        /// Return the (Width, Height) of a registered or disk-loaded texture in pixels.
+        /// </summary>
+        public Point GetTextureSize(string id)
+        {
+            var t = GetTexture(id);
+            return new Point(t.Width, t.Height);
+        }
+
+        /// <summary>
         /// Load / get effect from id.
         /// </summary>
         Effect? GetEffect(string? effectId)

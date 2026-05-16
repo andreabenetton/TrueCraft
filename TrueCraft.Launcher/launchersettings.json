@@ -25,7 +25,7 @@
               "Args": {
                 "path": "logs/Truecraft.Launcher..log",
                 "rollingInterval": "Day",
-                "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [Thread {ThreadId}] {SourceContext}: {Message:lj} {Properties:j}{NewLine}{Exception}"
+                "formatter": "Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact"
               }
             }
           ]

@@ -265,9 +265,8 @@ namespace TrueCraft.Commands
                 return;
             }
             client.SendMessage($"{entity.GetType().Name} {entity.Position}");
-            if (entity is MobEntity)
+            if (entity is MobEntity mob)
             {
-                var mob = entity as MobEntity;
                 var stateName = mob.CurrentState?.GetType().Name ?? "null";
                 var waypoint = mob.CurrentPath?.Waypoints.Last().ToString() ?? "null";
                 client.SendMessage($"{mob.Health}/{mob.MaxHealth} HP, {stateName} State, moving to to {waypoint}");

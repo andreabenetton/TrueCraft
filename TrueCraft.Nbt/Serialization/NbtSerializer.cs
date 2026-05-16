@@ -162,9 +162,8 @@ namespace TrueCraft.Nbt.Serialization
                 return ((NbtShort) value).Value;
             if (value is NbtString)
                 return ((NbtString) value).Value;
-            if (value is NbtList)
+            if (value is NbtList list)
             {
-                var list = (NbtList) value;
                 var type = typeof(object);
                 if (list.ListType == NbtTagType.Byte)
                 {

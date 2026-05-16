@@ -265,8 +265,8 @@ namespace TrueCraft.Core.Logic
         protected virtual ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
         {
             short meta;
-            if (this is ICraftingRecipe)
-                meta = (short) (((ICraftingRecipe) this).SignificantMetadata ? descriptor.Metadata : 0);
+            if (this is ICraftingRecipe recipe)
+                meta = (short) (recipe.SignificantMetadata ? descriptor.Metadata : 0);
             else
                 meta = descriptor.Metadata;
             return new[] {new ItemStack(descriptor.ID, 1, meta)};

@@ -98,9 +98,9 @@ namespace TrueCraft
                     client.KnownEntities.Remove(knownEntity);
                     i--;
                     // Make sure you're despawned on other clients if you move away from stationary players
-                    if (knownEntity is PlayerEntity)
+                    if (knownEntity is PlayerEntity knownPlayer)
                     {
-                        var c = (RemoteClient)GetClientForEntity(knownEntity as PlayerEntity);
+                        var c = (RemoteClient)GetClientForEntity(knownPlayer);
                         if (c.KnownEntities.Contains(entity))
                         {
                             c.KnownEntities.Remove(entity);
@@ -119,9 +119,9 @@ namespace TrueCraft
                 {
                     SendEntityToClient(client, e);
                     // Make sure other players know about you since you've moved
-                    if (e is PlayerEntity)
+                    if (e is PlayerEntity ePlayer)
                     {
-                        var c = (RemoteClient)GetClientForEntity(e as PlayerEntity);
+                        var c = (RemoteClient)GetClientForEntity(ePlayer);
                         if (!c.KnownEntities.Contains(entity))
                             SendEntityToClient(c, entity);
                     }
@@ -181,13 +181,12 @@ namespace TrueCraft
                 return; // We haven't finished setting this entity up yet
             client.Log("Spawning entity {0} ({1}) at {2}", entity.EntityID, entity.GetType().Name, (Coordinates3D)entity.Position);
             RemoteClient spawnedClient = null;
-            if (entity is PlayerEntity)
-                spawnedClient = (RemoteClient)GetClientForEntity(entity as PlayerEntity);
+            if (entity is PlayerEntity entityPlayer)
+                spawnedClient = (RemoteClient)GetClientForEntity(entityPlayer);
             client.KnownEntities.Add(entity);
             client.QueuePacket(entity.SpawnPacket);
-            if (entity is IPhysicsEntity)
+            if (entity is IPhysicsEntity pentity)
             {
-                var pentity = entity as IPhysicsEntity;
                 client.QueuePacket(new EntityVelocityPacket
                     {
                         EntityID = entity.EntityID,
@@ -245,14 +244,14 @@ namespace TrueCraft
             }
             foreach (var clientEntity in GetEntitiesInRange(entity, 8)) // Note: 8 is pretty arbitrary here
             {
-                if (clientEntity != entity && clientEntity is PlayerEntity)
+                if (clientEntity != entity && clientEntity is PlayerEntity clientPlayer)
                 {
-                    var client = (RemoteClient)GetClientForEntity((PlayerEntity)clientEntity);
+                    var client = (RemoteClient)GetClientForEntity(clientPlayer);
                     SendEntityToClient(client, entity);
                 }
             }
-            if (entity is IPhysicsEntity)
-                PhysicsEngine.AddEntity(entity as IPhysicsEntity);
+            if (entity is IPhysicsEntity physEntity)
+                PhysicsEngine.AddEntity(physEntity);
         }
 
         public void DespawnEntity(IEntity entity)

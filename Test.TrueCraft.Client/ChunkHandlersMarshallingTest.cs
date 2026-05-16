@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging.Abstractions;
 using TrueCraft.Client;
 using TrueCraft.Client.Handlers;
 using TrueCraft.Core;
@@ -10,10 +11,13 @@ namespace Test.TrueCraft.Client
 {
     public class ChunkHandlersMarshallingTest
     {
+        private static PacketHandlers NullHandlers() =>
+            new PacketHandlers(NullLogger<PacketHandlers>.Instance);
+
         [Fact]
         public void BlockChangeIsDeferredWhenMarshallerIsSet()
         {
-            var client = new MultiplayerClient(new TrueCraftUser { Username = "test" });
+            var client = new MultiplayerClient(new TrueCraftUser { Username = "test" }, NullHandlers());
             var deferred = new List<Action>();
             client.MainThreadInvoke = deferred.Add;
 
@@ -26,7 +30,7 @@ namespace Test.TrueCraft.Client
         [Fact]
         public void ChunkPreambleIsDeferredWhenMarshallerIsSet()
         {
-            var client = new MultiplayerClient(new TrueCraftUser { Username = "test" });
+            var client = new MultiplayerClient(new TrueCraftUser { Username = "test" }, NullHandlers());
             var deferred = new List<Action>();
             client.MainThreadInvoke = deferred.Add;
 
@@ -39,7 +43,7 @@ namespace Test.TrueCraft.Client
         [Fact]
         public void HandlerRunsInlineWhenNoMarshallerIsSet()
         {
-            var client = new MultiplayerClient(new TrueCraftUser { Username = "test" });
+            var client = new MultiplayerClient(new TrueCraftUser { Username = "test" }, NullHandlers());
             // MainThreadInvoke deliberately null.
 
             // With no chunk loaded, the inner action returns silently.

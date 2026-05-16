@@ -9,7 +9,7 @@ using TrueCraft.Core.Networking.Packets;
 
 namespace TrueCraft.Client.Handlers
 {
-    internal class PacketHandlers
+    public class PacketHandlers
     {
         private readonly ILogger<PacketHandlers> _log;
 

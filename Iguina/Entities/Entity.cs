@@ -2234,5 +2234,13 @@ namespace Iguina.Entities
         /// Called every frame this entity is actively being dragged.
         /// </summary>
         public EntityEvent? WhileDragging;
+
+        /// <summary>
+        /// Called when this entity gains or loses focus (when UISystem.FocusedEntity
+        /// transitions to or away from this entity). Fired on both the leaving and
+        /// the gaining entity in the same Update frame, plus once on the
+        /// UISystem-level event for global listeners.
+        /// </summary>
+        public EntityEvent? OnFocusChange;
     }
 }

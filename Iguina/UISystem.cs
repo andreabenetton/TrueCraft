@@ -534,9 +534,22 @@ namespace Iguina
                 return true;
             });
 
+            // OnFocusChange — fires on both the leaving entity and the gaining
+            // entity exactly once per transition. Caller sees consistent
+            // before/after pairs.
+            if (_previousFocusedEntity != FocusedEntity)
+            {
+                _previousFocusedEntity?.Events.OnFocusChange?.Invoke(_previousFocusedEntity);
+                FocusedEntity?.Events.OnFocusChange?.Invoke(FocusedEntity);
+                Events.OnFocusChange?.Invoke(FocusedEntity!);
+                _previousFocusedEntity = FocusedEntity;
+            }
+
             // dispatch tooltip state
             UpdateTooltip(deltaTime, cp);
         }
+
+        Entity? _previousFocusedEntity;
 
         /// <summary>
         /// Show / hide / position the tooltip popup based on the currently targeted

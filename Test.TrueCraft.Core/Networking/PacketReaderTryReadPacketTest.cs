@@ -37,7 +37,7 @@ namespace Test.TrueCraft.Core.Networking
         public void EmptySequence_ReturnsFalse()
         {
             var (reader, _, _, _) = Setup();
-            var buffer = new ReadOnlySequence<byte>(Array.Empty<byte>());
+            var buffer = new ReadOnlySequence<byte>([]);
 
             var ok = reader.TryReadPacket(ref buffer, out var packet);
 

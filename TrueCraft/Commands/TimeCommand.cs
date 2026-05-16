@@ -40,7 +40,7 @@ namespace TrueCraft.Commands
 
                     client.World.Time = newTime;
 
-                    client.SendMessage(string.Format("Setting time to {0}", arguments[1]));
+                    client.SendMessage($"Setting time to {arguments[1]}");
 
                     foreach (var remoteClient in client.Server.Clients.Where(c => c.World.Equals(client.World)))
                         remoteClient.QueuePacket(new TimeUpdatePacket(newTime));

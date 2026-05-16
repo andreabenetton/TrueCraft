@@ -213,8 +213,7 @@ namespace TrueCraft.Commands
                 }
                 else
                 {
-                    client.SendMessage(string.Format(ChatColor.Blue
-                        + "Executing path with {0} waypoints", path.Waypoints.Count()));
+                    client.SendMessage($"{ChatColor.Blue}Executing path with {path.Waypoints.Count()} waypoints");
                     entity.CurrentPath = path;
                 }
             });
@@ -265,16 +264,13 @@ namespace TrueCraft.Commands
                 client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
                 return;
             }
-            client.SendMessage(string.Format(
-                "{0} {1}", entity.GetType().Name, entity.Position));
+            client.SendMessage($"{entity.GetType().Name} {entity.Position}");
             if (entity is MobEntity)
             {
                 var mob = entity as MobEntity;
-                client.SendMessage(string.Format(
-                    "{0}/{1} HP, {2} State, moving to to {3}",
-                    mob.Health, mob.MaxHealth,
-                    mob.CurrentState?.GetType().Name ?? "null",
-                    mob.CurrentPath?.Waypoints.Last().ToString() ?? "null"));
+                var stateName = mob.CurrentState?.GetType().Name ?? "null";
+                var waypoint = mob.CurrentPath?.Waypoints.Last().ToString() ?? "null";
+                client.SendMessage($"{mob.Health}/{mob.MaxHealth} HP, {stateName} State, moving to to {waypoint}");
             }
         }
 

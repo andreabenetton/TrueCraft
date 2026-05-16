@@ -179,8 +179,7 @@ namespace TrueCraft.Launcher
                     var user = Current.User;
                     if (!string.IsNullOrEmpty(user?.SessionId) && user.SessionId != "-")
                     {
-                        var url = string.Format(TrueCraftUser.AuthServer + "/session?name={0}&session={1}",
-                            user.Username, user.SessionId);
+                        var url = $"{TrueCraftUser.AuthServer}/session?name={user.Username}&session={user.SessionId}";
                         SessionClient.GetStringAsync(url).GetAwaiter().GetResult();
                     }
                 }

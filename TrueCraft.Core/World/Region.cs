@@ -378,7 +378,7 @@ namespace TrueCraft.Core.World
 
         public static string GetRegionFileName(Coordinates2D position)
         {
-            return string.Format("r.{0}.{1}.mca", position.X, position.Z);
+            return $"r.{position.X}.{position.Z}.mca";
         }
 
         #region Stream Helpers

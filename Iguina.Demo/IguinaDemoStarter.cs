@@ -279,7 +279,7 @@ The small box in the corner is draggable too:"));
                     btn.Events.OnClick += (Entity entity) =>
                     {
                         clicksCount++;
-                        btn.Paragraph.Text = "Thanks x " + clicksCount;
+                        btn.Paragraph.Text = $"Thanks x {clicksCount}";
                     };
                 }
 
@@ -460,7 +460,7 @@ PS. you can also change the way words wrap when exceeding the parent width."));
                     selectedParagraph.Text = "Selected Class: None";
                     listbox.Events.OnValueChanged = (Entity entity) =>
                     {
-                        selectedParagraph.Text = "Selected Class: " + (listbox.SelectedValue ?? "None");
+                        selectedParagraph.Text = $"Selected Class: {listbox.SelectedValue ?? "None"}";
                     };
                 }
             }
@@ -505,7 +505,7 @@ PS. you can also change the way words wrap when exceeding the parent width."));
                     selectedParagraph.Text = "Selected Class: None";
                     dropdown.Events.OnValueChanged = (Entity entity) =>
                     {
-                        selectedParagraph.Text = "Selected Class: " + (dropdown.SelectedValue ?? "None");
+                        selectedParagraph.Text = $"Selected Class: {dropdown.SelectedValue ?? "None"}";
                     };
                 }
             }

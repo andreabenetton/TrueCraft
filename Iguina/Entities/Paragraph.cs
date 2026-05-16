@@ -236,7 +236,7 @@ namespace Iguina.Entities
                     {
                         if (ExceptionOnInvalidStyleCommands)
                         {
-                            throw new FormatException("Illegal style command: " + command);
+                            throw new FormatException($"Illegal style command: {command}");
                         }
                         continue;
                     }
@@ -308,14 +308,14 @@ namespace Iguina.Entities
                     {
                         if (ExceptionOnInvalidStyleCommands)
                         {
-                            throw new FormatException("Illegal style command value: " + command, e);
+                            throw new FormatException($"Illegal style command value: {command}", e);
                         }
                     }
 
                     // sanity - check number of values
                     if (ExceptionOnInvalidStyleCommands && ((split.Length - 1) != expectedValuesCount))
                     {
-                        throw new FormatException("Illegal number of values for command: " + command);
+                        throw new FormatException($"Illegal number of values for command: {command}");
                     }
                 }
 

@@ -105,7 +105,7 @@ namespace Iguina.Entities
             foreach (var item in items)
             {
                 // Label suffix '▶' makes cascade parents visually distinct from leaves.
-                var displayLabel = item.SubItems is not null ? item.Label + "  ▶" : item.Label;
+                var displayLabel = item.SubItems is not null ? $"{item.Label}  ▶" : item.Label;
                 var entryButton = new Button(UISystem, displayLabel)
                 {
                     Anchor = Anchor.AutoLTR,

@@ -23,11 +23,18 @@ namespace Iguina.Demo.MonoGame
         Texture2D _whiteTexture;
 
         /// <summary>
-        /// Font registry keyed by font id. The empty/null/default key resolves to
-        /// <c>default_font</c>, which is embedded in this assembly; additional
-        /// families are added at runtime via <see cref="RegisterFont(string, byte[])"/>.
+        /// TTF/OTF font registry. Lookups in <see cref="GetFont"/> consult
+        /// <see cref="_staticFonts"/> first and fall back here.
         /// </summary>
         Dictionary<string, FontSystem> _fontSystems = new();
+
+        /// <summary>
+        /// Pre-rasterized BMFont registry — entries here are returned as-is by
+        /// <see cref="GetFont"/> ignoring the stylesheet's FontSize (bitmap glyphs
+        /// have a baked-in size; scaling would defeat the point of using one).
+        /// </summary>
+        Dictionary<string, SpriteFontBase> _staticFonts = new();
+
         const string DefaultFontId = "default_font";
 
         Dictionary<string, Texture2D> _textures = new();
@@ -90,13 +97,32 @@ namespace Iguina.Demo.MonoGame
         }
 
         /// <summary>
-        /// Get a <see cref="DynamicSpriteFont"/> at the requested pixel size. Looks up
-        /// the registered font family by <paramref name="fontName"/>; falls back to
-        /// the default font (Open Sans) for unknown ids or null.
+        /// Register a pre-rasterized BMFont under <paramref name="fontId"/>. The
+        /// .fnt is read from <paramref name="fntPath"/>; referenced PNG pages are
+        /// opened from the same directory. Bitmap fonts ignore the stylesheet
+        /// FontSize and render at their baked-in size for pixel-perfect output.
         /// </summary>
-        DynamicSpriteFont GetFont(string? fontName, int fontSize)
+        public void RegisterBMFont(string fontId, string fntPath)
+        {
+            var data = File.ReadAllText(fntPath);
+            var dir = Path.GetDirectoryName(Path.GetFullPath(fntPath)) ?? string.Empty;
+            var staticFont = StaticSpriteFont.FromBMFont(
+                data,
+                fileName => File.OpenRead(Path.Combine(dir, fileName)),
+                _device);
+            _staticFonts[fontId] = staticFont;
+        }
+
+        /// <summary>
+        /// Resolve a font id to a <see cref="SpriteFontBase"/>. Static (BMFont)
+        /// entries win over dynamic (TTF); unknown ids fall back to the embedded
+        /// default font.
+        /// </summary>
+        SpriteFontBase GetFont(string? fontName, int fontSize)
         {
             var key = fontName ?? DefaultFontId;
+            if (_staticFonts.TryGetValue(key, out var staticFont))
+                return staticFont;
             if (!_fontSystems.TryGetValue(key, out var system))
                 system = _fontSystems[DefaultFontId];
             return system.GetFont(fontSize * GlobalTextScale);

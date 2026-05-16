@@ -129,11 +129,11 @@ public sealed class LauncherGame : Game
     }
 
     /// <summary>
-    ///     Load every TTF in the theme's Fonts/ subdirectory and register it with
-    ///     the renderer under its file stem (e.g. "AnonymousPro-Regular"). Theme
-    ///     stylesheets that set <c>FontIdentifier</c> to one of these stems then
-    ///     render with the matching font; unknown ids fall back to the renderer's
-    ///     embedded default (Open Sans).
+    ///     Load every TTF and BMFont (.fnt) in the theme's Fonts/ subdirectory
+    ///     and register each with the renderer under its file stem (e.g.
+    ///     "Pixel_Regular"). Theme stylesheets that set <c>FontIdentifier</c>
+    ///     to one of these stems then render with the matching font; unknown
+    ///     ids fall back to the renderer's embedded default (Open Sans).
     /// </summary>
     private void RegisterThemeFonts(string assetsPath)
     {
@@ -142,6 +142,10 @@ public sealed class LauncherGame : Game
         foreach (var ttf in Directory.EnumerateFiles(fontDir, "*.ttf"))
         {
             _renderer.RegisterFont(Path.GetFileNameWithoutExtension(ttf), ttf);
+        }
+        foreach (var fnt in Directory.EnumerateFiles(fontDir, "*.fnt"))
+        {
+            _renderer.RegisterBMFont(Path.GetFileNameWithoutExtension(fnt), fnt);
         }
     }
 

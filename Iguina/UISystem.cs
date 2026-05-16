@@ -323,6 +323,35 @@ namespace Iguina
         }
 
         /// <summary>
+        /// Convenience bootstrap: construct a UISystem from one of the
+        /// <see cref="BuiltinThemes"/> bundled with Iguina. <paramref name="themesRoot"/>
+        /// is the directory containing the theme subdirectories (e.g. a launcher's
+        /// <c>IguinaTheme/</c> output folder or the source <c>Iguina.LowResTheme/</c>
+        /// in the repo). The enum value names the subdirectory whose
+        /// <c>system_style.json</c> is loaded.
+        ///
+        /// Equivalent to <c>new UISystem(Path.Combine(themesRoot, "LowRes/system_style.json"), …)</c>
+        /// for the <see cref="BuiltinThemes.LowRes"/> case — exists so callers can
+        /// pick by enum rather than hard-coding the relative path.
+        /// </summary>
+        public static UISystem LoadBuiltinTheme(BuiltinThemes theme, string themesRoot, IRenderer renderer, IInputProvider input, IFilesProvider? filesReader = null)
+        {
+            var subdir = theme switch
+            {
+                BuiltinThemes.LowRes => "LowRes",
+                _ => theme.ToString(),
+            };
+            // The repo's vendored LowRes theme sits at a flat top-level root, so
+            // first try <themesRoot>/system_style.json (single-theme layouts);
+            // if that's missing, fall back to <themesRoot>/<EnumName>/system_style.json
+            // (multi-theme layouts).
+            var flat = System.IO.Path.Combine(themesRoot, "system_style.json");
+            var nested = System.IO.Path.Combine(themesRoot, subdir, "system_style.json");
+            var chosen = System.IO.File.Exists(nested) ? nested : flat;
+            return new UISystem(chosen, renderer, input, filesReader);
+        }
+
+        /// <summary>
         /// Switch the active theme by reloading <c>system_style.json</c> and all
         /// stylesheets it references. The new defaults take effect for entities
         /// created after this call; existing entities keep the stylesheet they

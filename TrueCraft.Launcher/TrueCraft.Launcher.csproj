@@ -41,6 +41,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="launchersettings.json" CopyToOutputDirectory="Always" />
+
+    <!--
+      Link the Iguina.LowResTheme sibling directory into the launcher's output
+      at the path LauncherGame.LoadContent expects (IguinaTheme/system_style.json).
+      The theme is a self-contained pile of PNGs + Iguina JSON stylesheets;
+      see Iguina.LowResTheme/README.md for provenance.
+    -->
+    <None Include="..\Iguina.LowResTheme\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>IguinaTheme\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
 </Project>

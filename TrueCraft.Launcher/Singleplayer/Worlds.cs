@@ -12,7 +12,12 @@ namespace TrueCraft.Launcher.Singleplayer
 {
     public class Worlds
     {
-        private static ILogger Log => App.LoggerFor<Worlds>();
+        private readonly ILogger<Worlds> Log;
+
+        public Worlds(ILogger<Worlds> log)
+        {
+            Log = log;
+        }
 
         public static Worlds Local { get; set; }
 

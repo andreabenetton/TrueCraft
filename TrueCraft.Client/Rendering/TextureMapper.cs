@@ -13,7 +13,7 @@ namespace TrueCraft.Client.Rendering
     /// </summary>
     public sealed class TextureMapper : IDisposable
     {
-        private static ILogger Log => App.LoggerFor<TextureMapper>();
+        private readonly ILogger<TextureMapper> Log;
 
         /// <summary>
         /// </summary>
@@ -23,9 +23,10 @@ namespace TrueCraft.Client.Rendering
         /// <summary>
         /// </summary>
         /// <param name="graphicsDevice"></param>
-        public TextureMapper(GraphicsDevice graphicsDevice)
+        public TextureMapper(GraphicsDevice graphicsDevice, ILogger<TextureMapper> log)
         {
             Device = graphicsDevice ?? throw new ArgumentException();
+            Log = log;
             Customs = new Dictionary<string, Texture2D>();
             IsDisposed = false;
         }

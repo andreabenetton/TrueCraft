@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using GeonBit.UI.Entities;
 using GeonBit.UI.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
+using TrueCraft;
 using TrueCraft.Launcher.Entities;
 using TrueCraft.Launcher.Singleplayer;
 
@@ -27,7 +29,7 @@ namespace TrueCraft.Launcher.Views
         public SingleplayerView(LauncherGame game)
         {
             _game = game;
-            Worlds.Local = new Worlds();
+            Worlds.Local = ActivatorUtilities.CreateInstance<Worlds>(App.Services);
             Worlds.Local.Load();
         }
 
@@ -98,7 +100,8 @@ namespace TrueCraft.Launcher.Views
             var idx = _worldList.SelectedIndex;
             if (idx < 0) return;
 
-            _server = new SingleplayerServer(Worlds.Local.Saves[idx]);
+            _server = ActivatorUtilities.CreateInstance<SingleplayerServer>(
+                App.Services, Worlds.Local.Saves[idx]);
             SetInteractive(false);
             _progressBar.Visible = true;
             _progressLabel.Visible = true;

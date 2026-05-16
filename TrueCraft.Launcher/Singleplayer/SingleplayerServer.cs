@@ -1,5 +1,4 @@
 using System.Net;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TrueCraft.API;
 using TrueCraft.Core.World;
@@ -8,17 +7,18 @@ namespace TrueCraft.Launcher.Singleplayer
 {
     public class SingleplayerServer
     {
-        private static ILogger Log => App.LoggerFor<SingleplayerServer>();
+        private readonly ILogger<SingleplayerServer> Log;
 
         public delegate void ProgressNotification(double progress, string stage);
 
-        public SingleplayerServer(World world)
+        public SingleplayerServer(World world, MultiplayerServer server, ILogger<SingleplayerServer> log)
         {
-            World = world;
             // The launcher's DI container has Singleplayer=true / query-enabled=false
             // baked into NodeOptions via Configure(...) in TrueCraft.Launcher.Program,
-            // so resolving the MultiplayerServer here picks up those overrides.
-            Server = App.Services.GetRequiredService<MultiplayerServer>();
+            // so the MultiplayerServer resolved here picks up those overrides.
+            World = world;
+            Server = server;
+            Log = log;
             world.BlockRepository = Server.BlockRepository;
             Server.AddWorld(world);
         }

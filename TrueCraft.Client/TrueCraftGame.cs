@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -212,7 +213,7 @@ namespace TrueCraft.Client
             TextureMapper.LoadDefaults(GraphicsDevice);
 
             // Load any custom textures if needed.
-            TextureMapper = new TextureMapper(GraphicsDevice);
+            TextureMapper = ActivatorUtilities.CreateInstance<TextureMapper>(App.Services, GraphicsDevice);
             if (UserSettings.Local.SelectedTexturePack != TexturePack.Default.Name)
                 TextureMapper.AddTexturePack(TexturePack.FromArchive(Path.Combine(Paths.TexturePacks,
                     UserSettings.Local.SelectedTexturePack)));

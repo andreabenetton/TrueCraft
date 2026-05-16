@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Serilog.Context;
 using TrueCraft.API.Networking;
 using TrueCraft.Options;
 using System.Buffers;
@@ -39,6 +40,7 @@ namespace TrueCraft
         private readonly ILogger<RemoteClient> Logger;
         private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
         private readonly NodeOptions _node;
+        private readonly string _endpointString;
 
         public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection, ILogger<RemoteClient> logger, IOptions<NodeOptions> nodeOpts)
         {
@@ -56,6 +58,9 @@ namespace TrueCraft
             EnableLogging = server.EnableClientLogging;
             NextWindowID = 1;
             Connection = connection;
+            // Cache once: Connection.RemoteEndPoint can throw ObjectDisposedException
+            // after disconnect, but the LogContext push must always succeed.
+            _endpointString = connection.RemoteEndPoint?.ToString() ?? "<unknown>";
             PacketReader = packetReader;
             PacketHandlers = packetHandlers;
 
@@ -461,20 +466,27 @@ namespace TrueCraft
                                 Log("Unhandled packet {0}", packet.GetType().Name);
                                 continue;
                             }
-                            try
+                            // Push PlayerName / ClientEndPoint into Serilog's LogContext so
+                            // every log event emitted by the handler chain (and anything it
+                            // awaits) carries the player identity for grep-by-player.
+                            using (LogContext.PushProperty("PlayerName", Username ?? "<anon>"))
+                            using (LogContext.PushProperty("ClientEndPoint", _endpointString))
                             {
-                                await handler(packet, this, Server).ConfigureAwait(false);
-                            }
-                            catch (PlayerDisconnectException)
-                            {
-                                Server.DisconnectClient(this);
-                                return;
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.LogDebug(ex, "Disconnecting client due to exception in network worker");
-                                Server.DisconnectClient(this);
-                                return;
+                                try
+                                {
+                                    await handler(packet, this, Server).ConfigureAwait(false);
+                                }
+                                catch (PlayerDisconnectException)
+                                {
+                                    Server.DisconnectClient(this);
+                                    return;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logger.LogDebug(ex, "Disconnecting client due to exception in network worker");
+                                    Server.DisconnectClient(this);
+                                    return;
+                                }
                             }
                         }
                     }

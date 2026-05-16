@@ -31,6 +31,20 @@ namespace Iguina.Entities
         /// </summary>
         public Color TintColor { get; set; } = new Color(255, 255, 255, 255);
 
+        /// <summary>
+        /// Optional drop-shadow color. When non-null the image renders a copy
+        /// at <see cref="ShadowOffset"/> beneath the main draw, tinted with
+        /// this color. Set to <c>null</c> (default) to disable.
+        /// </summary>
+        public Color? ShadowColor { get; set; }
+
+        /// <summary>
+        /// Pixel offset of the drop shadow relative to the image. Default (2, 2)
+        /// places the shadow down-right. Honored only when <see cref="ShadowColor"/>
+        /// is non-null.
+        /// </summary>
+        public Point ShadowOffset { get; set; } = new Point(2, 2);
+
         /// <param name="system">Parent UI system.</param>
         /// <param name="textureId">Identifier the renderer uses to look up the texture.</param>
         public Image(UISystem system, string textureId) : base(system, null)
@@ -44,6 +58,15 @@ namespace Iguina.Entities
         {
             base.DrawEntityType(ref boundingRect, ref internalBoundingRect, parentDrawResult, siblingDrawResult);
             var src = SourceRect ?? new Rectangle(0, 0, boundingRect.Width, boundingRect.Height);
+            if (ShadowColor.HasValue)
+            {
+                var shadowRect = new Rectangle(
+                    boundingRect.X + ShadowOffset.X,
+                    boundingRect.Y + ShadowOffset.Y,
+                    boundingRect.Width,
+                    boundingRect.Height);
+                UISystem.Renderer.DrawTexture(null, TextureId, shadowRect, src, ShadowColor.Value);
+            }
             UISystem.Renderer.DrawTexture(null, TextureId, boundingRect, src, TintColor);
         }
     }

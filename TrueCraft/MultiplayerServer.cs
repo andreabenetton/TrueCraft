@@ -83,8 +83,6 @@ namespace TrueCraft
         private Task AcceptLoopTask;
         private TcpListener Listener;
         private readonly PacketHandler[] PacketHandlers;
-        private static ILogger Log => App.LoggerFor<MultiplayerServer>();
-        private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
         private Stopwatch Time;
         private ConcurrentBag<Tuple<IWorld, IChunk>> ChunksToSchedule;
         internal object ClientLock = new object();
@@ -94,19 +92,24 @@ namespace TrueCraft
         internal bool ShuttingDown { get; private set; }
         
         private readonly NodeOptions _node;
+        private readonly ILogger<MultiplayerServer> Log;
+        private readonly Profiler Profiler;
 
         public MultiplayerServer(IBlockRepository blockRepository, IItemRepository itemRepository,
             ICraftingRepository craftingRepository, IOptions<NodeOptions> nodeOpts,
-            IOptions<AccessOptions> accessOpts, Handlers.LoginHandlers loginHandlers)
+            IOptions<AccessOptions> accessOpts, Handlers.LoginHandlers loginHandlers,
+            ILogger<MultiplayerServer> log, Profiler profiler)
         {
             _node = nodeOpts.Value;
+            Log = log;
+            Profiler = profiler;
             var reader = new PacketReader();
             PacketReader = reader;
             Clients = new List<IRemoteClient>();
             PacketHandlers = new PacketHandler[0x100];
             Worlds = new List<IWorld>();
             EntityManagers = new List<IEntityManager>();
-            Scheduler = new EventScheduler(this);
+            Scheduler = new EventScheduler(this, profiler);
             BlockRepository = blockRepository;
             ItemRepository = itemRepository;
             BlockProvider.ItemRepository = ItemRepository;
@@ -197,7 +200,7 @@ namespace TrueCraft
             world.BlockChanged += HandleBlockChanged;
             var manager = new EntityManager(this, world);
             EntityManagers.Add(manager);
-            var lighter = new WorldLighting(world, BlockRepository);
+            var lighter = new WorldLighting(world, BlockRepository, Profiler);
             WorldLighters.Add(lighter);
             foreach (var chunk in world)
                 HandleChunkLoaded(world, new ChunkLoadedEventArgs(chunk));
@@ -252,7 +255,7 @@ namespace TrueCraft
         {
             if (_node.EnableLighting)
             {
-                var lighter = new WorldLighting(sender as IWorld, BlockRepository);
+                var lighter = new WorldLighting(sender as IWorld, BlockRepository, Profiler);
                 lighter.InitialLighting(e.Chunk, false);
             }
             else

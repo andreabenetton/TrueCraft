@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.World;
-using Microsoft.Extensions.DependencyInjection;
 using TrueCraft.Core.Profiling;
 using TrueCraft.Core.World;
 
@@ -15,7 +14,7 @@ namespace TrueCraft.Core.Lighting
     // Note: Speed-critical code
     public class WorldLighting
     {
-        private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
+        private readonly Profiler Profiler;
 
         private static readonly Coordinates3D[] Neighbors =
         {
@@ -27,8 +26,9 @@ namespace TrueCraft.Core.Lighting
             Coordinates3D.South
         };
 
-        public WorldLighting(IWorld world, IBlockRepository blockRepository)
+        public WorldLighting(IWorld world, IBlockRepository blockRepository, Profiler profiler)
         {
+            Profiler = profiler;
             BlockRepository = blockRepository;
             World = world;
             PendingOperations = new ConcurrentQueue<LightingOperation>();

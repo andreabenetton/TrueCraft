@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Serilog.Context;
@@ -38,13 +37,14 @@ namespace TrueCraft
         // Named Logger (not Log) because the IRemoteClient.Log(string, params object[])
         // chat-broadcast method already occupies "Log" in this class.
         private readonly ILogger<RemoteClient> Logger;
-        private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
+        private readonly Profiler Profiler;
         private readonly NodeOptions _node;
         private readonly string _endpointString;
 
-        public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection, ILogger<RemoteClient> logger, IOptions<NodeOptions> nodeOpts)
+        public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection, ILogger<RemoteClient> logger, IOptions<NodeOptions> nodeOpts, Profiler profiler)
         {
             Logger = logger;
+            Profiler = profiler;
             _node = nodeOpts.Value;
             LoadedChunks = new HashSet<Coordinates2D>();
             Server = server;
@@ -662,7 +662,7 @@ namespace TrueCraft
             }
         }
 
-        private static ChunkDataPacket CreatePacket(IChunk chunk)
+        private ChunkDataPacket CreatePacket(IChunk chunk)
         {
             var X = chunk.Coordinates.X;
             var Z = chunk.Coordinates.Z;

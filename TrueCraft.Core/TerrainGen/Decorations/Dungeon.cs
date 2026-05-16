@@ -11,8 +11,6 @@ namespace TrueCraft.Core.TerrainGen.Decorations
     {
         private readonly ILogger<Dungeon> _log;
 
-        public Dungeon() : this(App.LoggerFor<Dungeon>()) { }
-
         public Dungeon(ILogger<Dungeon> log)
         {
             _log = log;

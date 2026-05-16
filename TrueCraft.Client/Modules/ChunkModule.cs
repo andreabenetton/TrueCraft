@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -42,7 +43,8 @@ namespace TrueCraft.Client.Modules
             Game.Client.BlockChanged += Game_Client_BlockChanged;
             ChunkRenderer.MeshCompleted += MeshCompleted;
             ChunkRenderer.Start();
-            WorldLighting = new WorldLighting(Game.Client.World.World, Game.BlockRepository);
+            WorldLighting = ActivatorUtilities.CreateInstance<WorldLighting>(
+                App.Services, Game.Client.World.World, Game.BlockRepository);
 
             OpaqueEffect = new BasicEffect(Game.GraphicsDevice)
             {

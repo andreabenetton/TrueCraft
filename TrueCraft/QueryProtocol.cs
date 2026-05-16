@@ -16,7 +16,7 @@ namespace TrueCraft
 {
     public class QueryProtocol
     {
-        private static ILogger Log => App.LoggerFor<QueryProtocol>();
+        private readonly ILogger<QueryProtocol> Log;
 
         private UdpClient Udp;
         private int Port;
@@ -33,11 +33,12 @@ namespace TrueCraft
 
         private readonly NodeOptions _node;
 
-        public QueryProtocol(IMultiplayerServer server, IOptions<NodeOptions> nodeOpts)
+        public QueryProtocol(IMultiplayerServer server, IOptions<NodeOptions> nodeOpts, ILogger<QueryProtocol> log)
         {
             Rnd = new Random();
             Server = server;
             _node = nodeOpts.Value;
+            Log = log;
         }
         public void Start()
         {

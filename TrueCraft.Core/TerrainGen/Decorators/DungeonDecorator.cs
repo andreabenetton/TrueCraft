@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using TrueCraft.API;
 using TrueCraft.API.World;
 using TrueCraft.Core.TerrainGen.Decorations;
@@ -35,7 +36,8 @@ namespace TrueCraft.Core.TerrainGen.Decorators
                 var spawnValue = offsetNoise.Value2D(blockX, blockZ);
                 if (spawnValue > 1.95 && spawnValue < 2.09)
                 {
-                    var generated = new Dungeon().GenerateAt(world, chunk, new Coordinates3D(blockX, y, blockZ));
+                    var generated = ActivatorUtilities.CreateInstance<Dungeon>(App.Services)
+                        .GenerateAt(world, chunk, new Coordinates3D(blockX, y, blockZ));
                     if (generated)
                         break;
                 }

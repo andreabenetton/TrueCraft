@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Configuration;
 
 namespace TrueCraft.Options
@@ -14,12 +15,15 @@ namespace TrueCraft.Options
 
         public string MOTD { get; set; } = "Welcome to TrueCraft!";
 
+        [Range(1, 65535)]
         [ConfigurationKeyName("bind-port")]
         public int ServerPort { get; set; } = 25565;
 
+        [Required, MinLength(1)]
         [ConfigurationKeyName("bind-endpoint")]
         public string ServerAddress { get; set; } = "0.0.0.0";
 
+        [Range(1, 86400)]
         [ConfigurationKeyName("save-interval")]
         public int WorldSaveInterval { get; set; } = 30;
 
@@ -28,6 +32,7 @@ namespace TrueCraft.Options
         [ConfigurationKeyName("query-enabled")]
         public bool Query { get; set; } = true;
 
+        [Range(1, 65535)]
         [ConfigurationKeyName("query-port")]
         public int QueryPort { get; set; } = 25566;
 

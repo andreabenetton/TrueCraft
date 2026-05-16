@@ -45,13 +45,17 @@ namespace TrueCraft
             services.AddSingleton<IConfiguration>(configuration);
 
             services.AddOptions<NodeOptions>()
-                .Bind(configuration.GetSection(NodeOptions.SectionName));
+                .Bind(configuration.GetSection(NodeOptions.SectionName))
+                .ValidateDataAnnotations();
             services.AddOptions<DebugOptions>()
-                .Bind(configuration.GetSection(DebugOptions.SectionName));
+                .Bind(configuration.GetSection(DebugOptions.SectionName))
+                .ValidateDataAnnotations();
             services.AddOptions<ProfilerOptions>()
-                .Bind(configuration.GetSection(ProfilerOptions.SectionName));
+                .Bind(configuration.GetSection(ProfilerOptions.SectionName))
+                .ValidateDataAnnotations();
             services.AddOptions<AccessOptions>()
-                .Bind(configuration.GetSection(AccessOptions.SectionName));
+                .Bind(configuration.GetSection(AccessOptions.SectionName))
+                .ValidateDataAnnotations();
 
             services.AddSingleton<Profiler>();
             services.AddSingleton<IBlockRepository>(_ =>
@@ -76,6 +80,10 @@ namespace TrueCraft
             services.AddSingleton<CommandManager>();
             App.Services = services.BuildServiceProvider();
 
+            // Force eager validation: any DataAnnotations violation in nodesettings.json
+            // throws OptionsValidationException here rather than silently misbehaving later.
+            _ = App.Services.GetRequiredService<IOptions<NodeOptions>>().Value;
+            _ = App.Services.GetRequiredService<IOptions<AccessOptions>>().Value;
             var debug = App.Services.GetRequiredService<IOptions<DebugOptions>>().Value;
             var profilerOpts = App.Services.GetRequiredService<IOptions<ProfilerOptions>>().Value;
 

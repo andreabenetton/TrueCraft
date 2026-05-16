@@ -31,15 +31,17 @@ namespace TrueCraft.Launcher
             // Launcher runs an embedded singleplayer server — bake the singleplayer
             // overrides into NodeOptions directly. No file source needed since
             // launchersettings.json has no Configuration section.
-            services.AddOptions<NodeOptions>().Configure(opts =>
-            {
-                opts.Singleplayer = true;
-                opts.Query = false;
-                opts.MOTD = null;
-            });
-            services.AddOptions<DebugOptions>();
-            services.AddOptions<ProfilerOptions>();
-            services.AddOptions<AccessOptions>();
+            services.AddOptions<NodeOptions>()
+                .Configure(opts =>
+                {
+                    opts.Singleplayer = true;
+                    opts.Query = false;
+                    opts.MOTD = null;
+                })
+                .ValidateDataAnnotations();
+            services.AddOptions<DebugOptions>().ValidateDataAnnotations();
+            services.AddOptions<ProfilerOptions>().ValidateDataAnnotations();
+            services.AddOptions<AccessOptions>().ValidateDataAnnotations();
 
             services.AddSingleton<Profiler>();
             services.AddSingleton<IBlockRepository>(_ =>

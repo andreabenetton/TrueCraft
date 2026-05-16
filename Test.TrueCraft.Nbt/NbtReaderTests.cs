@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Xunit;
 using TrueCraft.Nbt;
@@ -92,11 +92,10 @@ public sealed class NbtReaderTests {
             }
         };
         byte[] testData = new NbtFile(root).SaveToBuffer(NbtCompression.None);
-        using (var ms = new MemoryStream(testData)) {
-            var reader = new NbtReader(ms);
-            while (reader.ReadToFollowing()) {
-                Console.WriteLine(reader.ToString(true));
-            }
+        using var ms = new MemoryStream(testData);
+        var reader = new NbtReader(ms);
+        while (reader.ReadToFollowing()) {
+            Console.WriteLine(reader.ToString(true));
         }
     }
 
@@ -554,25 +553,21 @@ public sealed class NbtReaderTests {
     [Fact]
     public void NonSeekableStreamSkip1() {
         byte[] fileBytes = File.ReadAllBytes("TestFiles/bigtest.nbt");
-        using (var ms = new MemoryStream(fileBytes)) {
-            using (var nss = new NonSeekableStream(ms)) {
-                var reader = new NbtReader(nss);
-                reader.ReadToFollowing();
-                reader.Skip();
-            }
-        }
+        using var ms = new MemoryStream(fileBytes);
+        using var nss = new NonSeekableStream(ms);
+        var reader = new NbtReader(nss);
+        reader.ReadToFollowing();
+        reader.Skip();
     }
 
 
     [Fact]
     public void NonSeekableStreamSkip2() {
-        using (var ms = TestFiles.MakeReaderTest()) {
-            using (var nss = new NonSeekableStream(ms)) {
-                var reader = new NbtReader(nss);
-                reader.ReadToFollowing();
-                reader.Skip();
-            }
-        }
+        using var ms = TestFiles.MakeReaderTest();
+        using var nss = new NonSeekableStream(ms);
+        var reader = new NbtReader(nss);
+        reader.ReadToFollowing();
+        reader.Skip();
     }
 
 

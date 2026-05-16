@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -169,10 +169,8 @@ public sealed class NbtFile
             throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize,
                 "DefaultBufferSize cannot be negative.");
 
-        using (var readFileStream = File.OpenRead(fileName))
-        {
-            return ReadRootTagName(readFileStream, compression, bigEndian, bufferSize);
-        }
+        using var readFileStream = File.OpenRead(fileName);
+        return ReadRootTagName(readFileStream, compression, bigEndian, bufferSize);
     }
 
 
@@ -422,12 +420,10 @@ public sealed class NbtFile
     {
         if (buffer is null) throw new ArgumentNullException(nameof(buffer));
 
-        using (var ms = new MemoryStream(buffer, index, length))
-        {
-            LoadFromStream(ms, compression, selector);
-            FileName = null;
-            return ms.Position;
-        }
+        using var ms = new MemoryStream(buffer, index, length);
+        LoadFromStream(ms, compression, selector);
+        FileName = null;
+        return ms.Position;
     }
 
 
@@ -460,12 +456,10 @@ public sealed class NbtFile
     {
         if (buffer is null) throw new ArgumentNullException(nameof(buffer));
 
-        using (var ms = new MemoryStream(buffer, index, length))
-        {
-            LoadFromStream(ms, compression, null);
-            FileName = null;
-            return ms.Position;
-        }
+        using var ms = new MemoryStream(buffer, index, length);
+        LoadFromStream(ms, compression, null);
+        FileName = null;
+        return ms.Position;
     }
 
 
@@ -788,10 +782,8 @@ public sealed class NbtFile
     {
         if (buffer is null) throw new ArgumentNullException(nameof(buffer));
 
-        using (var ms = new MemoryStream(buffer, index, buffer.Length - index))
-        {
-            return SaveToStream(ms, compression);
-        }
+        using var ms = new MemoryStream(buffer, index, buffer.Length - index);
+        return SaveToStream(ms, compression);
     }
 
 
@@ -812,11 +804,9 @@ public sealed class NbtFile
     [NotNull]
     public byte[] SaveToBuffer(NbtCompression compression)
     {
-        using (var ms = new MemoryStream())
-        {
-            SaveToStream(ms, compression);
-            return ms.ToArray();
-        }
+        using var ms = new MemoryStream();
+        SaveToStream(ms, compression);
+        return ms.ToArray();
     }
 
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework.Audio;
@@ -97,22 +97,20 @@ public class AudioManager : IDisposable
 
     private SoundEffect LoadOgg(Stream stream)
     {
-        using (var reader = new VorbisReader(stream, false))
+        using var reader = new VorbisReader(stream, false);
+        var _buffer = new float[reader.TotalSamples];
+        var buffer = new byte[reader.TotalSamples * 2];
+        reader.ReadSamples(_buffer, 0, _buffer.Length);
+        for (var i = 0; i < _buffer.Length; i++)
         {
-            var _buffer = new float[reader.TotalSamples];
-            var buffer = new byte[reader.TotalSamples * 2];
-            reader.ReadSamples(_buffer, 0, _buffer.Length);
-            for (var i = 0; i < _buffer.Length; i++)
-            {
-                var val = (short) Math.Max(Math.Min(short.MaxValue * _buffer[i], short.MaxValue), short.MinValue);
-                var decoded = BitConverter.GetBytes(val);
-                buffer[i * 2] = decoded[0];
-                buffer[i * 2 + 1] = decoded[1];
-            }
-
-            return new SoundEffect(buffer, reader.SampleRate,
-                reader.Channels == 1 ? AudioChannels.Mono : AudioChannels.Stereo);
+            var val = (short) Math.Max(Math.Min(short.MaxValue * _buffer[i], short.MaxValue), short.MinValue);
+            var decoded = BitConverter.GetBytes(val);
+            buffer[i * 2] = decoded[0];
+            buffer[i * 2 + 1] = decoded[1];
         }
+
+        return new SoundEffect(buffer, reader.SampleRate,
+            reader.Channels == 1 ? AudioChannels.Mono : AudioChannels.Stereo);
     }
 
     public void LoadAudioPack(string pack, string[] filenames)

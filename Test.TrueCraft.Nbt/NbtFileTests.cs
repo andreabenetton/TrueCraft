@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Xunit;
@@ -94,14 +94,12 @@ public class NbtFileTests : IDisposable {
     [Fact]
     public void LoadingBigFileStream() {
         byte[] fileBytes = File.ReadAllBytes(TestFiles.Big);
-        using (var ms = new MemoryStream(fileBytes)) {
-            using (var nss = new NonSeekableStream(ms)) {
-                var file = new NbtFile();
-                long length = file.LoadFromStream(nss, NbtCompression.None, null);
-                TestFiles.AssertNbtBigFile(file);
-                Assert.Equal(length, new FileInfo(TestFiles.Big).Length);
-            }
-        }
+        using var ms = new MemoryStream(fileBytes);
+        using var nss = new NonSeekableStream(ms);
+        var file = new NbtFile();
+        long length = file.LoadFromStream(nss, NbtCompression.None, null);
+        TestFiles.AssertNbtBigFile(file);
+        Assert.Equal(length, new FileInfo(TestFiles.Big).Length);
     }
 
     #endregion
@@ -169,19 +167,17 @@ public class NbtFileTests : IDisposable {
     [Fact]
     public void ReloadNonSeekableStream() {
         var loadedFile = new NbtFile(TestFiles.Big);
-        using (var ms = new MemoryStream()) {
-            using (var nss = new NonSeekableStream(ms)) {
-                long bytesWritten = loadedFile.SaveToStream(nss, NbtCompression.None);
-                ms.Position = 0;
-                Assert.Throws<NotSupportedException>(() => loadedFile.LoadFromStream(nss, NbtCompression.AutoDetect));
-                ms.Position = 0;
-                Assert.Throws<InvalidDataException>(() => loadedFile.LoadFromStream(nss, NbtCompression.ZLib));
-                ms.Position = 0;
-                long bytesRead = loadedFile.LoadFromStream(nss, NbtCompression.None);
-                Assert.Equal(bytesWritten, bytesRead);
-                TestFiles.AssertNbtBigFile(loadedFile);
-            }
-        }
+        using var ms = new MemoryStream();
+        using var nss = new NonSeekableStream(ms);
+        long bytesWritten = loadedFile.SaveToStream(nss, NbtCompression.None);
+        ms.Position = 0;
+        Assert.Throws<NotSupportedException>(() => loadedFile.LoadFromStream(nss, NbtCompression.AutoDetect));
+        ms.Position = 0;
+        Assert.Throws<InvalidDataException>(() => loadedFile.LoadFromStream(nss, NbtCompression.ZLib));
+        ms.Position = 0;
+        long bytesRead = loadedFile.LoadFromStream(nss, NbtCompression.None);
+        Assert.Equal(bytesWritten, bytesRead);
+        TestFiles.AssertNbtBigFile(loadedFile);
     }
 
 
@@ -196,9 +192,8 @@ public class NbtFileTests : IDisposable {
     void LoadFromStreamInternal(String fileName, NbtCompression compression) {
         var file = new NbtFile();
         byte[] fileBytes = File.ReadAllBytes(fileName);
-        using (var ms = new MemoryStream(fileBytes)) {
-            file.LoadFromStream(ms, compression);
-        }
+        using var ms = new MemoryStream(fileBytes);
+        file.LoadFromStream(ms, compression);
     }
 
 
@@ -241,13 +236,11 @@ public class NbtFileTests : IDisposable {
         Assert.Equal("Level", NbtFile.ReadRootTagName(fileName, compression, true, 0));
 
         byte[] fileBytes = File.ReadAllBytes(fileName);
-        using (var ms = new MemoryStream(fileBytes)) {
-            using (var nss = new NonSeekableStream(ms)) {
-                Assert.Throws<ArgumentOutOfRangeException>(
-                    () => NbtFile.ReadRootTagName(nss, compression, true, -1));
-                NbtFile.ReadRootTagName(nss, compression, true, 0);
-            }
-        }
+        using var ms = new MemoryStream(fileBytes);
+        using var nss = new NonSeekableStream(ms);
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => NbtFile.ReadRootTagName(nss, compression, true, -1));
+        NbtFile.ReadRootTagName(nss, compression, true, 0);
     }
 
 

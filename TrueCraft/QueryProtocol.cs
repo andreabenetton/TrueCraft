@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,108 +85,84 @@ public class QueryProtocol
 
     private void HandleHandshake(byte[] buffer, IPEndPoint clientEP)
     {
-        using (var ms = new MemoryStream(buffer))
+        using var ms = new MemoryStream(buffer);
+        using var stream = new BinaryReader(ms);
+        int sessionId = GetSessionId(stream);
+
+        var user = new QueryUser { SessionId = sessionId, ChallengeToken = Rnd.Next() };
+
+        if (UserList.ContainsKey(clientEP))
         {
-            using (var stream = new BinaryReader(ms))
-            {
-                int sessionId = GetSessionId(stream);
-
-                var user = new QueryUser { SessionId = sessionId, ChallengeToken = Rnd.Next() };
-
-                if (UserList.ContainsKey(clientEP))
-                {
-                    QueryUser u;
-                    while (!UserList.TryRemove(clientEP, out u))
-                        Thread.Sleep(1);
-                }
-
-                UserList[clientEP] = user;
-
-                using (var response = new MemoryStream())
-                {
-                    using (var writer = new BinaryWriter(response))
-                    {
-                        WriteHead(Type_Handshake, user, writer);
-                        WriteStringToStream(user.ChallengeToken.ToString(), response);
-                        SendResponse(response.ToArray(), clientEP);
-                    }
-                }
-            }
-
+            QueryUser u;
+            while (!UserList.TryRemove(clientEP, out u))
+                Thread.Sleep(1);
         }
+
+        UserList[clientEP] = user;
+
+        using var response = new MemoryStream();
+        using var writer = new BinaryWriter(response);
+        WriteHead(Type_Handshake, user, writer);
+        WriteStringToStream(user.ChallengeToken.ToString(), response);
+        SendResponse(response.ToArray(), clientEP);
+
     }
 
     private void HandleBasicStat(byte[] buffer, IPEndPoint clientEP)
     {
-        using (var ms = new MemoryStream(buffer))
-        {
-            using (var stream = new BinaryReader(ms))
-            {
-                int sessionId = GetSessionId(stream);
-                int token = GetToken(stream);
+        using var ms = new MemoryStream(buffer);
+        using var stream = new BinaryReader(ms);
+        int sessionId = GetSessionId(stream);
+        int token = GetToken(stream);
 
-                var user = GetUser(clientEP);
-                if (user.ChallengeToken != token || user.SessionId != sessionId) throw new Exception("Invalid credentials");
+        var user = GetUser(clientEP);
+        if (user.ChallengeToken != token || user.SessionId != sessionId) throw new Exception("Invalid credentials");
 
-                var stats = GetStats();
-                using (var response = new MemoryStream())
-                {
-                    using (var writer = new BinaryWriter(response))
-                    {
-                        WriteHead(Type_Stat, user, writer);
-                        WriteStringToStream(stats["hostname"], response);
-                        WriteStringToStream(stats["gametype"], response);
-                        WriteStringToStream(stats["numplayers"], response);
-                        WriteStringToStream(stats["maxplayers"], response);
-                        byte[] hostport = BitConverter.GetBytes(ushort.Parse(stats["hostport"]));
-                        Array.Reverse(hostport);//The specification needs little endian short
-                        writer.Write(hostport);
-                        WriteStringToStream(stats["hostip"], response);
+        var stats = GetStats();
+        using var response = new MemoryStream();
+        using var writer = new BinaryWriter(response);
+        WriteHead(Type_Stat, user, writer);
+        WriteStringToStream(stats["hostname"], response);
+        WriteStringToStream(stats["gametype"], response);
+        WriteStringToStream(stats["numplayers"], response);
+        WriteStringToStream(stats["maxplayers"], response);
+        byte[] hostport = BitConverter.GetBytes(ushort.Parse(stats["hostport"]));
+        Array.Reverse(hostport);//The specification needs little endian short
+        writer.Write(hostport);
+        WriteStringToStream(stats["hostip"], response);
 
-                        SendResponse(response.ToArray(), clientEP);
-                    }
-                }
-            }
-        }
+        SendResponse(response.ToArray(), clientEP);
     }
 
     private void HandleFullStat(byte[] buffer, IPEndPoint clientEP)
     {
-        using (var stream = new MemoryStream(buffer))
+        using var stream = new MemoryStream(buffer);
+        using var reader = new BinaryReader(stream);
+        int sessionId = GetSessionId(reader);
+        int token = GetToken(reader);
+
+        var user = GetUser(clientEP);
+        if (user.ChallengeToken != token || user.SessionId != sessionId) throw new Exception("Invalid credentials");
+
+        var stats = GetStats();
+        using var response = new MemoryStream();
+        using var writer = new BinaryWriter(response);
+        WriteHead(Type_Stat, user, writer);
+        WriteStringToStream("SPLITNUM\0\0", response);
+        foreach (var pair in stats)
         {
-            using (var reader = new BinaryReader(stream))
-            {
-                int sessionId = GetSessionId(reader);
-                int token = GetToken(reader);
-
-                var user = GetUser(clientEP);
-                if (user.ChallengeToken != token || user.SessionId != sessionId) throw new Exception("Invalid credentials");
-
-                var stats = GetStats();
-                using (var response = new MemoryStream())
-                {
-                    using (var writer = new BinaryWriter(response))
-                    {
-                        WriteHead(Type_Stat, user, writer);
-                        WriteStringToStream("SPLITNUM\0\0", response);
-                        foreach (var pair in stats)
-                        {
-                            WriteStringToStream(pair.Key, response);
-                            WriteStringToStream(pair.Value, response);
-                        }
-                        writer.Write((byte)0x00);
-                        writer.Write((byte)0x01);
-                        WriteStringToStream("player_\0", response);
-                        var players = GetPlayers();
-                        foreach (string player in players)
-                            WriteStringToStream(player, response);
-                        writer.Write((byte)0x00);
-
-                        SendResponse(response.ToArray(), clientEP);
-                    }
-                }
-            }
+            WriteStringToStream(pair.Key, response);
+            WriteStringToStream(pair.Value, response);
         }
+        writer.Write((byte)0x00);
+        writer.Write((byte)0x01);
+        WriteStringToStream("player_\0", response);
+        var players = GetPlayers();
+        foreach (string player in players)
+            WriteStringToStream(player, response);
+        writer.Write((byte)0x00);
+
+        SendResponse(response.ToArray(), clientEP);
     }
 
     private bool CheckVersion(byte[] ver)

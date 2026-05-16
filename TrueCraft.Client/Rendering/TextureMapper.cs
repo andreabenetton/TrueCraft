@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -114,22 +114,20 @@ public sealed class TextureMapper : IDisposable
             {
                 var key = entry.FullName;
                 if (Path.GetExtension(key) == ".png")
-                    using (var stream = entry.Open())
+                {
+                    using var stream = entry.Open();
+                    try
                     {
-                        try
-                        {
-                            using (var ms = new MemoryStream())
-                            {
-                                CopyStream(stream, ms);
-                                ms.Seek(0, SeekOrigin.Begin);
-                                AddTexture(key, Texture2D.FromStream(Device, ms));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.LogError(ex, "Failed to load {Key} from texture pack", key);
-                        }
+                        using var ms = new MemoryStream();
+                        CopyStream(stream, ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        AddTexture(key, Texture2D.FromStream(Device, ms));
                     }
+                    catch (Exception ex)
+                    {
+                        Log.LogError(ex, "Failed to load {Key} from texture pack", key);
+                    }
+                }
             }
         }
         catch

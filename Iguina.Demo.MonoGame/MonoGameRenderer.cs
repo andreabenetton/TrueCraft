@@ -99,18 +99,39 @@ namespace Iguina.Demo.MonoGame
         /// <summary>
         /// Register a pre-rasterized BMFont under <paramref name="fontId"/>. The
         /// .fnt is read from <paramref name="fntPath"/>; referenced PNG pages are
-        /// opened from the same directory. Bitmap fonts ignore the stylesheet
-        /// FontSize and render at their baked-in size for pixel-perfect output.
+        /// opened from the same directory and premultiplied (SpriteBatch's default
+        /// AlphaBlend expects premultiplied alpha; raw PNG loads are not). Bitmap
+        /// fonts ignore the stylesheet FontSize and render at their baked-in size
+        /// for pixel-perfect output.
         /// </summary>
         public void RegisterBMFont(string fontId, string fntPath)
         {
             var data = File.ReadAllText(fntPath);
             var dir = Path.GetDirectoryName(Path.GetFullPath(fntPath)) ?? string.Empty;
-            var staticFont = StaticSpriteFont.FromBMFont(
-                data,
-                fileName => File.OpenRead(Path.Combine(dir, fileName)),
-                _device);
+            Func<string, TextureWithOffset> textureGetter =
+                fileName => new TextureWithOffset(LoadPremultipliedTexture(Path.Combine(dir, fileName)));
+            var staticFont = StaticSpriteFont.FromBMFont(data, textureGetter);
             _staticFonts[fontId] = staticFont;
+        }
+
+        Texture2D LoadPremultipliedTexture(string path)
+        {
+            using var stream = File.OpenRead(path);
+            var tex = Texture2D.FromStream(_device, stream);
+            var pixels = new Color[tex.Width * tex.Height];
+            tex.GetData(pixels);
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                var p = pixels[i];
+                if (p.A == 255) continue;
+                pixels[i] = new Color(
+                    (byte)(p.R * p.A / 255),
+                    (byte)(p.G * p.A / 255),
+                    (byte)(p.B * p.A / 255),
+                    p.A);
+            }
+            tex.SetData(pixels);
+            return tex;
         }
 
         /// <summary>

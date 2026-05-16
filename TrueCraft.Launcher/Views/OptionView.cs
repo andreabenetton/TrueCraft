@@ -113,12 +113,12 @@ public sealed class OptionView : ILauncherView
         _officialAssetsProgress.MaxValue = 100;
         parent.AddChild(_officialAssetsProgress);
 
-        _officialAssetsButton = new Button(_game.UI, "Download Minecraft assets (Mojang)")
+        _officialAssetsButton = new Button(_game.UI, "Download Minecraft assets")
         {
             Anchor = Anchor.AutoCenter,
             Visible = false,
         };
-        _officialAssetsButton.Events.OnClick = _ => StartOfficialAssetsDownload();
+        _officialAssetsButton.Events.OnClick = _ => ConfirmOfficialAssetsDownload();
         parent.AddChild(_officialAssetsButton);
 
         _errorLabel = new Paragraph(_game.UI, string.Empty) { Visible = false };
@@ -207,13 +207,21 @@ public sealed class OptionView : ILauncherView
             _officialAssetsButton.Visible = true;
     }
 
+    private void ConfirmOfficialAssetsDownload()
+    {
+        // Surface the Mojang asset terms before fetching beta 1.7.3.jar.
+        _game.UI.MessageBoxes.ShowConfirmMessageBox(
+            "Download Mojang assets",
+            "Download the official Minecraft assets from Mojang?\n\n" +
+            "By proceeding you agree to the Mojang asset guidelines:\n" +
+            "https://account.mojang.com/terms#brand",
+            onConfirm: StartOfficialAssetsDownload,
+            confirmText: "Download",
+            cancelText: "Cancel");
+    }
+
     private void StartOfficialAssetsDownload()
     {
-        // Pulls the Mojang beta 1.7.3 jar and extracts the textures into
-        // Minecraft.zip. By proceeding the user accepts Mojang's asset terms
-        // (https://account.mojang.com/terms#brand). The earlier modal that
-        // surfaced these terms is gone — Iguina has no MessageBox equivalent
-        // and an inline disclaimer in the button label communicates the same.
         _officialAssetsButton.Visible = false;
         _officialAssetsProgress.Visible = true;
         ShowError(null);

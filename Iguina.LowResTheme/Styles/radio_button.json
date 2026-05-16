@@ -1,0 +1,35 @@
+{
+    "InheritFrom": "paragraph_base_style.json",
+    "Default": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/radio.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 9, "Height": 9}
+        },
+        "DefaultWidth": {"Value": 20, "Unit": "Pixels"},
+        "DefaultHeight": {"Value": 20, "Unit": "Pixels"},
+        "Padding": {"Left": 26, "Right": 4, "Top": 0, "Bottom": 0}
+    },
+    "Targeted": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/radio_hover.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 9, "Height": 9}
+        }
+    },
+    "Checked": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/radio_down.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 9, "Height": 9}
+        }
+    },
+    "TargetedChecked": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/radio_down.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 9, "Height": 9}
+        }
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    },
+    "DefaultTextAnchor": "CenterLeft",
+    "InterpolateStatesSpeed": 5
+}

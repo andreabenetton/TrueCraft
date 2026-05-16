@@ -1,0 +1,13 @@
+{
+    "Default": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/scrollbar_mark.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 10, "Height": 10}
+        },
+        "DefaultWidth": {"Value": 16, "Unit": "Pixels"},
+        "DefaultHeight": {"Value": 16, "Unit": "Pixels"}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    }
+}

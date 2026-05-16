@@ -1,0 +1,6 @@
+{
+    "InheritFrom": "paragraph_base_style.json",
+    "Default": {
+        "Padding": {"Left": 4, "Right": 4, "Top": 2, "Bottom": 2}
+    }
+}

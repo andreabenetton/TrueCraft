@@ -1,0 +1,13 @@
+{
+    "Default": {
+        "FillTextureFramed": {
+            "TextureId": "Textures/panel_listbackground.png",
+            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 32, "Height": 32},
+            "FrameWidth": {"X": 6, "Y": 6}
+        },
+        "Padding": {"Left": 4, "Right": 4, "Top": 4, "Bottom": 4}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    }
+}

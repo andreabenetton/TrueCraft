@@ -1,0 +1,52 @@
+{
+    "ThemeIdentifier": "GeonBit LowRes (for Iguina)",
+    "DefaultTexture": "Textures/white_texture.png",
+    "TextScale": 1,
+    "TextureScale": 2,
+    "CursorScale": 2,
+    "RowSpaceHeight": 14,
+    "TimeToLockInteractiveState": 0.135,
+    "CursorDefault": {
+        "TextureId": "Textures/cursor_default.png",
+        "SourceRect": {"X": 0, "Y": 0, "Width": 16, "Height": 16}
+    },
+    "CursorDisabled": {
+        "TextureId": "Textures/cursor_default.png",
+        "SourceRect": {"X": 0, "Y": 0, "Width": 16, "Height": 16}
+    },
+    "CursorLocked": {
+        "TextureId": "Textures/cursor_default.png",
+        "SourceRect": {"X": 0, "Y": 0, "Width": 16, "Height": 16}
+    },
+    "CursorInteractable": {
+        "TextureId": "Textures/cursor_pointer.png",
+        "SourceRect": {"X": 0, "Y": 0, "Width": 16, "Height": 16}
+    },
+    "LoadDefaultStylesheets": {
+        "Panels": "Styles/panel.json",
+        "MessageBoxPanels": "Styles/panel.json",
+        "MessageBoxBackdrop": "Styles/message_box_backdrop.json",
+        "MessageBoxParagraphs": "Styles/paragraph.json",
+        "MessageBoxTitles": "Styles/title.json",
+        "MessageBoxButtons": "Styles/button.json",
+        "Paragraphs": "Styles/paragraph.json",
+        "Titles": "Styles/title.json",
+        "Labels": "Styles/paragraph.json",
+        "Buttons": "Styles/button.json",
+        "HorizontalLines": "Styles/horizontal_line.json",
+        "CheckBoxes": "Styles/checkbox.json",
+        "RadioButtons": "Styles/radio_button.json",
+        "HorizontalSliders": "Styles/slider_horizontal.json",
+        "HorizontalSlidersHandle": "Styles/slider_handle.json",
+        "ListPanels": "Styles/list_panel.json",
+        "ListItems": "Styles/list_item.json",
+        "DropDownPanels": "Styles/list_panel.json",
+        "DropDownItems": "Styles/list_item.json",
+        "DropDownIcon": "Styles/dropdown_icon.json",
+        "VerticalScrollbars": "Styles/scrollbar_vertical.json",
+        "VerticalScrollbarsHandle": "Styles/scrollbar_vertical_handle.json",
+        "TextInput": "Styles/text_input.json",
+        "HorizontalProgressBars": "Styles/progress_bar_horizontal.json",
+        "HorizontalProgressBarsFill": "Styles/progress_bar_horizontal_fill.json"
+    }
+}

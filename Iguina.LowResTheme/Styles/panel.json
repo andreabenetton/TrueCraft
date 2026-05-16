@@ -1,0 +1,14 @@
+{
+    "Default": {
+        "FillTextureFramed": {
+            "TextureId": "Textures/panel_default.png",
+            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 80, "Height": 80},
+            "FrameWidth": {"X": 16, "Y": 16}
+        },
+        "Padding": {"Left": 16, "Right": 16, "Top": 12, "Bottom": 12}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    },
+    "InterpolateStatesSpeed": 5
+}

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <VersionPrefix>1.1.4</VersionPrefix>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Iguina</RootNamespace>
+    <AssemblyName>Iguina</AssemblyName>
+    <!-- Vendored from https://github.com/RonenNess/Iguina (v1.1.4).
+         Packaging artifacts removed since we consume this as a ProjectReference,
+         not a NuGet package. -->
+  </PropertyGroup>
+
+</Project>

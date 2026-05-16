@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using Iguina.Entities;
 
 namespace Iguina.Utils
@@ -16,6 +17,12 @@ namespace Iguina.Utils
         DropDown,
         /// <summary>Read-only paragraph block — useful for section dividers / hints.</summary>
         Paragraph,
+        /// <summary>Integer slider with Min/Max range from the descriptor.</summary>
+        Slider,
+        /// <summary>Mutually-exclusive radio-button group from <see cref="FormFieldData.DropDownChoices"/>.</summary>
+        RadioButtons,
+        /// <summary>Visual section header (bold Title); no input value.</summary>
+        Section,
     }
 
     /// <summary>Descriptor for one field in a <see cref="Form"/>.</summary>
@@ -28,8 +35,12 @@ namespace Iguina.Utils
         public FormFieldType Type { get; set; } = FormFieldType.Text;
         /// <summary>Initial value; for Checkbox use "true" / "false".</summary>
         public string DefaultValue { get; set; } = string.Empty;
-        /// <summary>For <see cref="FormFieldType.DropDown"/>: the list of options.</summary>
+        /// <summary>For <see cref="FormFieldType.DropDown"/> / <see cref="FormFieldType.RadioButtons"/>: the list of options.</summary>
         public IList<string>? DropDownChoices { get; set; }
+        /// <summary>For <see cref="FormFieldType.Slider"/> / <see cref="FormFieldType.Numeric"/>: minimum allowed value.</summary>
+        public int Min { get; set; } = 0;
+        /// <summary>For <see cref="FormFieldType.Slider"/> / <see cref="FormFieldType.Numeric"/>: maximum allowed value.</summary>
+        public int Max { get; set; } = 100;
     }
 
     /// <summary>
@@ -41,6 +52,8 @@ namespace Iguina.Utils
     public class Form
     {
         readonly Dictionary<string, Entity> _entitiesByKey = new();
+        // For RadioButtons we store the list of radio entities + the original choices.
+        readonly Dictionary<string, (List<RadioButton> radios, IList<string> choices)> _radioGroups = new();
 
         /// <summary>Root panel containing all field rows. Caller adds it to the UI.</summary>
         public Panel Panel { get; }
@@ -54,7 +67,14 @@ namespace Iguina.Utils
 
         void AddField(UISystem ui, FormFieldData field)
         {
-            // label
+            // For Section, render the label as a bold Title and skip the input.
+            if (field.Type == FormFieldType.Section)
+            {
+                Panel.AddChild(new Title(ui, field.Label));
+                return;
+            }
+
+            // For all other field types, show a label paragraph above the input.
             Panel.AddChild(new Paragraph(ui, field.Label));
 
             switch (field.Type)
@@ -69,6 +89,8 @@ namespace Iguina.Utils
                 case FormFieldType.Numeric:
                 {
                     var input = new NumericInput(ui) { Value = field.DefaultValue };
+                    input.MinValue = field.Min;
+                    input.MaxValue = field.Max;
                     Panel.AddChild(input);
                     _entitiesByKey[field.Key] = input;
                     break;
@@ -99,21 +121,61 @@ namespace Iguina.Utils
                     _entitiesByKey[field.Key] = p;
                     break;
                 }
+                case FormFieldType.Slider:
+                {
+                    var slider = new Slider(ui)
+                    {
+                        MinValue = field.Min,
+                        MaxValue = field.Max,
+                    };
+                    if (int.TryParse(field.DefaultValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
+                        slider.Value = System.Math.Clamp(v, field.Min, field.Max);
+                    Panel.AddChild(slider);
+                    _entitiesByKey[field.Key] = slider;
+                    break;
+                }
+                case FormFieldType.RadioButtons:
+                {
+                    var radios = new List<RadioButton>();
+                    if (field.DropDownChoices != null)
+                    {
+                        foreach (var choice in field.DropDownChoices)
+                        {
+                            var rb = new RadioButton(ui, choice)
+                            {
+                                ExclusiveSelection = true,
+                                Checked = choice == field.DefaultValue,
+                            };
+                            Panel.AddChild(rb);
+                            radios.Add(rb);
+                        }
+                    }
+                    _radioGroups[field.Key] = (radios, field.DropDownChoices ?? new List<string>());
+                    break;
+                }
             }
         }
 
         /// <summary>Read the current text value of the field with this key.
-        /// For Checkbox returns "true" / "false"; for DropDown returns the
-        /// selected option (or empty if none); for Paragraph returns the
-        /// rendered text.</summary>
+        /// For Checkbox returns "true" / "false"; for DropDown / RadioButtons
+        /// returns the selected option (or empty if none); for Slider /
+        /// NumericInput returns the integer as a string; for Paragraph returns
+        /// the rendered text.</summary>
         public string GetValue(string key)
         {
+            if (_radioGroups.TryGetValue(key, out var group))
+            {
+                for (var i = 0; i < group.radios.Count; i++)
+                    if (group.radios[i].Checked) return group.choices[i];
+                return string.Empty;
+            }
             if (!_entitiesByKey.TryGetValue(key, out var entity)) return string.Empty;
             return entity switch
             {
                 TextInput t => t.Value,
                 Checkbox c => c.Checked ? "true" : "false",
                 DropDown d => d.SelectedValue ?? string.Empty,
+                Slider s => s.Value.ToString(CultureInfo.InvariantCulture),
                 Paragraph p => p.Text,
                 _ => string.Empty,
             };
@@ -128,6 +190,7 @@ namespace Iguina.Utils
         {
             var ret = new Dictionary<string, string>();
             foreach (var key in _entitiesByKey.Keys) ret[key] = GetValue(key);
+            foreach (var key in _radioGroups.Keys) ret[key] = GetValue(key);
             return ret;
         }
     }

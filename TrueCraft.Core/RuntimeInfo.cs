@@ -8,7 +8,7 @@ namespace TrueCraft.Core
     {
         static RuntimeInfo()
         {
-            IsMono = Type.GetType("Mono.Runtime") != null;
+            IsMono = Type.GetType("Mono.Runtime") is not null;
             var p = (int) Environment.OSVersion.Platform;
             IsUnix = p == 4 || p == 6 || p == 128;
             IsWindows = Path.DirectorySeparatorChar == '\\';

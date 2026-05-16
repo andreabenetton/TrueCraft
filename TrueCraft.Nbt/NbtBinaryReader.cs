@@ -205,7 +205,7 @@ namespace TrueCraft.Nbt
             }
             else if (bytesToSkip != 0)
             {
-                if (_seekBuffer == null) _seekBuffer = new byte[SeekBufferSize];
+                if (_seekBuffer is null) _seekBuffer = new byte[SeekBufferSize];
                 var bytesSkipped = 0;
                 while (bytesSkipped < bytesToSkip)
                 {

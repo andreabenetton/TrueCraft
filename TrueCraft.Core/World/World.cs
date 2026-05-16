@@ -73,7 +73,7 @@ namespace TrueCraft.Core.World
         {
             get
             {
-                if (_SpawnPoint == null)
+                if (_SpawnPoint is null)
                     _SpawnPoint = ChunkProvider.GetSpawn(this);
                 return _SpawnPoint.Value;
             }
@@ -110,7 +110,7 @@ namespace TrueCraft.Core.World
             var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
 
             var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ), generate);
-            if (region == null)
+            if (region is null)
                 return null;
             return region.GetChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32),
                 generate);
@@ -165,7 +165,7 @@ namespace TrueCraft.Core.World
             var old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
             chunk.SetBlockID(adjustedCoordinates, descriptor.ID);
             chunk.SetMetadata(adjustedCoordinates, descriptor.Metadata);
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 BlockChanged(this,
                     new BlockChangeEventArgs(coordinates, old,
                         GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
@@ -176,10 +176,10 @@ namespace TrueCraft.Core.World
             IChunk chunk;
             var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
             var old = new BlockDescriptor();
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
             chunk.SetBlockID(adjustedCoordinates, value);
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 BlockChanged(this,
                     new BlockChangeEventArgs(coordinates, old,
                         GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
@@ -190,10 +190,10 @@ namespace TrueCraft.Core.World
             IChunk chunk;
             var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
             var old = new BlockDescriptor();
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
             chunk.SetMetadata(adjustedCoordinates, value);
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 BlockChanged(this,
                     new BlockChangeEventArgs(coordinates, old,
                         GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
@@ -204,10 +204,10 @@ namespace TrueCraft.Core.World
             IChunk chunk;
             var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
             var old = new BlockDescriptor();
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
             chunk.SetSkyLight(adjustedCoordinates, value);
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 BlockChanged(this,
                     new BlockChangeEventArgs(coordinates, old,
                         GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
@@ -218,10 +218,10 @@ namespace TrueCraft.Core.World
             IChunk chunk;
             var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
             var old = new BlockDescriptor();
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
             chunk.SetBlockLight(adjustedCoordinates, value);
-            if (BlockChanged != null)
+            if (BlockChanged is not null)
                 BlockChanged(this,
                     new BlockChangeEventArgs(coordinates, old,
                         GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
@@ -326,7 +326,7 @@ namespace TrueCraft.Core.World
             if (ChunkCache.ContainsKey(Thread.CurrentThread))
             {
                 var cache = ChunkCache[Thread.CurrentThread];
-                if (cache != null && chunkX == cache.Coordinates.X && chunkZ == cache.Coordinates.Z)
+                if (cache is not null && chunkX == cache.Coordinates.X && chunkZ == cache.Coordinates.Z)
                 {
                     chunk = cache;
                 }
@@ -489,7 +489,7 @@ namespace TrueCraft.Core.World
             if (!generate)
                 return null;
             Region region;
-            if (BaseDirectory != null)
+            if (BaseDirectory is not null)
             {
                 var file = Path.Combine(BaseDirectory, Region.GetRegionFileName(coordinates));
                 if (File.Exists(file))
@@ -512,13 +512,13 @@ namespace TrueCraft.Core.World
 
         protected internal void OnChunkGenerated(ChunkLoadedEventArgs e)
         {
-            if (ChunkGenerated != null)
+            if (ChunkGenerated is not null)
                 ChunkGenerated(this, e);
         }
 
         protected internal void OnChunkLoaded(ChunkLoadedEventArgs e)
         {
-            if (ChunkLoaded != null)
+            if (ChunkLoaded is not null)
                 ChunkLoaded(this, e);
         }
 

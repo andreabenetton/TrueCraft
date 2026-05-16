@@ -51,7 +51,7 @@ namespace TrueCraft.Handlers
                         if (c.KnownEntities.Contains(client.Entity))
                             c.QueuePacket(new AnimationPacket(client.Entity.EntityID, AnimationPacket.PlayerAnimation.SwingArm));
                     }
-                    if (provider == null)
+                    if (provider is null)
                         server.SendMessage(ChatColor.Red + "WARNING: block provider for ID {0} is null (player digging)", descriptor.ID);
                     else
                         provider.BlockLeftClicked(descriptor, packet.Face, world, client);
@@ -83,7 +83,7 @@ namespace TrueCraft.Handlers
                         if (c.KnownEntities.Contains(client.Entity))
                             c.QueuePacket(new AnimationPacket(client.Entity.EntityID, AnimationPacket.PlayerAnimation.None));
                     }
-                    if (provider != null && descriptor.ID != 0)
+                    if (provider is not null && descriptor.ID != 0)
                     {
                         time = BlockProvider.GetHarvestTime(descriptor.ID, client.SelectedItem.ID, out damage);
                         if (time <= 20)
@@ -96,7 +96,7 @@ namespace TrueCraft.Handlers
                             if (damage != 0)
                             {
                                 var tool = server.ItemRepository.GetItemProvider(client.SelectedItem.ID) as ToolItem;
-                                if (tool != null && tool.Uses != -1)
+                                if (tool is not null && tool.Uses != -1)
                                 {
                                     var slot = client.SelectedItem;
                                     slot.Metadata += damage;
@@ -132,10 +132,10 @@ namespace TrueCraft.Handlers
                 return Task.CompletedTask;
             }
             bool use = true;
-            if (block != null)
+            if (block is not null)
             {
                 var provider = server.BlockRepository.GetBlockProvider(block.Value.ID);
-                if (provider == null)
+                if (provider is null)
                 {
                     server.SendMessage(ChatColor.Red + "WARNING: block provider for ID {0} is null (player placing)", block.Value.ID);
                     server.SendMessage(ChatColor.Red + "Error occured from client {0} at coordinates {1}", client.Username, block.Value.Coordinates);
@@ -157,15 +157,15 @@ namespace TrueCraft.Handlers
                 if (use)
                 {
                     var itemProvider = server.ItemRepository.GetItemProvider(slot.ID);
-                    if (itemProvider == null)
+                    if (itemProvider is null)
                     {
                         server.SendMessage(ChatColor.Red + "WARNING: item provider for ID {0} is null (player placing)", block.Value.ID);
                         server.SendMessage(ChatColor.Red + "Error occured from client {0} at coordinates {1}", client.Username, block.Value.Coordinates);
                         server.SendMessage(ChatColor.Red + "Packet logged at {0}, please report upstream", DateTime.UtcNow);
                     }
-                    if (block != null)
+                    if (block is not null)
                     {
-                        if (itemProvider != null)
+                        if (itemProvider is not null)
                             itemProvider.ItemUsedOnBlock(position, slot, packet.Face, client.World, client);
                     }
                     else

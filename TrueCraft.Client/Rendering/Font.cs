@@ -68,7 +68,7 @@ namespace TrueCraft.Client.Rendering
                 _definition = FontLoader.Load(contents);
             }
 
-            if (_textures != null)
+            if (_textures is not null)
                 foreach (var texture in _textures)
                     texture.Dispose();
 

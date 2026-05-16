@@ -29,7 +29,7 @@ namespace TrueCraft.Core.TerrainGen
         {
             var temperatureResults = new List<IBiomeProvider>();
             foreach (var biome in BiomeProviders)
-                if (biome != null && biome.Temperature.Equals(temperature))
+                if (biome is not null && biome.Temperature.Equals(temperature))
                     temperatureResults.Add(biome);
 
             if (temperatureResults.Count.Equals(0))
@@ -37,10 +37,10 @@ namespace TrueCraft.Core.TerrainGen
                 IBiomeProvider provider = null;
                 var temperatureDifference = 100.0f;
                 foreach (var biome in BiomeProviders)
-                    if (biome != null)
+                    if (biome is not null)
                     {
                         var Difference = Math.Abs(temperature - biome.Temperature);
-                        if (provider == null || Difference < temperatureDifference)
+                        if (provider is null || Difference < temperatureDifference)
                         {
                             provider = biome;
                             temperatureDifference = (float) Difference;
@@ -51,7 +51,7 @@ namespace TrueCraft.Core.TerrainGen
             }
 
             foreach (var biome in BiomeProviders)
-                if (biome != null
+                if (biome is not null
                     && biome.Rainfall.Equals(rainfall)
                     && temperatureResults.Contains(biome)
                     && (!spawn || biome.Spawn))
@@ -60,10 +60,10 @@ namespace TrueCraft.Core.TerrainGen
             IBiomeProvider biomeProvider = null;
             var rainfallDifference = 100.0f;
             foreach (var biome in BiomeProviders)
-                if (biome != null)
+                if (biome is not null)
                 {
                     var difference = Math.Abs(temperature - biome.Temperature);
-                    if ((biomeProvider == null || difference < rainfallDifference)
+                    if ((biomeProvider is null || difference < rainfallDifference)
                         && (!spawn || biome.Spawn))
                     {
                         biomeProvider = biome;

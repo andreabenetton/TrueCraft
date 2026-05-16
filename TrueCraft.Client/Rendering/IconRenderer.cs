@@ -14,7 +14,7 @@ namespace TrueCraft.Client.Rendering
             for (var i = 0; i < 0x100; i++)
             {
                 var provider = repository.GetBlockProvider((byte) i);
-                if (provider == null || provider.GetIconTexture(0) != null)
+                if (provider is null || provider.GetIconTexture(0) is not null)
                     continue;
                 int[] indicies;
                 var verticies = BlockRenderer.RenderBlock(provider,
@@ -59,7 +59,7 @@ namespace TrueCraft.Client.Rendering
             Rectangle destination)
         {
             var mesh = BlockMeshes[provider.ID];
-            if (mesh != null)
+            if (mesh is not null)
             {
                 RenderEffect.World = Matrix.Identity
                                      * Matrix.CreateScale(0.6f)

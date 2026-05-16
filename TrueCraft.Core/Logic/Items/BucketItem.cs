@@ -53,7 +53,7 @@ namespace TrueCraft.Core.Logic.Items
                 var provider = user.Server.BlockRepository.GetBlockProvider(world.GetBlockID(coordinates));
                 if (!provider.Opaque)
                 {
-                    if (RelevantBlockType != null)
+                    if (RelevantBlockType is not null)
                     {
                         var blockType = RelevantBlockType.Value;
                         user.Server.BlockUpdatesEnabled = false;

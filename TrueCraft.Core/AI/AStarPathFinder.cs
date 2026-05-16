@@ -40,12 +40,12 @@ namespace TrueCraft.Core.AI
         private bool CanOccupyVoxel(IWorld world, BoundingBox box, Coordinates3D voxel)
         {
             var id = world.GetBlockID(voxel);
-            if (world.BlockRepository == null)
+            if (world.BlockRepository is null)
                 return id == 0;
             var provider = world.BlockRepository.GetBlockProvider(id);
-            if (provider == null)
+            if (provider is null)
                 return true;
-            return provider.BoundingBox == null;
+            return provider.BoundingBox is null;
         }
 
         private IEnumerable<Coordinates3D> GetNeighbors(IWorld world, BoundingBox subject, Coordinates3D current)

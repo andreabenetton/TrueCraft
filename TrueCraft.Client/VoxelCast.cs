@@ -32,10 +32,10 @@ namespace TrueCraft.Client
                 {
                     var provider = repository.GetBlockProvider(id);
                     var box = provider.InteractiveBoundingBox;
-                    if (box != null)
+                    if (box is not null)
                     {
                         var distance = ray.Intersects(box.Value.OffsetBy(coords), out var _face);
-                        if (distance != null && distance.Value < min)
+                        if (distance is not null && distance.Value < min)
                         {
                             min = distance.Value;
                             pick = coords;

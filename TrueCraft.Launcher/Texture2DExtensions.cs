@@ -18,7 +18,7 @@ namespace GeonBit.UI.Extensions
         /// </summary>
         public static Texture2D Crop(this Texture2D originalTexture, Rectangle sourceRectangle)
         {
-            if (originalTexture == null)
+            if (originalTexture is null)
                 return null;
 
             var cropTexture = new Texture2D(originalTexture.GraphicsDevice,
@@ -37,7 +37,7 @@ namespace GeonBit.UI.Extensions
         /// </summary>
         public static Texture2D HorizontalResize(this Texture2D source, Rectangle area)
         {
-            if (source == null)
+            if (source is null)
                 return null;
 
             var cropped = new Texture2D(source.GraphicsDevice, area.Width, area.Height);

@@ -94,19 +94,19 @@ namespace TrueCraft.Core.Logic.Blocks
         private FurnaceState GetState(IWorld world, Coordinates3D coords)
         {
             var tileEntity = world.GetTileEntity(coords);
-            if (tileEntity == null)
+            if (tileEntity is null)
                 tileEntity = CreateTileEntity();
             var burnTime = tileEntity.Get<NbtShort>("BurnTime");
             var burnTotal = tileEntity.Get<NbtShort>("BurnTotal");
             var cookTime = tileEntity.Get<NbtShort>("CookTime");
             var state = new FurnaceState
             {
-                BurnTimeTotal = burnTotal == null ? (short) 0 : burnTotal.Value,
-                BurnTimeRemaining = burnTime == null ? (short) 0 : burnTime.Value,
-                CookTime = cookTime == null ? (short) 200 : cookTime.Value
+                BurnTimeTotal = burnTotal is null ? (short) 0 : burnTotal.Value,
+                BurnTimeRemaining = burnTime is null ? (short) 0 : burnTime.Value,
+                CookTime = cookTime is null ? (short) 200 : cookTime.Value
             };
             var items = tileEntity.Get<NbtList>("Items");
-            if (items != null)
+            if (items is not null)
             {
                 var i = 0;
                 foreach (var item in items)
@@ -165,7 +165,7 @@ namespace TrueCraft.Core.Logic.Blocks
         public override void BlockMined(BlockDescriptor descriptor, BlockFace face, IWorld world, IRemoteClient user)
         {
             var entity = world.GetTileEntity(descriptor.Coordinates);
-            if (entity != null)
+            if (entity is not null)
             {
                 foreach (var item in (NbtList) entity["Items"])
                 {
@@ -248,7 +248,7 @@ namespace TrueCraft.Core.Logic.Blocks
 
             if (state.BurnTimeRemaining > 0)
             {
-                if (state.CookTime == -1 && input != null &&
+                if (state.CookTime == -1 && input is not null &&
                     (outputStack.Empty || outputStack.CanMerge(input.SmeltingOutput)))
                 {
                     state.CookTime = 0;
@@ -262,7 +262,7 @@ namespace TrueCraft.Core.Logic.Blocks
                 return;
             }
 
-            if (fuel != null && input != null) // We can maybe start
+            if (fuel is not null && input is not null) // We can maybe start
                 if (outputStack.Empty || outputStack.CanMerge(input.SmeltingOutput))
                 {
                     // We can definitely start
@@ -285,7 +285,7 @@ namespace TrueCraft.Core.Logic.Blocks
                 TrackedFurnaces.Remove(coords);
 
             if (world.GetBlockID(coords) != BlockID && world.GetBlockID(coords) != LitFurnaceBlock.BlockID)
-                /*if (window != null && !window.IsDisposed)
+                /*if (window is not null && !window.IsDisposed)
                         window.Dispose();*/
                 return;
 
@@ -321,7 +321,7 @@ namespace TrueCraft.Core.Logic.Blocks
             if (state.CookTime == 200 && burnTime > 0)
             {
                 state.CookTime = -1;
-                if (input != null && (outputStack.Empty || outputStack.CanMerge(input.SmeltingOutput)))
+                if (input is not null && (outputStack.Empty || outputStack.CanMerge(input.SmeltingOutput)))
                 {
                     if (outputStack.Empty)
                         outputStack = input.SmeltingOutput;
@@ -367,7 +367,7 @@ namespace TrueCraft.Core.Logic.Blocks
 
             public void Dispose()
             {
-                if (Disposed != null)
+                if (Disposed is not null)
                     Dispose();
             }
         }

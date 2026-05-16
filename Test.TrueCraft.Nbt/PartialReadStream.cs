@@ -12,7 +12,7 @@ namespace Test.TrueCraft.Nbt {
 
 
         public PartialReadStream([NotNull] Stream baseStream, int increment) {
-            if (baseStream == null) throw new ArgumentNullException("baseStream");
+            if (baseStream is null) throw new ArgumentNullException("baseStream");
             this.baseStream = baseStream;
             this.increment = increment;
         }

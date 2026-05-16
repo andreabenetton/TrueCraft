@@ -43,7 +43,7 @@ namespace TrueCraft.Commands
         public void HandleCommand(IRemoteClient client, string alias, string[] arguments)
         {
             ICommand foundCommand = FindByName(alias) ?? FindByAlias(alias);
-            if (foundCommand == null)
+            if (foundCommand is null)
             {
                 client.SendMessage("Invalid command \"" + alias + "\".");
                 return;

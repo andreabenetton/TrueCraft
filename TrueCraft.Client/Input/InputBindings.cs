@@ -46,7 +46,7 @@ namespace TrueCraft.Client.Input
         public static bool Matches(InputAction action, Keys key)
         {
             // Custom bindings (UserSettings) override defaults when present.
-            if (UserSettings.Local?.KeyBindings != null &&
+            if (UserSettings.Local?.KeyBindings is not null &&
                 UserSettings.Local.KeyBindings.TryGetValue(action.ToString(), out var custom) &&
                 Enum.TryParse<Keys>(custom, true, out var customKey))
                 return customKey == key;

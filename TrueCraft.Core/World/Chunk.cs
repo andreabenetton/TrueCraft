@@ -43,7 +43,7 @@ namespace TrueCraft.Core.World
 
         public void Dispose()
         {
-            if (Disposed != null)
+            if (Disposed is not null)
                 Disposed(this, null);
         }
 
@@ -124,7 +124,7 @@ namespace TrueCraft.Core.World
         public void SetBlockID(Coordinates3D coordinates, byte value)
         {
             IsModified = true;
-            if (ParentRegion != null)
+            if (ParentRegion is not null)
                 ParentRegion.DamageChunk(Coordinates);
             var index = coordinates.Y + coordinates.Z * Height + coordinates.X * Height * Width;
             Data[index] = value;
@@ -161,7 +161,7 @@ namespace TrueCraft.Core.World
         public void SetMetadata(Coordinates3D coordinates, byte value)
         {
             IsModified = true;
-            if (ParentRegion != null)
+            if (ParentRegion is not null)
                 ParentRegion.DamageChunk(Coordinates);
             var index = coordinates.Y + coordinates.Z * Height + coordinates.X * Height * Width;
             Metadata[index] = value;
@@ -174,7 +174,7 @@ namespace TrueCraft.Core.World
         public void SetSkyLight(Coordinates3D coordinates, byte value)
         {
             IsModified = true;
-            if (ParentRegion != null)
+            if (ParentRegion is not null)
                 ParentRegion.DamageChunk(Coordinates);
             var index = coordinates.Y + coordinates.Z * Height + coordinates.X * Height * Width;
             SkyLight[index] = value;
@@ -187,7 +187,7 @@ namespace TrueCraft.Core.World
         public void SetBlockLight(Coordinates3D coordinates, byte value)
         {
             IsModified = true;
-            if (ParentRegion != null)
+            if (ParentRegion is not null)
                 ParentRegion.DamageChunk(Coordinates);
             var index = coordinates.Y + coordinates.Z * Height + coordinates.X * Height * Width;
             BlockLight[index] = value;
@@ -208,12 +208,12 @@ namespace TrueCraft.Core.World
         /// </summary>
         public void SetTileEntity(Coordinates3D coordinates, NbtCompound value)
         {
-            if (value == null && TileEntities.ContainsKey(coordinates))
+            if (value is null && TileEntities.ContainsKey(coordinates))
                 TileEntities.Remove(coordinates);
             else
                 TileEntities[coordinates] = value;
             IsModified = true;
-            if (ParentRegion != null)
+            if (ParentRegion is not null)
                 ParentRegion.DamageChunk(Coordinates);
         }
 

@@ -43,7 +43,7 @@ namespace TrueCraft.Nbt
         /// </summary>
         public static int GetByteCount(string value)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value is null) throw new ArgumentNullException(nameof(value));
             var bytes = 0;
             foreach (var c in value)
             {
@@ -60,8 +60,8 @@ namespace TrueCraft.Nbt
         /// </summary>
         public static int Encode(string value, byte[] destination, int offset)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
-            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+            if (destination is null) throw new ArgumentNullException(nameof(destination));
             var pos = offset;
             foreach (var c in value)
             {
@@ -105,7 +105,7 @@ namespace TrueCraft.Nbt
         /// </exception>
         public static string Decode(byte[] source, int offset, int length)
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source is null) throw new ArgumentNullException(nameof(source));
             if (offset < 0 || length < 0 || offset + length > source.Length)
                 throw new ArgumentOutOfRangeException();
 
@@ -166,7 +166,7 @@ namespace TrueCraft.Nbt
         /// </summary>
         public static void Write(Stream destination, string value)
         {
-            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            if (destination is null) throw new ArgumentNullException(nameof(destination));
             var bytes = Encode(value);
             destination.Write(bytes, 0, bytes.Length);
         }

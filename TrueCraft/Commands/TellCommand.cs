@@ -39,7 +39,7 @@ namespace TrueCraft.Commands
 
             var receivingPlayer = GetPlayerByName(client, username);
 
-            if (receivingPlayer == null)
+            if (receivingPlayer is null)
             {
                 client.SendMessage("No client with the username \"" + username + "\" was found.");
                 return;

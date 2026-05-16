@@ -146,7 +146,7 @@ namespace TrueCraft.Commands
 
             arguments[0] = arguments[0].ToUpper();
             var type = entityTypes.SingleOrDefault(t => t.Name.ToUpper() == arguments[0] + "ENTITY");
-            if (type == null)
+            if (type is null)
             {
                 client.SendMessage(ChatColor.Red + "Unknown entity type.");
                 return;
@@ -197,7 +197,7 @@ namespace TrueCraft.Commands
 
             var manager = client.Server.GetEntityManagerForWorld(client.World);
             var entity = manager.GetEntityByID(id) as MobEntity;
-            if (entity == null)
+            if (entity is null)
             {
                 client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
                 return;
@@ -207,7 +207,7 @@ namespace TrueCraft.Commands
             {
                 var astar = new AStarPathFinder();
                 var path = astar.FindPath(client.World, entity.BoundingBox, (Coordinates3D)entity.Position, (Coordinates3D)client.Entity.Position);
-                if (path == null)
+                if (path is null)
                 {
                     client.SendMessage(ChatColor.Red + "It is impossible for this entity to reach you.");
                 }
@@ -260,7 +260,7 @@ namespace TrueCraft.Commands
 
             var manager = client.Server.GetEntityManagerForWorld(client.World);
             var entity = manager.GetEntityByID(id);
-            if (entity == null)
+            if (entity is null)
             {
                 client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
                 return;
@@ -318,7 +318,7 @@ namespace TrueCraft.Commands
 
             var manager = client.Server.GetEntityManagerForWorld(client.World);
             var entity = manager.GetEntityByID(id) as MobEntity;
-            if (entity == null)
+            if (entity is null)
             {
                 client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
                 return;
@@ -515,7 +515,7 @@ namespace TrueCraft.Commands
             var server = client.Server as MultiplayerServer;
             var chunk = client.World.FindChunk((Coordinates3D)client.Entity.Position);
             var lighter = server.WorldLighters.SingleOrDefault(l => l.World == client.World);
-            if (lighter != null)
+            if (lighter is not null)
             {
                 lighter.InitialLighting(chunk, true);
                 (client as RemoteClient).UnloadChunk(chunk.Coordinates);

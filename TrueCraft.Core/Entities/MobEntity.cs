@@ -75,7 +75,7 @@ namespace TrueCraft.Core.Entities
         public bool AdvancePath(TimeSpan time, bool faceRoute = true)
         {
             var modifier = time.TotalSeconds * Speed;
-            if (CurrentPath != null)
+            if (CurrentPath is not null)
             {
                 // Advance along path
                 var target = (Vector3) CurrentPath.Waypoints[CurrentPath.Index];
@@ -106,7 +106,7 @@ namespace TrueCraft.Core.Entities
 
         public override void Update(IEntityManager entityManager)
         {
-            if (CurrentState != null)
+            if (CurrentState is not null)
                 CurrentState.Update(this, entityManager);
             else
                 AdvancePath(entityManager.TimeSinceLastUpdate);

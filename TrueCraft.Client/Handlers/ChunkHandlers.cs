@@ -144,7 +144,7 @@ namespace TrueCraft.Client.Handlers
         private static void Marshal(MultiplayerClient client, Action action)
         {
             var invoke = client.MainThreadInvoke;
-            if (invoke != null)
+            if (invoke is not null)
                 invoke(action);
             else
                 action();

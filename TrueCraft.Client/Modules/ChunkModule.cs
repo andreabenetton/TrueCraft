@@ -93,14 +93,14 @@ namespace TrueCraft.Client.Modules
             {
                 any = true;
                 var chunkMesh = mesh as ChunkMesh;
-                if (chunkMesh != null && ActiveMeshes.Contains(chunkMesh.Chunk.Coordinates))
+                if (chunkMesh is not null && ActiveMeshes.Contains(chunkMesh.Chunk.Coordinates))
                 {
                     var existing = ChunkMeshes.FindIndex(m => m.Chunk.Coordinates == chunkMesh.Chunk.Coordinates);
                     ChunkMeshes[existing] = chunkMesh;
                 }
                 else
                 {
-                    if (chunkMesh != null)
+                    if (chunkMesh is not null)
                     {
                         ActiveMeshes.Add(chunkMesh.Chunk.Coordinates);
                         ChunkMeshes.Add(chunkMesh);
@@ -180,7 +180,7 @@ namespace TrueCraft.Client.Modules
             {
                 var adjacent = Game.Client.World.GetChunk(
                     coordinates + e.Chunk.Coordinates);
-                if (adjacent != null)
+                if (adjacent is not null)
                     ChunkRenderer.Enqueue(adjacent);
             }
         }

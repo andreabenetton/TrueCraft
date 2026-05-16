@@ -39,7 +39,7 @@ namespace TrueCraft.Client.Modules
 
         public void Draw(GameTime gameTime)
         {
-            if (Game.Client.CurrentWindow != null)
+            if (Game.Client.CurrentWindow is not null)
             {
                 // TODO: slot == -999 when outside of the window and -1 when inside the window, but not on an item
                 SelectedSlot = -999;
@@ -76,7 +76,7 @@ namespace TrueCraft.Client.Modules
                         break;
                 }
 
-                if (provider?.GetIconTexture((byte) HeldItem.Metadata) != null)
+                if (provider?.GetIconTexture((byte) HeldItem.Metadata) is not null)
                     IconRenderer.RenderItemIcon(SpriteBatch, Items, provider,
                         (byte) HeldItem.Metadata, rect, Color.White);
                 SpriteBatch.End();
@@ -90,8 +90,8 @@ namespace TrueCraft.Client.Modules
                         break;
                 }
 
-                if (provider != null)
-                    if (provider.GetIconTexture((byte) HeldItem.Metadata) == null && provider is IBlockProvider)
+                if (provider is not null)
+                    if (provider.GetIconTexture((byte) HeldItem.Metadata) is null && provider is IBlockProvider)
                         IconRenderer.RenderBlockIcon(Game, provider as IBlockProvider, (byte) HeldItem.Metadata, rect);
                 SpriteBatch.Begin(samplerState: SamplerState.PointClamp, blendState: BlendState.NonPremultiplied);
                 switch (Game.Client.CurrentWindow.Type)
@@ -104,7 +104,7 @@ namespace TrueCraft.Client.Modules
                         break;
                 }
 
-                if (provider != null)
+                if (provider is not null)
                     if (HeldItem.Count > 1)
                     {
                         var offset = 10;
@@ -136,20 +136,20 @@ namespace TrueCraft.Client.Modules
 
         public override void Update(GameTime gameTime)
         {
-            Game.IsMouseVisible = Game.Client.CurrentWindow != null;
+            Game.IsMouseVisible = Game.Client.CurrentWindow is not null;
             base.Update(gameTime);
         }
 
         public override bool MouseMove(GameTime gameTime, MouseMoveEventArgs e)
         {
-            if (Game.Client.CurrentWindow != null)
+            if (Game.Client.CurrentWindow is not null)
                 return true;
             return base.MouseMove(gameTime, e);
         }
 
         public override bool MouseButtonDown(GameTime gameTime, MouseButtonEventArgs e)
         {
-            if (Game.Client.CurrentWindow == null)
+            if (Game.Client.CurrentWindow is null)
                 return false;
             var id = Game.Client.CurrentWindow.ID;
             if (id == -1)
@@ -179,12 +179,12 @@ namespace TrueCraft.Client.Modules
 
         public override bool MouseButtonUp(GameTime gameTime, MouseButtonEventArgs e)
         {
-            return Game.Client.CurrentWindow != null;
+            return Game.Client.CurrentWindow is not null;
         }
 
         public override bool KeyDown(GameTime gameTime, KeyboardKeyEventArgs e)
         {
-            if (Game.Client.CurrentWindow != null)
+            if (Game.Client.CurrentWindow is not null)
             {
                 if (e.Key == Keys.Escape)
                 {
@@ -266,10 +266,10 @@ namespace TrueCraft.Client.Modules
                     continue;
                 var provider = Game.ItemRepository.GetItemProvider(item.ID);
                 var texture = provider.GetIconTexture((byte) item.Metadata);
-                if (texture != null && stage == RenderStage.Sprites)
+                if (texture is not null && stage == RenderStage.Sprites)
                     IconRenderer.RenderItemIcon(SpriteBatch, Items, provider,
                         (byte) item.Metadata, rect, Color.White);
-                if (texture == null && stage == RenderStage.Models && provider is IBlockProvider)
+                if (texture is null && stage == RenderStage.Models && provider is IBlockProvider)
                     IconRenderer.RenderBlockIcon(Game, provider as IBlockProvider, (byte) item.Metadata, rect);
                 if (stage == RenderStage.Text && item.Count > 1)
                 {

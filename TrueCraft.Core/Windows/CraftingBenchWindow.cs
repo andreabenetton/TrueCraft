@@ -16,7 +16,7 @@ namespace TrueCraft.Core.Windows
                 new WindowArea(MainIndex, 27, 9, 3), // Main inventory
                 new WindowArea(HotbarIndex, 9, 9, 1) // Hotbar
             };
-            if (inventory != null)
+            if (inventory is not null)
             {
                 inventory.MainInventory.CopyTo(MainInventory);
                 inventory.Hotbar.CopyTo(Hotbar);
@@ -26,7 +26,7 @@ namespace TrueCraft.Core.Windows
                 area.WindowChange += (s, e) => OnWindowChange(new WindowChangeEventArgs(
                     (s as WindowArea).StartIndex + e.SlotIndex, e.Value));
             Copying = false;
-            if (inventory != null)
+            if (inventory is not null)
                 inventory.WindowChange += (sender, e) =>
                 {
                     if (Copying)

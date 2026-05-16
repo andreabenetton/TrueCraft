@@ -138,7 +138,7 @@ namespace TrueCraft.Core.Logic.Blocks
             var window = new ChestWindow((InventoryWindow) user.Inventory, adjacent != -Coordinates3D.One);
             // Add items
             var entity = world.GetTileEntity(self);
-            if (entity != null)
+            if (entity is not null)
                 foreach (var item in (NbtList) entity["Items"])
                 {
                     var slot = ItemStack.FromNbt((NbtCompound) item);
@@ -149,7 +149,7 @@ namespace TrueCraft.Core.Logic.Blocks
             if (adjacent != -Coordinates3D.One)
             {
                 entity = world.GetTileEntity(adjacent);
-                if (entity != null)
+                if (entity is not null)
                     foreach (var item in (NbtList) entity["Items"])
                     {
                         var slot = ItemStack.FromNbt((NbtCompound) item);
@@ -180,7 +180,7 @@ namespace TrueCraft.Core.Logic.Blocks
                 }
 
                 var newEntity = world.GetTileEntity(self);
-                if (newEntity == null)
+                if (newEntity is null)
                     newEntity = new NbtCompound(new[] {entitySelf});
                 else
                     newEntity["Items"] = entitySelf;
@@ -188,7 +188,7 @@ namespace TrueCraft.Core.Logic.Blocks
                 if (adjacent != -Coordinates3D.One)
                 {
                     newEntity = world.GetTileEntity(adjacent);
-                    if (newEntity == null)
+                    if (newEntity is null)
                         newEntity = new NbtCompound(new[] {entityAdjacent});
                     else
                         newEntity["Items"] = entityAdjacent;
@@ -204,7 +204,7 @@ namespace TrueCraft.Core.Logic.Blocks
             var self = descriptor.Coordinates;
             var entity = world.GetTileEntity(self);
             var manager = user.Server.GetEntityManagerForWorld(world);
-            if (entity != null)
+            if (entity is not null)
                 foreach (var item in (NbtList) entity["Items"])
                 {
                     var slot = ItemStack.FromNbt((NbtCompound) item);

@@ -146,7 +146,7 @@ namespace TrueCraft.Client.Modules
                 if (item.Empty)
                     continue;
                 var provider = Game.ItemRepository.GetItemProvider(item.ID);
-                if (provider.GetIconTexture((byte) item.Metadata) == null)
+                if (provider.GetIconTexture((byte) item.Metadata) is null)
                     continue;
                 var position = origin + new Point((int) Scale(i * 20), 0);
                 var rect = new Rectangle(position, scale);
@@ -169,7 +169,7 @@ namespace TrueCraft.Client.Modules
                 if (item.Empty)
                     continue;
                 var provider = Game.ItemRepository.GetItemProvider(item.ID) as IBlockProvider;
-                if (provider == null || provider.GetIconTexture((byte) item.Metadata) != null)
+                if (provider is null || provider.GetIconTexture((byte) item.Metadata) is not null)
                     continue;
                 var position = origin + new Point((int) Scale(i * 20), 0);
                 var rect = new Rectangle(position, scale);

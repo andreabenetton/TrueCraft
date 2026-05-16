@@ -94,7 +94,7 @@ namespace TrueCraft.Nbt.Serialization
                 return ((NbtFile) value).RootTag;
             var compound = new NbtCompound(tagName);
 
-            if (value == null) return compound;
+            if (value is null) return compound;
             var nameAttributes = Attribute.GetCustomAttributes(value.GetType(), typeof(TagNameAttribute));
 
             if (nameAttributes.Length > 0)
@@ -119,9 +119,9 @@ namespace TrueCraft.Nbt.Serialization
                 var innerSerializer = new NbtSerializer(property.PropertyType);
                 var propValue = property.GetValue(value, null);
 
-                if (propValue == null)
+                if (propValue is null)
                 {
-                    if (ignoreOnNullAttribute != null) continue;
+                    if (ignoreOnNullAttribute is not null) continue;
                     if (property.PropertyType.IsValueType)
                         propValue = Activator.CreateInstance(property.PropertyType);
                     else if (property.PropertyType == typeof(string))
@@ -241,7 +241,7 @@ namespace TrueCraft.Nbt.Serialization
                     if (nameAttributes.Length != 0)
                         name = ((TagNameAttribute) nameAttributes[0]).Name;
                     var node = compound.Tags.SingleOrDefault(a => a.Name == name);
-                    if (node == null) continue;
+                    if (node is null) continue;
                     object data;
                     if (typeof(INbtSerializable).IsAssignableFrom(property.PropertyType))
                     {

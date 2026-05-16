@@ -55,7 +55,7 @@ namespace TrueCraft.Core.Networking
                 buffer.Slice(0, candidateLen).CopyTo(rented);
                 byte packetId = rented[0];
                 var factory = serverbound ? ServerboundPackets[packetId] : ClientboundPackets[packetId];
-                if (factory == null)
+                if (factory is null)
                     throw new NotSupportedException("Unable to read packet type 0x" + packetId.ToString("X2"));
 
                 using var ms = new MemoryStream(rented, 1, candidateLen - 1);

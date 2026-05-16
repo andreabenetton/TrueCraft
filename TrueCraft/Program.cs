@@ -91,7 +91,7 @@ namespace TrueCraft
             var profilerOpts = App.Services.GetRequiredService<IOptions<ProfilerOptions>>().Value;
 
             var buckets = profilerOpts.Buckets?.Split(',');
-            if (buckets != null)
+            if (buckets is not null)
             {
                 foreach (var bucket in buckets)
                     Profiler.EnableBucket(bucket.Trim());

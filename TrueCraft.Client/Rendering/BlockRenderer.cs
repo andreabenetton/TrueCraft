@@ -308,7 +308,7 @@ namespace TrueCraft.Client.Rendering
 
         /// <summary>
         ///     The default lighting information for rendering a block;
-        ///     i.e. when the lighting param to CreateUniformCube == null.
+        ///     i.e. when the lighting param to CreateUniformCube is null.
         /// </summary>
         protected static readonly int[] DefaultLighting =
         {
@@ -355,7 +355,7 @@ namespace TrueCraft.Client.Rendering
         protected static int GetLight(IChunk chunk, Coordinates3D coords)
         {
             // Handle icon renderer.
-            if (chunk == null)
+            if (chunk is null)
                 return 15;
 
             // Handle top (and bottom) of the world.

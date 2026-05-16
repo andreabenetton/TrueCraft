@@ -28,7 +28,7 @@ namespace TrueCraft.Core.TerrainGen.Decorators
                 var blockZ = MathHelper.ChunkToBlockZ(z, chunk.Coordinates.Z);
                 var height = chunk.HeightMap[x * Chunk.Width + z];
 
-                if (lastTree != null && lastTree.Value.DistanceTo(new Coordinates2D(x, z)) < biome.TreeDensity)
+                if (lastTree is not null && lastTree.Value.DistanceTo(new Coordinates2D(x, z)) < biome.TreeDensity)
                     continue;
 
                 if (Noise.Value2D(blockX, blockZ) > 0.3)
@@ -40,9 +40,9 @@ namespace TrueCraft.Core.TerrainGen.Decorators
                         || id != StationaryWaterBlock.BlockID && id != WaterBlock.BlockID
                                                               && id != LavaBlock.BlockID &&
                                                               id != StationaryLavaBlock.BlockID
-                                                              && provider.BoundingBox == null)
+                                                              && provider.BoundingBox is null)
                     {
-                        if (provider.BoundingBox == null)
+                        if (provider.BoundingBox is null)
                             location.Y--;
                         var oakNoise = ChanceNoise.Value2D(blockX * 0.6, blockZ * 0.6);
                         var birchNoise = ChanceNoise.Value2D(blockX * 0.2, blockZ * 0.2);

@@ -88,7 +88,7 @@ namespace TrueCraft.Client.Rendering
         /// <param name="texture"></param>
         public void AddTexture(string key, Texture2D texture)
         {
-            if (string.IsNullOrEmpty(key) || texture == null)
+            if (string.IsNullOrEmpty(key) || texture is null)
                 throw new ArgumentException();
 
             if (Customs.ContainsKey(key))
@@ -102,7 +102,7 @@ namespace TrueCraft.Client.Rendering
         /// <param name="texturePack"></param>
         public void AddTexturePack(TexturePack texturePack)
         {
-            if (texturePack == null)
+            if (texturePack is null)
                 return;
 
             // Make sure to 'silence' errors loading custom texture packs;
@@ -152,7 +152,7 @@ namespace TrueCraft.Client.Rendering
         public Texture2D GetTexture(string key)
         {
             TryGetTexture(key, out var result);
-            if (result == null)
+            if (result is null)
                 throw new InvalidOperationException();
 
             return result;

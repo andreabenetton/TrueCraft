@@ -59,7 +59,7 @@ namespace TrueCraft.Handlers
                     var head = client.World.GetBlockID((Coordinates3D)(client.Entity.Position + Vector3.Up));
                     var feetBox = server.BlockRepository.GetBlockProvider(feet).BoundingBox;
                     var headBox = server.BlockRepository.GetBlockProvider(head).BoundingBox;
-                    return feetBox != null || headBox != null;
+                    return feetBox is not null || headBox is not null;
                 });
                 while (collision())
                     client.Entity.Position += Vector3.Up;

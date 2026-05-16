@@ -43,14 +43,14 @@ namespace TrueCraft.Launcher.Views
 
             parent.AddChild(new Label("Saved servers"));
             _serverList = new SelectList(new Vector2(0, 160));
-            if (UserSettings.Local?.FavoriteServers != null)
+            if (UserSettings.Local?.FavoriteServers is not null)
                 foreach (var s in UserSettings.Local.FavoriteServers)
                     _serverList.AddItem(s.Name);
             _serverList.OnValueChange = _ =>
             {
                 var has = _serverList.SelectedIndex >= 0;
                 _removeServerButton.Enabled = has;
-                if (has && UserSettings.Local?.FavoriteServers != null
+                if (has && UserSettings.Local?.FavoriteServers is not null
                        && _serverList.SelectedIndex < UserSettings.Local.FavoriteServers.Length)
                     _serverIPInput.Value =
                         UserSettings.Local.FavoriteServers[_serverList.SelectedIndex].Address;
@@ -124,7 +124,7 @@ namespace TrueCraft.Launcher.Views
         private void RemoveSelectedServer()
         {
             var idx = _serverList.SelectedIndex;
-            if (idx < 0 || UserSettings.Local?.FavoriteServers == null) return;
+            if (idx < 0 || UserSettings.Local?.FavoriteServers is null) return;
             var server = UserSettings.Local.FavoriteServers[idx];
             _serverList.RemoveItem(idx);
             UserSettings.Local.FavoriteServers = UserSettings.Local.FavoriteServers

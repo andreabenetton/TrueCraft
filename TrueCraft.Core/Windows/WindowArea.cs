@@ -52,7 +52,7 @@ namespace TrueCraft.Core.Windows
                 {
                     // Merging takes precedence over empty slots
                     emptyIndex = -1;
-                    if (@from != null)
+                    if (@from is not null)
                         @from[index] = ItemStack.EmptyStack;
                     if (this[i].Count + item.Count > maximumStackSize)
                     {
@@ -68,7 +68,7 @@ namespace TrueCraft.Core.Windows
 
             if (emptyIndex != -1)
             {
-                if (from != null)
+                if (from is not null)
                     from[index] = ItemStack.EmptyStack;
                 this[emptyIndex] = item;
             }
@@ -98,7 +98,7 @@ namespace TrueCraft.Core.Windows
 
         protected internal virtual void OnWindowChange(WindowChangeEventArgs e)
         {
-            if (WindowChange != null)
+            if (WindowChange is not null)
                 WindowChange(this, e);
         }
     }

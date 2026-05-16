@@ -47,8 +47,8 @@ namespace TrueCraft.Nbt
             get => _rootTag;
             set
             {
-                if (value == null) throw new ArgumentNullException(nameof(value));
-                if (value.Name == null) throw new ArgumentException("Root tag must be named.");
+                if (value is null) throw new ArgumentNullException(nameof(value));
+                if (value.Name is null) throw new ArgumentException("Root tag must be named.");
                 _rootTag = value;
             }
         }
@@ -161,7 +161,7 @@ namespace TrueCraft.Nbt
         public static string ReadRootTagName([NotNull] string fileName, NbtCompression compression, bool bigEndian,
             int bufferSize)
         {
-            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
+            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
 
             if (!File.Exists(fileName)) throw new FileNotFoundException("Could not find the given NBT file.", fileName);
 
@@ -201,7 +201,7 @@ namespace TrueCraft.Nbt
         public static string ReadRootTagName([NotNull] Stream stream, NbtCompression compression, bool bigEndian,
             int bufferSize)
         {
-            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
             if (bufferSize < 0)
                 throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize,
                     "DefaultBufferSize cannot be negative.");
@@ -244,7 +244,7 @@ namespace TrueCraft.Nbt
         [NotNull]
         private static string GetRootNameInternal([NotNull] Stream stream, bool bigEndian)
         {
-            Debug.Assert(stream != null);
+            Debug.Assert(stream is not null);
             var firstByte = stream.ReadByte();
             if (firstByte < 0) throw new EndOfStreamException();
 
@@ -305,7 +305,7 @@ namespace TrueCraft.Nbt
         public NbtFile([NotNull] NbtCompound rootTag)
             : this()
         {
-            if (rootTag == null) throw new ArgumentNullException(nameof(rootTag));
+            if (rootTag is null) throw new ArgumentNullException(nameof(rootTag));
             RootTag = rootTag;
         }
 
@@ -324,7 +324,7 @@ namespace TrueCraft.Nbt
         public NbtFile([NotNull] string fileName)
             : this()
         {
-            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
+            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
             LoadFromFile(fileName, NbtCompression.AutoDetect, null);
         }
 
@@ -370,7 +370,7 @@ namespace TrueCraft.Nbt
         public long LoadFromFile([NotNull] string fileName, NbtCompression compression,
             [CanBeNull] TagSelector selector)
         {
-            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
+            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
 
             using (
                 var readFileStream = new FileStream(fileName,
@@ -420,7 +420,7 @@ namespace TrueCraft.Nbt
         public long LoadFromBuffer([NotNull] byte[] buffer, int index, int length, NbtCompression compression,
             [CanBeNull] TagSelector selector)
         {
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
 
             using (var ms = new MemoryStream(buffer, index, length))
             {
@@ -458,7 +458,7 @@ namespace TrueCraft.Nbt
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         public long LoadFromBuffer([NotNull] byte[] buffer, int index, int length, NbtCompression compression)
         {
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
 
             using (var ms = new MemoryStream(buffer, index, length))
             {
@@ -499,7 +499,7 @@ namespace TrueCraft.Nbt
         public long LoadFromStream([NotNull] Stream stream, NbtCompression compression,
             [CanBeNull] TagSelector selector)
         {
-            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
 
             FileName = null;
 
@@ -684,7 +684,7 @@ namespace TrueCraft.Nbt
         public async Task<long> LoadFromFileAsync([NotNull] string fileName, NbtCompression compression,
             [CanBeNull] TagSelector selector, CancellationToken cancellationToken = default)
         {
-            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
+            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
 
             await using var readFileStream = new FileStream(fileName,
                 FileMode.Open,
@@ -719,7 +719,7 @@ namespace TrueCraft.Nbt
         public async Task<long> LoadFromStreamAsync([NotNull] Stream stream, NbtCompression compression,
             [CanBeNull] TagSelector selector, CancellationToken cancellationToken = default)
         {
-            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
 
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
@@ -751,7 +751,7 @@ namespace TrueCraft.Nbt
         /// </exception>
         public long SaveToFile([NotNull] string fileName, NbtCompression compression)
         {
-            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
+            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
 
             using (
                 var saveFile = new FileStream(fileName,
@@ -786,7 +786,7 @@ namespace TrueCraft.Nbt
         /// </exception>
         public long SaveToBuffer([NotNull] byte[] buffer, int index, NbtCompression compression)
         {
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
 
             using (var ms = new MemoryStream(buffer, index, buffer.Length - index))
             {
@@ -839,7 +839,7 @@ namespace TrueCraft.Nbt
         /// </exception>
         public long SaveToStream([NotNull] Stream stream, NbtCompression compression)
         {
-            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
 
             switch (compression)
             {
@@ -853,7 +853,7 @@ namespace TrueCraft.Nbt
                     throw new ArgumentOutOfRangeException(nameof(compression));
             }
 
-            if (RootHasName && _rootTag.Name == null)
+            if (RootHasName && _rootTag.Name is null)
                 // This may trigger if root tag has been renamed
                 throw new NbtFormatException(
                     "Cannot save NbtFile: Root tag is not named. Its name may be an empty string, but not null.");
@@ -919,7 +919,7 @@ namespace TrueCraft.Nbt
         public async Task<long> SaveToFileAsync([NotNull] string fileName, NbtCompression compression,
             CancellationToken cancellationToken = default)
         {
-            if (fileName == null) throw new ArgumentNullException(nameof(fileName));
+            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
 
             using var ms = new MemoryStream();
             var bytesWritten = SaveToStream(ms, compression);
@@ -944,7 +944,7 @@ namespace TrueCraft.Nbt
         public async Task<long> SaveToStreamAsync([NotNull] Stream stream, NbtCompression compression,
             CancellationToken cancellationToken = default)
         {
-            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
 
             using var ms = new MemoryStream();
             var bytesWritten = SaveToStream(ms, compression);

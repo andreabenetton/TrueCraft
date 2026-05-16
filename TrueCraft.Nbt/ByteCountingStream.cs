@@ -17,7 +17,7 @@ namespace TrueCraft.Nbt
 
         public ByteCountingStream([NotNull] Stream stream)
         {
-            Debug.Assert(stream != null);
+            Debug.Assert(stream is not null);
             _baseStream = stream;
         }
 

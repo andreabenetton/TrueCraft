@@ -25,7 +25,7 @@ namespace TrueCraft.Core.Windows
                 return;
             var to = GetLinkedArea(fromIndex, slot);
             var destination = to.MoveOrMergeItem(index, slot, from);
-            if (WindowChange != null && destination != -1)
+            if (WindowChange is not null && destination != -1)
                 WindowChange(this, new WindowChangeEventArgs(destination + to.StartIndex, slot));
         }
 
@@ -98,7 +98,7 @@ namespace TrueCraft.Core.Windows
         {
             for (var i = 0; i < WindowAreas.Length; i++) WindowAreas[i].Dispose();
             WindowChange = null;
-            if (Disposed != null)
+            if (Disposed is not null)
                 Disposed(this, null);
             Client = null;
             IsDisposed = true;
@@ -147,7 +147,7 @@ namespace TrueCraft.Core.Windows
 
         protected internal virtual void OnWindowChange(WindowChangeEventArgs e)
         {
-            if (WindowChange != null)
+            if (WindowChange is not null)
                 WindowChange(this, e);
         }
 

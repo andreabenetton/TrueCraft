@@ -37,7 +37,7 @@ namespace TrueCraft.Core.Entities
                 EntityManager.DespawnEntity(this);
                 var position = (Coordinates3D) collisionPoint + Coordinates3D.Up;
                 var hit = World.BlockRepository.GetBlockProvider(World.GetBlockID(position));
-                if (hit.BoundingBox == null && BlockProvider.Overwritable.All(o => o != hit.ID))
+                if (hit.BoundingBox is null && BlockProvider.Overwritable.All(o => o != hit.ID))
                     EntityManager.SpawnEntity(new ItemEntity(position + new Vector3(0.5), new ItemStack(id)));
                 else
                     World.SetBlockID(position, id);

@@ -187,7 +187,7 @@ namespace TrueCraft.Client
 
         public void QueuePacket(IPacket packet)
         {
-            if (!Connected || Client != null && !Client.Connected)
+            if (!Connected || Client is not null && !Client.Connected)
                 return;
 
             // Serialize into a per-call MemoryStream and copy into a pooled byte[]. The pooled buffer is
@@ -216,7 +216,7 @@ namespace TrueCraft.Client
                     {
                         try
                         {
-                            if (Client != null && Client.Connected)
+                            if (Client is not null && Client.Connected)
                             {
                                 await Client.Client.SendAsync(
                                     item.Buffer.AsMemory(0, item.Length),
@@ -322,7 +322,7 @@ namespace TrueCraft.Client
                     {
                         while (PacketReader.TryReadPacket(ref buffer, out IPacket packet, serverbound: false))
                         {
-                            if (PacketHandlers.Length > packet.ID && PacketHandlers[packet.ID] != null)
+                            if (PacketHandlers.Length > packet.ID && PacketHandlers[packet.ID] is not null)
                                 PacketHandlers[packet.ID](packet, this);
                         }
                     }

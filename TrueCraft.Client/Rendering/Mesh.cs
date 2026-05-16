@@ -129,7 +129,7 @@ namespace TrueCraft.Client.Rendering
 
             lock (SyncLock)
             {
-                if (_indices[index] != null)
+                if (_indices[index] is not null)
                     _indices[index].Dispose();
 
                 _game.Invoke(() =>
@@ -149,7 +149,7 @@ namespace TrueCraft.Client.Rendering
         /// <param name="effect">The effect to use.</param>
         public void Draw(Effect effect)
         {
-            if (effect == null)
+            if (effect is null)
                 throw new ArgumentException();
 
             for (var i = 0; i < _indices.Length; i++)
@@ -163,13 +163,13 @@ namespace TrueCraft.Client.Rendering
         /// <param name="index">The submesh index.</param>
         public void Draw(Effect effect, int index)
         {
-            if (effect == null)
+            if (effect is null)
                 throw new ArgumentException();
 
             if (index < 0 || index > _indices.Length)
                 throw new ArgumentOutOfRangeException();
 
-            if (_vertices == null || _vertices.IsDisposed || _indices[index] == null || _indices[index].IsDisposed ||
+            if (_vertices is null || _vertices.IsDisposed || _indices[index] is null || _indices[index].IsDisposed ||
                 _indices[index].IndexCount < 3)
                 return; // Invalid state for rendering, just return.
 
@@ -195,7 +195,7 @@ namespace TrueCraft.Client.Rendering
         /// </summary>
         public int GetTotalVertices()
         {
-            if (_vertices == null)
+            if (_vertices is null)
                 return 0;
 
             lock (SyncLock)
@@ -230,7 +230,7 @@ namespace TrueCraft.Client.Rendering
 
         internal static BoundingBox ComputeAxisAlignedBounds(VertexPositionNormalColorTexture[] vertices)
         {
-            if (vertices == null || vertices.Length == 0)
+            if (vertices is null || vertices.Length == 0)
                 return default;
 
             var first = vertices[0].Position;

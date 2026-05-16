@@ -68,7 +68,7 @@ namespace TrueCraft.API
 
             foreach (var entry in entries.Values)
             {
-                if (sb != null)
+                if (sb is not null)
                     sb.Append(", ");
                 else
                     sb = new StringBuilder();
@@ -76,7 +76,7 @@ namespace TrueCraft.API
                 sb.Append(entry);
             }
 
-            if (sb != null)
+            if (sb is not null)
                 return sb.ToString();
 
             return string.Empty;

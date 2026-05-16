@@ -21,7 +21,7 @@ namespace TrueCraft.Nbt.Snbt
         /// </param>
         public static string ToSnbt(NbtTag tag, bool pretty = false)
         {
-            if (tag == null) throw new ArgumentNullException(nameof(tag));
+            if (tag is null) throw new ArgumentNullException(nameof(tag));
             var sb = new StringBuilder();
             WriteTag(sb, tag, pretty, 0);
             return sb.ToString();

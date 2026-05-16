@@ -28,12 +28,12 @@ namespace TrueCraft.Commands
             var identifier = arguments.Length == 1 ? arguments[0] : "1";
 
             ICommand found;
-            if ((found = App.Services.GetRequiredService<CommandManager>().FindByName(identifier)) != null)
+            if ((found = App.Services.GetRequiredService<CommandManager>().FindByName(identifier)) is not null)
             {
                 found.Help(client, identifier, new string[0]);
                 return;
             }
-            else if ((found = App.Services.GetRequiredService<CommandManager>().FindByAlias(identifier)) != null)
+            else if ((found = App.Services.GetRequiredService<CommandManager>().FindByAlias(identifier)) is not null)
             {
                 found.Help(client, identifier, new string[0]);
                 return;

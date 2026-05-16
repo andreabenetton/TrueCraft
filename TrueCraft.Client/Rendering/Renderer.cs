@@ -115,7 +115,7 @@ namespace TrueCraft.Client.Rendering
                     }
                 }
 
-                if (item == null) // We don't have any work, so sleep for a bit.
+                if (item is null) // We don't have any work, so sleep for a bit.
                     Thread.Sleep(100);
             }
         }

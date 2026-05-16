@@ -48,7 +48,7 @@ namespace TrueCraft
         private void HandlePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             var entity = sender as IEntity;
-            if (entity == null)
+            if (entity is null)
                 throw new InvalidCastException("Attempted to handle property changes for non-entity");
             if (entity is PlayerEntity)
                 HandlePlayerPropertyChanged(e.PropertyName, entity as PlayerEntity);
@@ -68,7 +68,7 @@ namespace TrueCraft
         private void HandlePlayerPropertyChanged(string property, PlayerEntity entity)
         {
             var client = GetClientForEntity(entity) as RemoteClient;
-            if (client == null)
+            if (client is null)
                 return; // Note: would an exception be appropriate here?
             switch (property)
             {
@@ -198,7 +198,7 @@ namespace TrueCraft
             }
             if (entity.SendMetadataToClients)
                 client.QueuePacket(new EntityMetadataPacket(entity.EntityID, entity.Metadata));
-            if (spawnedClient != null)
+            if (spawnedClient is not null)
             {
                 // Send equipment when spawning player entities
                 client.QueuePacket(new EntityEquipmentPacket(entity.EntityID,
@@ -216,7 +216,7 @@ namespace TrueCraft
 
         private IRemoteClient GetClientForEntity(PlayerEntity entity)
         {
-            return Server.Clients.SingleOrDefault(c => c.Entity != null && c.Entity.EntityID == entity.EntityID);
+            return Server.Clients.SingleOrDefault(c => c.Entity is not null && c.Entity.EntityID == entity.EntityID);
         }
 
         public IList<IEntity> EntitiesInRange(Vector3 center, float radius)

@@ -164,11 +164,11 @@ namespace TrueCraft
             internal set
             {
                 var player = _Entity as PlayerEntity;
-                if (player != null)
+                if (player is not null)
                     player.PickUpItem -= HandlePickUpItem;
                 _Entity = value;
                 player = _Entity as PlayerEntity;
-                if (player != null)
+                if (player is not null)
                     player.PickUpItem += HandlePickUpItem;
             }
         }
@@ -241,7 +241,7 @@ namespace TrueCraft
                 path = Path.Combine(((World)World).BaseDirectory, "player.nbt");
             if (!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
-            if (Entity == null) // I didn't think this could happen but null reference exceptions have been repoted here
+            if (Entity is null) // I didn't think this could happen but null reference exceptions have been repoted here
                 return;
             var nbt = new NbtFile(new NbtCompound("player", new NbtTag[]
                 {
@@ -289,7 +289,7 @@ namespace TrueCraft
 
         public void QueuePacket(IPacket packet)
         {
-            if (Disconnected || (Connection != null && !Connection.Connected))
+            if (Disconnected || (Connection is not null && !Connection.Connected))
                 return;
 
             // Serialize into a local MemoryStream, then copy into an ArrayPool-rented buffer that the
@@ -319,7 +319,7 @@ namespace TrueCraft
                     {
                         try
                         {
-                            if (Connection != null && Connection.Connected)
+                            if (Connection is not null && Connection.Connected)
                             {
                                 await Connection.SendAsync(
                                     item.Buffer.AsMemory(0, item.Length),
@@ -385,7 +385,7 @@ namespace TrueCraft
                     break;
             }
 
-            if (Connection != null)
+            if (Connection is not null)
                 if (!Connection.Connected && !Disconnected)
                     Server.DisconnectClient(this);
         }
@@ -461,7 +461,7 @@ namespace TrueCraft
                         while (PacketReader.TryReadPacket(ref buffer, out IPacket packet))
                         {
                             var handler = PacketHandlers[packet.ID];
-                            if (handler == null)
+                            if (handler is null)
                             {
                                 Log("Unhandled packet {0}", packet.GetType().Name);
                                 continue;
@@ -590,7 +590,7 @@ namespace TrueCraft
                 {
                     var coords = tup.Item1;
                     var chunk = tup.Item2;
-                    if (chunk == null)
+                    if (chunk is null)
                         chunk = World.GetChunk(coords);
                     chunk.LastAccessed = DateTime.UtcNow;
                     LoadChunk(chunk);
@@ -692,7 +692,7 @@ namespace TrueCraft
             {
                 Disconnect();
 
-                if (Disposed != null)
+                if (Disposed is not null)
                     Disposed(this, null);
             }
         }

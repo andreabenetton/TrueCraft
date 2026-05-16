@@ -20,7 +20,7 @@ namespace TrueCraft.Core.Windows
                 return true;
             // TODO: Armor
             //var item = (IArmorItem)(Item)slot.Id;
-            //if (item == null)
+            //if (item is null)
             //    return false;
             //if (index == Footwear && item.ArmorSlot != ArmorSlot.Footwear)
             //    return false;

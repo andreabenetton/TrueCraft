@@ -36,7 +36,7 @@ namespace TrueCraft.Nbt
 
         public NbtBinaryWriter([NotNull] Stream input, bool bigEndian)
         {
-            if (input == null) throw new ArgumentNullException(nameof(input));
+            if (input is null) throw new ArgumentNullException(nameof(input));
             if (!input.CanWrite) throw new ArgumentException("Given stream must be writable", nameof(input));
             _stream = input;
             _swapNeeded = BitConverter.IsLittleEndian == bigEndian;
@@ -212,7 +212,7 @@ namespace TrueCraft.Nbt
         // standard UTF-8 — opt in via UseStandardUtf8.
         public void Write([NotNull] string value)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value is null) throw new ArgumentNullException(nameof(value));
 
             int numBytes;
             byte[] bytes;

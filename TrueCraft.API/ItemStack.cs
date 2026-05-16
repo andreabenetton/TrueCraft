@@ -25,7 +25,7 @@ namespace TrueCraft.API
                 hashCode = (hashCode * 397) ^ _Count.GetHashCode();
                 hashCode = (hashCode * 397) ^ Metadata.GetHashCode();
                 hashCode = (hashCode * 397) ^ Index;
-                hashCode = (hashCode * 397) ^ (Nbt != null ? Nbt.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Nbt is not null ? Nbt.GetHashCode() : 0);
                 return hashCode;
             }
         }
@@ -127,7 +127,7 @@ namespace TrueCraft.API
                 return;
             stream.WriteInt8(Count);
             stream.WriteInt16(Metadata);
-            if (Nbt == null)
+            if (Nbt is null)
             {
                 stream.WriteInt16(-1);
                 return;
@@ -152,7 +152,7 @@ namespace TrueCraft.API
             s.Metadata = compound.Get<NbtShort>("Damage").Value;
             s.Count = (sbyte) compound.Get<NbtByte>("Count").Value;
             s.Index = compound.Get<NbtByte>("Slot").Value;
-            if (compound.Get<NbtCompound>("tag") != null)
+            if (compound.Get<NbtCompound>("tag") is not null)
                 s.Nbt = compound.Get<NbtCompound>("tag");
             return s;
         }
@@ -168,7 +168,7 @@ namespace TrueCraft.API
             c.Add(new NbtShort("Damage", Metadata));
             c.Add(new NbtByte("Count", (byte) Count));
             c.Add(new NbtByte("Slot", (byte) Index));
-            if (Nbt != null)
+            if (Nbt is not null)
                 c.Add(new NbtCompound("tag"));
             return c;
         }
@@ -247,7 +247,7 @@ namespace TrueCraft.API
 
             if (Count != 1) resultBuilder.Append("; Count: " + Count);
             if (Metadata != 0) resultBuilder.Append("; Metadata: " + Metadata);
-            if (Nbt != null) resultBuilder.Append(Environment.NewLine + Nbt);
+            if (Nbt is not null) resultBuilder.Append(Environment.NewLine + Nbt);
 
             return "(" + resultBuilder + ")";
         }

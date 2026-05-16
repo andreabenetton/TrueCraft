@@ -62,7 +62,7 @@ namespace TrueCraft.Core.Physics
                         Vector3 collision, before = entity.Velocity;
 
                         var aabbEntity = entity as IAABBEntity;
-                        if (aabbEntity != null)
+                        if (aabbEntity is not null)
                         {
                             if (TestTerrainCollisionY(aabbEntity, out collision))
                                 aabbEntity.TerrainCollision(collision, before.Y < 0 ? Vector3.Down : Vector3.Up);
@@ -144,7 +144,7 @@ namespace TrueCraft.Core.Physics
                     continue;
 
                 var _box = BlockPhysicsProvider.GetBoundingBox(World, coords);
-                if (_box == null)
+                if (_box is null)
                     continue;
 
                 var box = _box.Value.OffsetBy(coords);
@@ -207,7 +207,7 @@ namespace TrueCraft.Core.Physics
                     continue;
 
                 var _box = BlockPhysicsProvider.GetBoundingBox(World, coords);
-                if (_box == null)
+                if (_box is null)
                     continue;
 
                 var box = _box.Value.OffsetBy(coords);
@@ -215,7 +215,7 @@ namespace TrueCraft.Core.Physics
                 {
                     if (negative)
                     {
-                        if (collisionExtent == null || collisionExtent.Value < box.Max.Y)
+                        if (collisionExtent is null || collisionExtent.Value < box.Max.Y)
                         {
                             collisionExtent = box.Max.Y;
                             collisionPoint = coords;
@@ -223,7 +223,7 @@ namespace TrueCraft.Core.Physics
                     }
                     else
                     {
-                        if (collisionExtent == null || collisionExtent.Value > box.Min.Y)
+                        if (collisionExtent is null || collisionExtent.Value > box.Min.Y)
                         {
                             collisionExtent = box.Min.Y;
                             collisionPoint = coords;
@@ -232,7 +232,7 @@ namespace TrueCraft.Core.Physics
                 }
             }
 
-            if (collisionExtent != null) // Collision detected, adjust accordingly
+            if (collisionExtent is not null) // Collision detected, adjust accordingly
             {
                 var extent = collisionExtent.Value;
                 double diff;
@@ -293,7 +293,7 @@ namespace TrueCraft.Core.Physics
                     continue;
 
                 var _box = BlockPhysicsProvider.GetBoundingBox(World, coords);
-                if (_box == null)
+                if (_box is null)
                     continue;
 
                 var box = _box.Value.OffsetBy(coords);
@@ -301,7 +301,7 @@ namespace TrueCraft.Core.Physics
                 {
                     if (negative)
                     {
-                        if (collisionExtent == null || collisionExtent.Value < box.Max.X)
+                        if (collisionExtent is null || collisionExtent.Value < box.Max.X)
                         {
                             collisionExtent = box.Max.X;
                             collisionPoint = coords;
@@ -309,7 +309,7 @@ namespace TrueCraft.Core.Physics
                     }
                     else
                     {
-                        if (collisionExtent == null || collisionExtent.Value > box.Min.X)
+                        if (collisionExtent is null || collisionExtent.Value > box.Min.X)
                         {
                             collisionExtent = box.Min.X;
                             collisionPoint = coords;
@@ -318,7 +318,7 @@ namespace TrueCraft.Core.Physics
                 }
             }
 
-            if (collisionExtent != null) // Collision detected, adjust accordingly
+            if (collisionExtent is not null) // Collision detected, adjust accordingly
             {
                 var extent = collisionExtent.Value;
                 double diff;
@@ -379,7 +379,7 @@ namespace TrueCraft.Core.Physics
                     continue;
 
                 var _box = BlockPhysicsProvider.GetBoundingBox(World, coords);
-                if (_box == null)
+                if (_box is null)
                     continue;
 
                 var box = _box.Value.OffsetBy(coords);
@@ -387,7 +387,7 @@ namespace TrueCraft.Core.Physics
                 {
                     if (negative)
                     {
-                        if (collisionExtent == null || collisionExtent.Value < box.Max.Z)
+                        if (collisionExtent is null || collisionExtent.Value < box.Max.Z)
                         {
                             collisionExtent = box.Max.Z;
                             collisionPoint = coords;
@@ -395,7 +395,7 @@ namespace TrueCraft.Core.Physics
                     }
                     else
                     {
-                        if (collisionExtent == null || collisionExtent.Value > box.Min.Z)
+                        if (collisionExtent is null || collisionExtent.Value > box.Min.Z)
                         {
                             collisionExtent = box.Min.Z;
                             collisionPoint = coords;
@@ -404,7 +404,7 @@ namespace TrueCraft.Core.Physics
                 }
             }
 
-            if (collisionExtent != null) // Collision detected, adjust accordingly
+            if (collisionExtent is not null) // Collision detected, adjust accordingly
             {
                 var extent = collisionExtent.Value;
                 double diff;

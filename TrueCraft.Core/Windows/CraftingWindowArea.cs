@@ -31,17 +31,17 @@ namespace TrueCraft.Core.Windows
 
         private void HandleWindowChange(object sender, WindowChangeEventArgs e)
         {
-            if (Repository == null)
+            if (Repository is null)
                 return;
             var current = Repository.GetRecipe(Bench);
             if (e.SlotIndex == CraftingOutput)
-                if (e.Value.Empty && current != null) // Item picked up
+                if (e.Value.Empty && current is not null) // Item picked up
                 {
                     RemoveItemFromOutput(current);
                     current = Repository.GetRecipe(Bench);
                 }
 
-            if (current == null)
+            if (current is null)
                 Items[CraftingOutput] = ItemStack.EmptyStack;
             else
                 Items[CraftingOutput] = current.Output;

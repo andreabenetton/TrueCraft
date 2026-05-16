@@ -38,7 +38,7 @@ namespace TrueCraft.Core.World
 
         public byte GetBiome(Coordinates2D location)
         {
-            var BiomeID = ClosestCell(location) != null ? ClosestCell(location).BiomeID : (byte) Biome.Plains;
+            var BiomeID = ClosestCell(location) is not null ? ClosestCell(location).BiomeID : (byte) Biome.Plains;
             return BiomeID;
         }
 

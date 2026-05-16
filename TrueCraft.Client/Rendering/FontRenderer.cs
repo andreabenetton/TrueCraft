@@ -15,7 +15,7 @@ namespace TrueCraft.Client.Rendering
         /// <param name="font"></param>
         public FontRenderer(Font font)
         {
-            if (font == null)
+            if (font is null)
                 throw new ArgumentNullException(nameof(font));
 
             Fonts = new[]
@@ -33,7 +33,7 @@ namespace TrueCraft.Client.Rendering
         /// <param name="italic"></param>
         public FontRenderer(Font regular, Font bold, Font strikethrough, Font underline, Font italic)
         {
-            if (regular == null)
+            if (regular is null)
                 throw new ArgumentNullException(nameof(regular));
 
             Fonts = new[]
@@ -65,7 +65,7 @@ namespace TrueCraft.Client.Rendering
                 else
                 {
                     var glyph = font.GetGlyph(text[i]);
-                    if (glyph != null)
+                    if (glyph is not null)
                     {
                         dx += (int) (glyph.XAdvance * scale);
                         if (glyph.Height > height)
@@ -95,7 +95,7 @@ namespace TrueCraft.Client.Rendering
                 else
                 {
                     var glyph = font.GetGlyph(text[i]);
-                    if (glyph != null)
+                    if (glyph is not null)
                     {
                         var sourceRectangle = new Rectangle(glyph.X, glyph.Y, glyph.Width, glyph.Height);
                         var destRectangle = new Rectangle(

@@ -32,7 +32,7 @@ namespace TrueCraft.Nbt
         /// <exception cref="ArgumentException"> <paramref name="stream" /> is not writable. </exception>
         public NbtWriter([NotNull] Stream stream, [NotNull] string rootTagName, bool bigEndian = true)
         {
-            if (rootTagName == null) throw new ArgumentNullException(nameof(rootTagName));
+            if (rootTagName is null) throw new ArgumentNullException(nameof(rootTagName));
             _writer = new NbtBinaryWriter(stream, bigEndian);
             _writer.Write((byte) NbtTagType.Compound);
             _writer.Write(rootTagName);
@@ -61,9 +61,9 @@ namespace TrueCraft.Nbt
         /// <exception cref="ArgumentNullException"> <paramref name="tag" /> is null </exception>
         public void WriteTag([NotNull] NbtTag tag)
         {
-            if (tag == null) throw new ArgumentNullException(nameof(tag));
+            if (tag is null) throw new ArgumentNullException(nameof(tag));
             EnforceConstraints(tag.Name, tag.TagType);
-            if (tag.Name != null)
+            if (tag.Name is not null)
                 tag.WriteTag(_writer);
             else
                 tag.WriteData(_writer);
@@ -84,7 +84,7 @@ namespace TrueCraft.Nbt
 
         private void GoDown(NbtTagType thisType)
         {
-            if (_nodes == null) _nodes = new Stack<NbtWriterNode>();
+            if (_nodes is null) _nodes = new Stack<NbtWriterNode>();
 
             var newNode = new NbtWriterNode
             {
@@ -104,7 +104,7 @@ namespace TrueCraft.Nbt
 
         private void GoUp()
         {
-            if (_nodes == null || _nodes.Count == 0)
+            if (_nodes is null || _nodes.Count == 0)
             {
                 IsDone = true;
             }
@@ -125,7 +125,7 @@ namespace TrueCraft.Nbt
 
             if (_parentType == NbtTagType.List)
             {
-                if (name != null) throw new NbtFormatException("Expecting an unnamed tag.");
+                if (name is not null) throw new NbtFormatException("Expecting an unnamed tag.");
 
                 if (_listType != desiredType)
                     throw new NbtFormatException("Unexpected tag type (expected: " + _listType + ", given: " +
@@ -135,7 +135,7 @@ namespace TrueCraft.Nbt
 
                 _listIndex++;
             }
-            else if (name == null)
+            else if (name is null)
             {
                 throw new NbtFormatException("Expecting a named tag.");
             }
@@ -144,7 +144,7 @@ namespace TrueCraft.Nbt
 
         private static void CheckArray([NotNull] Array data, int offset, int count)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data is null) throw new ArgumentNullException(nameof(data));
 
             if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset), "offset may not be negative.");
 
@@ -157,8 +157,8 @@ namespace TrueCraft.Nbt
 
         private void WriteByteArrayFromStreamImpl([NotNull] Stream dataSource, int count, [NotNull] byte[] buffer)
         {
-            Debug.Assert(dataSource != null);
-            Debug.Assert(buffer != null);
+            Debug.Assert(dataSource is not null);
+            Debug.Assert(buffer is not null);
             _writer.Write(count);
             var maxBytesToWrite = Math.Min(buffer.Length, NbtBinaryWriter.MAX_WRITE_CHUNK);
             var bytesWritten = 0;
@@ -485,7 +485,7 @@ namespace TrueCraft.Nbt
         /// </exception>
         public void WriteString([NotNull] string value)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value is null) throw new ArgumentNullException(nameof(value));
             EnforceConstraints(null, NbtTagType.String);
             _writer.Write(value);
         }
@@ -500,7 +500,7 @@ namespace TrueCraft.Nbt
         /// </exception>
         public void WriteString([NotNull] string tagName, [NotNull] string value)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value is null) throw new ArgumentNullException(nameof(value));
             EnforceConstraints(tagName, NbtTagType.String);
             _writer.Write((byte) NbtTagType.String);
             _writer.Write(tagName);
@@ -522,7 +522,7 @@ namespace TrueCraft.Nbt
         /// <exception cref="ArgumentNullException"> <paramref name="data" /> is null </exception>
         public void WriteByteArray([NotNull] byte[] data)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data is null) throw new ArgumentNullException(nameof(data));
             WriteByteArray(data, 0, data.Length);
         }
 
@@ -567,7 +567,7 @@ namespace TrueCraft.Nbt
         /// </exception>
         public void WriteByteArray([NotNull] string tagName, [NotNull] byte[] data)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data is null) throw new ArgumentNullException(nameof(data));
             WriteByteArray(tagName, data, 0, data.Length);
         }
 
@@ -621,7 +621,7 @@ namespace TrueCraft.Nbt
         /// <exception cref="ArgumentException"> Given stream does not support reading. </exception>
         public void WriteByteArray([NotNull] Stream dataSource, int count)
         {
-            if (dataSource == null) throw new ArgumentNullException(nameof(dataSource));
+            if (dataSource is null) throw new ArgumentNullException(nameof(dataSource));
             if (!dataSource.CanRead)
                 throw new ArgumentException("Given stream does not support reading.", nameof(dataSource));
 
@@ -650,8 +650,8 @@ namespace TrueCraft.Nbt
         /// </exception>
         public void WriteByteArray([NotNull] Stream dataSource, int count, [NotNull] byte[] buffer)
         {
-            if (dataSource == null) throw new ArgumentNullException(nameof(dataSource));
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (dataSource is null) throw new ArgumentNullException(nameof(dataSource));
+            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
             if (!dataSource.CanRead)
                 throw new ArgumentException("Given stream does not support reading.", nameof(dataSource));
 
@@ -683,7 +683,7 @@ namespace TrueCraft.Nbt
         /// <exception cref="ArgumentException"> Given stream does not support reading. </exception>
         public void WriteByteArray([NotNull] string tagName, [NotNull] Stream dataSource, int count)
         {
-            if (dataSource == null) throw new ArgumentNullException(nameof(dataSource));
+            if (dataSource is null) throw new ArgumentNullException(nameof(dataSource));
             if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), "count may not be negative");
 
             var bufferSize = Math.Min(count, MaxStreamCopyBufferSize);
@@ -710,8 +710,8 @@ namespace TrueCraft.Nbt
         public void WriteByteArray([NotNull] string tagName, [NotNull] Stream dataSource, int count,
             [NotNull] byte[] buffer)
         {
-            if (dataSource == null) throw new ArgumentNullException(nameof(dataSource));
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (dataSource is null) throw new ArgumentNullException(nameof(dataSource));
+            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
             if (!dataSource.CanRead)
                 throw new ArgumentException("Given stream does not support reading.", nameof(dataSource));
 
@@ -738,7 +738,7 @@ namespace TrueCraft.Nbt
         /// <exception cref="ArgumentNullException"> <paramref name="data" /> is null </exception>
         public void WriteIntArray([NotNull] int[] data)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data is null) throw new ArgumentNullException(nameof(data));
             WriteIntArray(data, 0, data.Length);
         }
 
@@ -783,7 +783,7 @@ namespace TrueCraft.Nbt
         /// </exception>
         public void WriteIntArray([NotNull] string tagName, [NotNull] int[] data)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data is null) throw new ArgumentNullException(nameof(data));
             WriteIntArray(tagName, data, 0, data.Length);
         }
 
@@ -823,7 +823,7 @@ namespace TrueCraft.Nbt
         /// <summary> Writes an unnamed long array tag, copying the full array. </summary>
         public void WriteLongArray([NotNull] long[] data)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data is null) throw new ArgumentNullException(nameof(data));
             WriteLongArray(data, 0, data.Length);
         }
 
@@ -841,7 +841,7 @@ namespace TrueCraft.Nbt
         /// <summary> Writes a named long array tag, copying the full array. </summary>
         public void WriteLongArray([NotNull] string tagName, [NotNull] long[] data)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data is null) throw new ArgumentNullException(nameof(data));
             WriteLongArray(tagName, data, 0, data.Length);
         }
 

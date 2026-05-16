@@ -54,7 +54,7 @@ namespace TrueCraft.Nbt.Tags
         /// </remarks>
         public NbtLongArray([CanBeNull] string tagName, [NotNull] long[] value)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value is null) throw new ArgumentNullException(nameof(value));
             name = tagName;
             _longs = (long[]) value.Clone();
         }
@@ -66,7 +66,7 @@ namespace TrueCraft.Nbt.Tags
         /// <remarks> Long array of given tag will be cloned. </remarks>
         public NbtLongArray([NotNull] NbtLongArray other)
         {
-            if (other == null) throw new ArgumentNullException(nameof(other));
+            if (other is null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             _longs = (long[]) other.Value.Clone();
         }
@@ -103,7 +103,7 @@ namespace TrueCraft.Nbt.Tags
             var length = readStream.ReadInt32();
             readStream.CheckArrayLength(length, "TAG_Long_Array");
 
-            if (readStream.Selector != null && !readStream.Selector(this))
+            if (readStream.Selector is not null && !readStream.Selector(this))
             {
                 readStream.Skip(length * sizeof(long));
                 return false;
@@ -128,7 +128,7 @@ namespace TrueCraft.Nbt.Tags
         internal override void WriteTag(NbtBinaryWriter writeStream)
         {
             writeStream.Write(NbtTagType.LongArray);
-            if (Name == null) throw new NbtFormatException("Name is null");
+            if (Name is null) throw new NbtFormatException("Name is null");
             writeStream.Write(Name);
             WriteData(writeStream);
         }

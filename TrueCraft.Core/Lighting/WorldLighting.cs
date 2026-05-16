@@ -67,7 +67,7 @@ namespace TrueCraft.Core.Lighting
                 if (id == 0)
                     continue;
                 var provider = BlockRepository.GetBlockProvider(id);
-                if (provider == null || provider.LightOpacity != 0)
+                if (provider is null || provider.LightOpacity != 0)
                 {
                     map[x, z] = y;
                     break;
@@ -109,7 +109,7 @@ namespace TrueCraft.Core.Lighting
         private void LightBox(LightingOperation op)
         {
             var chunk = World.FindChunk((Coordinates3D) op.Box.Center, false);
-            if (chunk == null || !chunk.TerrainPopulated)
+            if (chunk is null || !chunk.TerrainPopulated)
                 return;
             Profiler.Start("lighting.box");
             for (var x = (int) op.Box.Min.X; x < (int) op.Box.Max.X; x++)
@@ -129,7 +129,7 @@ namespace TrueCraft.Core.Lighting
                 return;
             IChunk chunk;
             var adjustedCoords = World.FindBlockPosition(coords, out chunk, false);
-            if (chunk == null || !chunk.TerrainPopulated)
+            if (chunk is null || !chunk.TerrainPopulated)
                 return;
             var current = op.SkyLight ? World.GetSkyLight(coords) : World.GetBlockLight(coords);
             if (value == current)
@@ -157,7 +157,7 @@ namespace TrueCraft.Core.Lighting
             IChunk chunk;
             var adjustedCoords = World.FindBlockPosition(coords, out chunk, false);
 
-            if (chunk == null || !chunk.TerrainPopulated) // Move on if this chunk is empty
+            if (chunk is null || !chunk.TerrainPopulated) // Move on if this chunk is empty
                 return;
 
             Profiler.Start("lighting.voxel");
@@ -206,7 +206,7 @@ namespace TrueCraft.Core.Lighting
                     {
                         IChunk c;
                         var adjusted = World.FindBlockPosition(coords + Neighbors[i], out c, false);
-                        if (c != null) // We don't want to generate new chunks just to light this voxel
+                        if (c is not null) // We don't want to generate new chunks just to light this voxel
                         {
                             byte val;
                             if (op.SkyLight)

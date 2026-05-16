@@ -82,7 +82,7 @@ namespace TrueCraft.Core.Entities
                 var player = nearbyEntities.FirstOrDefault(e => e is PlayerEntity && (e as PlayerEntity).Health != 0
                                                                                   && e.Position.DistanceTo(Position) <=
                                                                                   PickupRange);
-                if (player != null)
+                if (player is not null)
                 {
                     var playerEntity = player as PlayerEntity;
                     playerEntity?.OnPickUpItem(this);

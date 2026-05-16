@@ -125,7 +125,7 @@ namespace TrueCraft.API
         /// <returns></returns>
         public static BoundingBox CreateFromPoints(IEnumerable<Vector3> points)
         {
-            if (points == null)
+            if (points is null)
                 throw new ArgumentNullException();
 
             var empty = true;

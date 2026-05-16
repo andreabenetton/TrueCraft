@@ -126,7 +126,7 @@ namespace TrueCraft.Launcher.Views
 
         private void UpdatePreview(TexturePack pack)
         {
-            if (_texturePackPreview == null || pack?.Image == null) return;
+            if (_texturePackPreview is null || pack?.Image is null) return;
             try
             {
                 // pack.Image is a Stream over pack.png; reset to start in case the
@@ -170,7 +170,7 @@ namespace TrueCraft.Launcher.Views
                     officialPresent = true;
 
                 var pack = TexturePack.FromArchive(zip);
-                if (pack != null)
+                if (pack is not null)
                 {
                     _texturePacks.Add(pack);
                     _texturePackList.AddItem(pack.Name);
@@ -269,7 +269,7 @@ namespace TrueCraft.Launcher.Views
         private static void CopyEntryByName(string name, ZipArchive source, ZipArchive destination)
         {
             var entry = source.GetEntry(name);
-            if (entry != null) CopyEntry(entry, destination);
+            if (entry is not null) CopyEntry(entry, destination);
         }
 
         private static void CopyEntry(ZipArchiveEntry source, ZipArchive destination)

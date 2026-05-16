@@ -83,14 +83,14 @@ namespace TrueCraft.Client.Modules
                 new TRay(Game.Camera.Position, new TVector3(direction.X, direction.Y, direction.Z)),
                 Game.BlockRepository, TrueCraftGame.Reach, TrueCraftGame.Reach + 2);
 
-            if (cast == null)
+            if (cast is null)
             {
                 Game.HighlightedBlock = -Coordinates3D.One;
             }
             else
             {
                 var provider = Game.BlockRepository.GetBlockProvider(Game.Client.World.GetBlockID(cast.Item1));
-                if (provider.InteractiveBoundingBox != null)
+                if (provider.InteractiveBoundingBox is not null)
                 {
                     var box = provider.InteractiveBoundingBox.Value;
 

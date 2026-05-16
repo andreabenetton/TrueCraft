@@ -49,7 +49,7 @@ namespace TrueCraft.Nbt.Tags
         /// </exception>
         public NbtCompound([CanBeNull] string tagName, [NotNull] IEnumerable<NbtTag> tags)
         {
-            if (tags == null) throw new ArgumentNullException(nameof(tags));
+            if (tags is null) throw new ArgumentNullException(nameof(tags));
             name = tagName;
             foreach (var tag in tags) Add(tag);
         }
@@ -60,7 +60,7 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentNullException"> <paramref name="other" /> is <c>null</c>. </exception>
         public NbtCompound([NotNull] NbtCompound other)
         {
-            if (other == null) throw new ArgumentNullException(nameof(other));
+            if (other is null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             foreach (var tag in other._tags.Values) Add((NbtTag) tag.Clone());
         }
@@ -82,13 +82,13 @@ namespace TrueCraft.Nbt.Tags
             [CanBeNull] get => Get<NbtTag>(tagName);
             set
             {
-                if (tagName == null) throw new ArgumentNullException(nameof(tagName));
+                if (tagName is null) throw new ArgumentNullException(nameof(tagName));
 
-                if (value == null) throw new ArgumentNullException(nameof(value));
+                if (value is null) throw new ArgumentNullException(nameof(value));
 
                 if (value.Name != tagName) throw new ArgumentException("Given tag name must match tag's actual name.");
 
-                if (value.Parent != null)
+                if (value.Parent is not null)
                     throw new ArgumentException("A tag may only be added to one compound/list at a time.");
 
                 if (value == this) throw new ArgumentException("Cannot add tag to itself");
@@ -117,7 +117,7 @@ namespace TrueCraft.Nbt.Tags
         [CanBeNull]
         public T Get<T>([NotNull] string tagName) where T : NbtTag
         {
-            if (tagName == null) throw new ArgumentNullException(nameof(tagName));
+            if (tagName is null) throw new ArgumentNullException(nameof(tagName));
             if (_tags.TryGetValue(tagName, out var result)) return (T) result;
 
             return null;
@@ -132,7 +132,7 @@ namespace TrueCraft.Nbt.Tags
         [CanBeNull]
         public NbtTag Get([NotNull] string tagName)
         {
-            if (tagName == null) throw new ArgumentNullException(nameof(tagName));
+            if (tagName is null) throw new ArgumentNullException(nameof(tagName));
             if (_tags.TryGetValue(tagName, out var result)) return result;
 
             return null;
@@ -151,7 +151,7 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="InvalidCastException"> If tag could not be cast to the desired tag. </exception>
         public bool TryGet<T>([NotNull] string tagName, out T result) where T : NbtTag
         {
-            if (tagName == null) throw new ArgumentNullException(nameof(tagName));
+            if (tagName is null) throw new ArgumentNullException(nameof(tagName));
             if (_tags.TryGetValue(tagName, out var tempResult))
             {
                 result = (T) tempResult;
@@ -174,7 +174,7 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="InvalidCastException"> If tag could not be cast to the desired tag. </exception>
         public bool TryGet([NotNull] string tagName, out NbtTag result)
         {
-            if (tagName == null) throw new ArgumentNullException(nameof(tagName));
+            if (tagName is null) throw new ArgumentNullException(nameof(tagName));
             if (_tags.TryGetValue(tagName, out var tempResult))
             {
                 result = tempResult;
@@ -198,7 +198,7 @@ namespace TrueCraft.Nbt.Tags
         /// </exception>
         public void AddRange([NotNull] IEnumerable<NbtTag> newTags)
         {
-            if (newTags == null) throw new ArgumentNullException(nameof(newTags));
+            if (newTags is null) throw new ArgumentNullException(nameof(newTags));
             foreach (var tag in newTags) Add(tag);
         }
 
@@ -210,7 +210,7 @@ namespace TrueCraft.Nbt.Tags
         [Pure]
         public bool Contains([NotNull] string tagName)
         {
-            if (tagName == null) throw new ArgumentNullException(nameof(tagName));
+            if (tagName is null) throw new ArgumentNullException(nameof(tagName));
             return _tags.ContainsKey(tagName);
         }
 
@@ -224,7 +224,7 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentNullException"> <paramref name="tagName" /> is <c>null</c>. </exception>
         public bool Remove([NotNull] string tagName)
         {
-            if (tagName == null) throw new ArgumentNullException(nameof(tagName));
+            if (tagName is null) throw new ArgumentNullException(nameof(tagName));
             if (!_tags.TryGetValue(tagName, out var tag)) return false;
 
             _tags.Remove(tagName);
@@ -235,8 +235,8 @@ namespace TrueCraft.Nbt.Tags
 
         internal void RenameTag([NotNull] string oldName, [NotNull] string newName)
         {
-            Debug.Assert(oldName != null);
-            Debug.Assert(newName != null);
+            Debug.Assert(oldName is not null);
+            Debug.Assert(newName is not null);
             Debug.Assert(newName != oldName);
             if (_tags.TryGetValue(newName, out var tag))
                 throw new ArgumentException("Cannot rename: a tag with the name already exists in this compound.");
@@ -285,7 +285,7 @@ namespace TrueCraft.Nbt.Tags
 
         internal override bool ReadTag(NbtBinaryReader readStream)
         {
-            if (Parent != null && readStream.Selector != null && !readStream.Selector(this))
+            if (Parent is not null && readStream.Selector is not null && !readStream.Selector(this))
             {
                 SkipTag(readStream);
                 return false;
@@ -461,7 +461,7 @@ namespace TrueCraft.Nbt.Tags
         internal override void WriteTag(NbtBinaryWriter writeStream)
         {
             writeStream.Write(NbtTagType.Compound);
-            if (Name == null) throw new NbtFormatException("Name is null");
+            if (Name is null) throw new NbtFormatException("Name is null");
             writeStream.Write(Name);
             WriteData(writeStream);
         }
@@ -506,13 +506,13 @@ namespace TrueCraft.Nbt.Tags
         /// </exception>
         public void Add([NotNull] NbtTag newTag)
         {
-            if (newTag == null) throw new ArgumentNullException(nameof(newTag));
+            if (newTag is null) throw new ArgumentNullException(nameof(newTag));
 
             if (newTag == this) throw new ArgumentException("Cannot add tag to self");
 
-            if (newTag.Name == null) throw new ArgumentException("Only named tags are allowed in compound tags.");
+            if (newTag.Name is null) throw new ArgumentException("Only named tags are allowed in compound tags.");
 
-            if (newTag.Parent != null)
+            if (newTag.Parent is not null)
                 throw new ArgumentException("A tag may only be added to one compound/list at a time.");
 
             _tags.Add(newTag.Name, newTag);
@@ -539,7 +539,7 @@ namespace TrueCraft.Nbt.Tags
         [Pure]
         public bool Contains([NotNull] NbtTag tag)
         {
-            if (tag == null) throw new ArgumentNullException(nameof(tag));
+            if (tag is null) throw new ArgumentNullException(nameof(tag));
             return _tags.ContainsValue(tag);
         }
 
@@ -577,8 +577,8 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentException"> If the given tag is unnamed </exception>
         public bool Remove([NotNull] NbtTag tag)
         {
-            if (tag == null) throw new ArgumentNullException(nameof(tag));
-            if (tag.Name == null) throw new ArgumentException("Trying to remove an unnamed tag.");
+            if (tag is null) throw new ArgumentNullException(nameof(tag));
+            if (tag.Name is null) throw new ArgumentException("Trying to remove an unnamed tag.");
             if (_tags.TryGetValue(tag.Name, out var maybeItem))
                 if (maybeItem == tag && _tags.Remove(tag.Name))
                 {

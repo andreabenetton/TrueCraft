@@ -25,7 +25,7 @@ namespace TrueCraft.Client.Handlers
                 window = client.Inventory;
             else
                 window = client.CurrentWindow;
-            if (window != null)
+            if (window is not null)
             {
                 if (setSlotPacket.SlotIndex >= 0 && setSlotPacket.SlotIndex < window.Length)
                 {

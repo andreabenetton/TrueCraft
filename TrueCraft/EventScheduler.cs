@@ -65,7 +65,7 @@ namespace TrueCraft
             if (DisabledEvents.Contains(name))
                 return;
             long _when = Stopwatch.ElapsedTicks + when.Ticks;
-            if (subject != null && !Subjects.Contains(subject))
+            if (subject is not null && !Subjects.Contains(subject))
             {
                 Subjects.Add(subject);
                 subject.Disposed += Subject_Disposed;

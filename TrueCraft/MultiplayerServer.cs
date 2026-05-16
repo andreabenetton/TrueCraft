@@ -136,7 +136,7 @@ namespace TrueCraft
         public void Start(IPEndPoint endPoint)
         {
             Scheduler.DisabledEvents.Clear();
-            if (_node.DisabledEvents != null)
+            if (_node.DisabledEvents is not null)
                 _node.DisabledEvents.ToList().ForEach(
                     ev => Scheduler.DisabledEvents.Add(ev));
             ShuttingDown = false;
@@ -237,7 +237,7 @@ namespace TrueCraft
                 if (_node.EnableLighting)
                 {
                     var lighter = WorldLighters.SingleOrDefault(l => l.World == sender);
-                    if (lighter != null)
+                    if (lighter is not null)
                     {
                         var posA = e.Position;
                         posA.Y = 0;
@@ -310,7 +310,7 @@ namespace TrueCraft
                 {
                     var descriptor = update.World.GetBlockData(update.Coordinates + offset);
                     var provider = BlockRepository.GetBlockProvider(descriptor.ID);
-                    if (provider != null)
+                    if (provider is not null)
                         provider.BlockUpdate(descriptor, source, this, update.World);
                 }
             }
@@ -341,19 +341,19 @@ namespace TrueCraft
 
         protected internal void OnChatMessageReceived(ChatMessageEventArgs e)
         {
-            if (ChatMessageReceived != null)
+            if (ChatMessageReceived is not null)
                 ChatMessageReceived(this, e);
         }
 
         protected internal void OnPlayerJoined(PlayerJoinedQuitEventArgs e)
         {
-            if (PlayerJoined != null)
+            if (PlayerJoined is not null)
                 PlayerJoined(this, e);
         }
 
         protected internal void OnPlayerQuit(PlayerJoinedQuitEventArgs e)
         {
-            if (PlayerQuit != null)
+            if (PlayerQuit is not null)
                 PlayerQuit(this, e);
         }
 

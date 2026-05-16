@@ -90,7 +90,7 @@ namespace TrueCraft.Core.World
 
         public void Dispose()
         {
-            if (regionFile == null)
+            if (regionFile is null)
                 return;
             streamLock.Wait();
             try
@@ -130,13 +130,13 @@ namespace TrueCraft.Core.World
         {
             if (!Chunks.ContainsKey(position))
             {
-                if (regionFile != null)
+                if (regionFile is not null)
                 {
                     // Search the stream for that region
                     var chunkData = GetChunkFromTable(position);
-                    if (chunkData == null)
+                    if (chunkData is null)
                     {
-                        if (World.ChunkProvider == null)
+                        if (World.ChunkProvider is null)
                             throw new ArgumentException("The requested chunk is not loaded.", "position");
                         if (generate)
                             GenerateChunk(position);
@@ -174,7 +174,7 @@ namespace TrueCraft.Core.World
                         streamLock.Release();
                     }
                 }
-                else if (World.ChunkProvider == null)
+                else if (World.ChunkProvider is null)
                 {
                     throw new ArgumentException("The requested chunk is not loaded.", nameof(position));
                 }
@@ -276,7 +276,7 @@ namespace TrueCraft.Core.World
         /// </summary>
         public async Task SaveAsync(string file, CancellationToken cancellationToken = default)
         {
-            if (regionFile == null)
+            if (regionFile is null)
             {
                 var exists = File.Exists(file);
                 regionFile = new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite,
@@ -304,7 +304,7 @@ namespace TrueCraft.Core.World
                     var raw = data.SaveToBuffer(NbtCompression.ZLib);
 
                     var header = GetChunkFromTable(coords);
-                    if (header == null || header.Item2 > raw.Length)
+                    if (header is null || header.Item2 > raw.Length)
                         header = AllocateNewChunks(coords, raw.Length);
 
                     regionFile.Seek(header.Item1, SeekOrigin.Begin);
@@ -348,7 +348,7 @@ namespace TrueCraft.Core.World
                     var raw = data.SaveToBuffer(NbtCompression.ZLib);
 
                     var header = GetChunkFromTable(coords);
-                    if (header == null || header.Item2 > raw.Length)
+                    if (header is null || header.Item2 > raw.Length)
                         header = AllocateNewChunks(coords, raw.Length);
 
                     regionFile.Seek(header.Item1, SeekOrigin.Begin);

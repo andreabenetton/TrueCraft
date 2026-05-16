@@ -54,7 +54,7 @@ namespace TrueCraft.Client.Rendering
             result = new ChunkMesh(item, Game, state.Verticies.ToArray(),
                 state.OpaqueIndicies.ToArray(), state.TransparentIndicies.ToArray());
 
-            return result != null;
+            return result is not null;
         }
 
         private void AddBottomBlock(Coordinates3D coords, RenderState state, ReadOnlyChunk chunk)
@@ -127,7 +127,7 @@ namespace TrueCraft.Client.Rendering
         private void UpdateFacesFromAdjacent(Coordinates3D adjacent, ReadOnlyChunk chunk,
             VisibleFaces mod, ref VisibleFaces faces)
         {
-            if (chunk == null)
+            if (chunk is null)
                 return;
             var provider = BlockRepository.GetBlockProvider(chunk.GetBlockId(adjacent));
             if (!provider.Opaque)

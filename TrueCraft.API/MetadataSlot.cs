@@ -37,7 +37,7 @@ namespace TrueCraft.API
             {
                 stream.WriteInt8(Value.Count);
                 stream.WriteInt16(Value.Metadata);
-                if (Value.Nbt != null)
+                if (Value.Nbt is not null)
                 {
                     var file = new NbtFile(Value.Nbt);
                     var data = file.SaveToBuffer(NbtCompression.GZip);

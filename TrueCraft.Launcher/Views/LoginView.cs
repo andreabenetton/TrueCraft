@@ -150,26 +150,26 @@ namespace TrueCraft.Launcher.Views
 
         private static void PersistSettings(string username, string password, bool remember)
         {
-            if (UserSettings.Local == null)
+            if (UserSettings.Local is null)
                 return;
             UserSettings.Local.Username = username;
-            UserSettings.Local.AutoLogin = remember && password != null;
-            UserSettings.Local.Password = remember && password != null ? password : string.Empty;
+            UserSettings.Local.AutoLogin = remember && password is not null;
+            UserSettings.Local.Password = remember && password is not null ? password : string.Empty;
             UserSettings.Local.Save();
         }
 
         private void SetInteractive(bool enabled)
         {
-            if (_loginButton != null) _loginButton.Enabled = enabled;
-            if (_offlineButton != null) _offlineButton.Enabled = enabled;
-            if (_registerButton != null) _registerButton.Enabled = enabled;
-            if (_usernameInput != null) _usernameInput.Enabled = enabled;
-            if (_passwordInput != null) _passwordInput.Enabled = enabled;
+            if (_loginButton is not null) _loginButton.Enabled = enabled;
+            if (_offlineButton is not null) _offlineButton.Enabled = enabled;
+            if (_registerButton is not null) _registerButton.Enabled = enabled;
+            if (_usernameInput is not null) _usernameInput.Enabled = enabled;
+            if (_passwordInput is not null) _passwordInput.Enabled = enabled;
         }
 
         private void ShowError(string message)
         {
-            if (_errorLabel == null)
+            if (_errorLabel is null)
                 return;
             if (string.IsNullOrEmpty(message))
             {

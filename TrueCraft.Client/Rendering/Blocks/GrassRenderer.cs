@@ -101,7 +101,7 @@ namespace TrueCraft.Client.Rendering.Blocks
             List<VertexPositionNormalColorTexture> vertices, List<int> indices)
         {
             var texture = Texture;
-            if (descriptor.Coordinates.Y < World.Height && descriptor.Chunk != null)
+            if (descriptor.Coordinates.Y < World.Height && descriptor.Chunk is not null)
                 if (descriptor.Chunk.GetBlockID(descriptor.Coordinates + Coordinates3D.Up) == SnowfallBlock.BlockID)
                     texture = SnowTexture;
 

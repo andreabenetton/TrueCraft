@@ -37,7 +37,7 @@ namespace TrueCraft.Nbt.Snbt
         /// </summary>
         public static NbtTag Parse(string snbt)
         {
-            if (snbt == null) throw new ArgumentNullException(nameof(snbt));
+            if (snbt is null) throw new ArgumentNullException(nameof(snbt));
             var p = new Parser(snbt);
             p.SkipWhitespace();
             var tag = p.ParseValue();

@@ -46,7 +46,7 @@ namespace TrueCraft.Nbt
         /// <exception cref="ArgumentException"> <paramref name="stream" /> is not readable. </exception>
         public NbtReader([NotNull] Stream stream, bool bigEndian)
         {
-            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
             SkipEndTags = true;
             CacheTagValues = false;
             ParentTagType = NbtTagType.Unknown;
@@ -99,7 +99,7 @@ namespace TrueCraft.Nbt
         }
 
         /// <summary> Whether current tag has a name. </summary>
-        public bool HasName => TagName != null;
+        public bool HasName => TagName is not null;
 
         /// <summary> Whether this reader has reached the end of stream. </summary>
         public bool IsAtStreamEnd => state == NbtParseState.AtStreamEnd;
@@ -384,7 +384,7 @@ namespace TrueCraft.Nbt
         // Goes one step down the NBT file's hierarchy, preserving current state
         private void GoDown()
         {
-            if (nodes == null) nodes = new Stack<NbtReaderNode>();
+            if (nodes is null) nodes = new Stack<NbtReaderNode>();
             var newNode = new NbtReaderNode
             {
                 ListIndex = ListIndex,
@@ -637,7 +637,7 @@ namespace TrueCraft.Nbt
             {
                 ReadToFollowing();
                 // Going up the file tree, or end of document: wrap up
-                while (Depth <= parentDepth && parent.Parent != null)
+                while (Depth <= parentDepth && parent.Parent is not null)
                 {
                     parent = parent.Parent;
                     parentDepth--;
@@ -674,14 +674,14 @@ namespace TrueCraft.Nbt
         private void AddToParent([NotNull] NbtTag thisTag, [NotNull] NbtTag parent)
         {
             var parentAsList = parent as NbtList;
-            if (parentAsList != null)
+            if (parentAsList is not null)
             {
                 parentAsList.Add(thisTag);
             }
             else
             {
                 var parentAsCompound = parent as NbtCompound;
-                if (parentAsCompound != null)
+                if (parentAsCompound is not null)
                     parentAsCompound.Add(thisTag);
                 else
                     // cannot happen unless NbtReader is bugged
@@ -780,7 +780,7 @@ namespace TrueCraft.Nbt
             {
                 if (cacheTagValues)
                 {
-                    if (valueCache == null) throw new InvalidOperationException("No value to read.");
+                    if (valueCache is null) throw new InvalidOperationException("No value to read.");
 
                     return valueCache;
                 }
@@ -992,7 +992,7 @@ namespace TrueCraft.Nbt
         [NotNull]
         public string ToString(bool includeValue, [NotNull] string indentString)
         {
-            if (indentString == null) throw new ArgumentNullException(nameof(indentString));
+            if (indentString is null) throw new ArgumentNullException(nameof(indentString));
             var sb = new StringBuilder();
             for (var i = 0; i < Depth; i++) sb.Append(indentString);
 

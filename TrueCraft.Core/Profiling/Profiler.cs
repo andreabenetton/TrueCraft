@@ -74,7 +74,7 @@ namespace TrueCraft.Core.Profiling
 
         private static bool Match(string mask, string value)
         {
-            if (value == null)
+            if (value is null)
                 value = string.Empty;
             var i = 0;
             var j = 0;

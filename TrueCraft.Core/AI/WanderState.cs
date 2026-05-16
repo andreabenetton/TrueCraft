@@ -26,7 +26,7 @@ namespace TrueCraft.Core.AI
         public void Update(IMobEntity entity, IEntityManager manager)
         {
             var cast = entity as IEntity;
-            if (entity.CurrentPath != null)
+            if (entity.CurrentPath is not null)
             {
                 if (entity.AdvancePath(manager.TimeSinceLastUpdate))
                     entity.CurrentState = new IdleState(new WanderState());

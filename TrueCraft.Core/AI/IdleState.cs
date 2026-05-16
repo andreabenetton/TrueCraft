@@ -10,7 +10,7 @@ namespace TrueCraft.Core.AI
         public IdleState(IMobState nextState, DateTime? expiry = null)
         {
             NextState = nextState;
-            if (expiry != null)
+            if (expiry is not null)
                 Expiry = expiry.Value;
             else
                 Expiry = DateTime.UtcNow.AddSeconds(MathHelper.Random.Next(5, 15));

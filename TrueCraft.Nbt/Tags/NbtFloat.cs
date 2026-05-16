@@ -43,7 +43,7 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentNullException"> <paramref name="other" /> is <c>null</c>. </exception>
         public NbtFloat([NotNull] NbtFloat other)
         {
-            if (other == null) throw new ArgumentNullException(nameof(other));
+            if (other is null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             Value = other.Value;
         }
@@ -57,7 +57,7 @@ namespace TrueCraft.Nbt.Tags
 
         internal override bool ReadTag(NbtBinaryReader readStream)
         {
-            if (readStream.Selector != null && !readStream.Selector(this))
+            if (readStream.Selector is not null && !readStream.Selector(this))
             {
                 readStream.ReadSingle();
                 return false;
@@ -77,7 +77,7 @@ namespace TrueCraft.Nbt.Tags
         internal override void WriteTag(NbtBinaryWriter writeStream)
         {
             writeStream.Write(NbtTagType.Float);
-            if (Name == null) throw new NbtFormatException("Name is null");
+            if (Name is null) throw new NbtFormatException("Name is null");
             writeStream.Write(Name);
             writeStream.Write(Value);
         }

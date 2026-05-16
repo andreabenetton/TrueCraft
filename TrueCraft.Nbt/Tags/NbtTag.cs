@@ -62,11 +62,11 @@ namespace TrueCraft.Nbt.Tags
 
                 if (Parent is NbtCompound parentAsCompound)
                 {
-                    if (value == null)
+                    if (value is null)
                         throw new ArgumentNullException(nameof(value),
                             "Name of tags inside an NbtCompound may not be null.");
 
-                    if (name != null) parentAsCompound.RenameTag(name, value);
+                    if (name is not null) parentAsCompound.RenameTag(name, value);
                 }
 
                 name = value;
@@ -185,7 +185,7 @@ namespace TrueCraft.Nbt.Tags
         [NotNull]
         public string ToString([NotNull] string indentString)
         {
-            if (indentString == null) throw new ArgumentNullException(nameof(indentString));
+            if (indentString is null) throw new ArgumentNullException(nameof(indentString));
             var sb = new StringBuilder();
             PrettyPrint(sb, indentString, 0);
             return sb.ToString();

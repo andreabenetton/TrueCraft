@@ -66,7 +66,7 @@ namespace TrueCraft.Launcher
         public void ShowView(ILauncherView view)
         {
             _currentView?.Dispose();
-            if (InteractionPanel != null)
+            if (InteractionPanel is not null)
             {
                 while (InteractionPanel.Children.Count > 0)
                     InteractionPanel.RemoveChild(InteractionPanel.Children[0]);

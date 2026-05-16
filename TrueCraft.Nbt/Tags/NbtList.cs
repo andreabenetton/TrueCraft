@@ -34,7 +34,7 @@ namespace TrueCraft.Nbt.Tags
             : this(null, tags, NbtTagType.Unknown)
         {
             // the base constructor will allow null "tags," but we don't want that in this constructor
-            if (tags == null) throw new ArgumentNullException(nameof(tags));
+            if (tags is null) throw new ArgumentNullException(nameof(tags));
         }
 
 
@@ -66,7 +66,7 @@ namespace TrueCraft.Nbt.Tags
             : this(tagName, tags, NbtTagType.Unknown)
         {
             // the base constructor will allow null "tags," but we don't want that in this constructor
-            if (tags == null) throw new ArgumentNullException(nameof(tags));
+            if (tags is null) throw new ArgumentNullException(nameof(tags));
         }
 
 
@@ -87,7 +87,7 @@ namespace TrueCraft.Nbt.Tags
             : this(null, tags, givenListType)
         {
             // the base constructor will allow null "tags," but we don't want that in this constructor
-            if (tags == null) throw new ArgumentNullException(nameof(tags));
+            if (tags is null) throw new ArgumentNullException(nameof(tags));
         }
 
 
@@ -122,7 +122,7 @@ namespace TrueCraft.Nbt.Tags
             name = tagName;
             ListType = givenListType;
 
-            if (tags == null) return;
+            if (tags is null) return;
             foreach (var tag in tags) Add(tag);
         }
 
@@ -132,7 +132,7 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentNullException"> <paramref name="other" /> is <c>null</c>. </exception>
         public NbtList([NotNull] NbtList other)
         {
-            if (other == null) throw new ArgumentNullException(nameof(other));
+            if (other is null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             _listType = other._listType;
             foreach (var tag in other._tags) _tags.Add((NbtTag) tag.Clone());
@@ -190,15 +190,15 @@ namespace TrueCraft.Nbt.Tags
             get => _tags[tagIndex];
             set
             {
-                if (value == null) throw new ArgumentNullException(nameof(value));
+                if (value is null) throw new ArgumentNullException(nameof(value));
 
-                if (value.Parent != null)
+                if (value.Parent is not null)
                     throw new ArgumentException("A tag may only be added to one compound/list at a time.");
 
                 if (value == this || value == Parent)
                     throw new ArgumentException("A list tag may not be added to itself or to its child tag.");
 
-                if (value.Name != null)
+                if (value.Name is not null)
                     throw new ArgumentException("Named tag given. A list may only contain unnamed tags.");
 
                 if (_listType != NbtTagType.Unknown && value.TagType != _listType)
@@ -230,7 +230,7 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentException"> If given tags do not match ListType, or are of mixed types. </exception>
         public void AddRange([NotNull] IEnumerable<NbtTag> newTags)
         {
-            if (newTags == null) throw new ArgumentNullException(nameof(newTags));
+            if (newTags is null) throw new ArgumentNullException(nameof(newTags));
             foreach (var tag in newTags) Add(tag);
         }
 
@@ -298,7 +298,7 @@ namespace TrueCraft.Nbt.Tags
 
         internal override bool ReadTag(NbtBinaryReader readStream)
         {
-            if (readStream.Selector != null && !readStream.Selector(this))
+            if (readStream.Selector is not null && !readStream.Selector(this))
             {
                 SkipTag(readStream);
                 return false;
@@ -449,7 +449,7 @@ namespace TrueCraft.Nbt.Tags
         internal override void WriteTag(NbtBinaryWriter writeStream)
         {
             writeStream.Write(NbtTagType.List);
-            if (Name == null) throw new NbtFormatException("Name is null");
+            if (Name is null) throw new NbtFormatException("Name is null");
             writeStream.Write(Name);
             WriteData(writeStream);
         }
@@ -500,7 +500,7 @@ namespace TrueCraft.Nbt.Tags
         /// <param name="tag"> The tag to locate in this NbtList. </param>
         public int IndexOf([CanBeNull] NbtTag tag)
         {
-            if (tag == null) return -1;
+            if (tag is null) return -1;
             return _tags.IndexOf(tag);
         }
 
@@ -512,12 +512,12 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentNullException"> <paramref name="newTag" /> is <c>null</c>. </exception>
         public void Insert(int tagIndex, [NotNull] NbtTag newTag)
         {
-            if (newTag == null) throw new ArgumentNullException(nameof(newTag));
+            if (newTag is null) throw new ArgumentNullException(nameof(newTag));
 
             if (_listType != NbtTagType.Unknown && newTag.TagType != _listType)
                 throw new ArgumentException("Items must be of type " + _listType);
 
-            if (newTag.Parent != null)
+            if (newTag.Parent is not null)
                 throw new ArgumentException("A tag may only be added to one compound/list at a time.");
 
             _tags.Insert(tagIndex, newTag);
@@ -544,15 +544,15 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentException"> If <paramref name="newTag" /> does not match ListType. </exception>
         public void Add([NotNull] NbtTag newTag)
         {
-            if (newTag == null) throw new ArgumentNullException(nameof(newTag));
+            if (newTag is null) throw new ArgumentNullException(nameof(newTag));
 
-            if (newTag.Parent != null)
+            if (newTag.Parent is not null)
                 throw new ArgumentException("A tag may only be added to one compound/list at a time.");
 
             if (newTag == this || newTag == Parent)
                 throw new ArgumentException("A list tag may not be added to itself or to its child tag.");
 
-            if (newTag.Name != null)
+            if (newTag.Name is not null)
                 throw new ArgumentException("Named tag given. A list may only contain unnamed tags.");
 
             if (_listType != NbtTagType.Unknown && newTag.TagType != _listType)
@@ -615,7 +615,7 @@ namespace TrueCraft.Nbt.Tags
         /// <exception cref="ArgumentNullException"> <paramref name="tag" /> is <c>null</c>. </exception>
         public bool Remove([NotNull] NbtTag tag)
         {
-            if (tag == null) throw new ArgumentNullException(nameof(tag));
+            if (tag is null) throw new ArgumentNullException(nameof(tag));
             if (!_tags.Remove(tag)) return false;
 
             tag.Parent = null;

@@ -51,15 +51,22 @@ namespace TrueCraft.Core.Profiling
                     var timer = _activeTimers.Pop();
                     timer.Finished = _stopwatch.ElapsedTicks;
                     var elapsed = (timer.Finished - timer.Started) / 10000.0;
-                    foreach (var bucket in _enabledBuckets)
-                        if (Match(bucket, timer.Bucket))
-                        {
-                            _log.LogInformation("[@{Elapsed:0.00}s] {Bucket} took {Took}ms",
-                                _stopwatch.ElapsedMilliseconds / 1000.0, timer.Bucket, elapsed);
-                            break;
-                        }
 
-                    if (LogLag && lag != -1 && elapsed > lag)
+                    // Done() runs every tick (multiple times) per profiler section.
+                    // IsEnabled gates the bucket-match scan and the double-arg boxing
+                    // when the Profiler namespace is silenced via MinimumLevel.Override.
+                    if (_log.IsEnabled(LogLevel.Information))
+                    {
+                        foreach (var bucket in _enabledBuckets)
+                            if (Match(bucket, timer.Bucket))
+                            {
+                                _log.LogInformation("[@{Elapsed:0.00}s] {Bucket} took {Took}ms",
+                                    _stopwatch.ElapsedMilliseconds / 1000.0, timer.Bucket, elapsed);
+                                break;
+                            }
+                    }
+
+                    if (LogLag && lag != -1 && elapsed > lag && _log.IsEnabled(LogLevel.Warning))
                         _log.LogWarning("{Bucket} is lagging by {Elapsed}ms", timer.Bucket, elapsed);
                 }
             }

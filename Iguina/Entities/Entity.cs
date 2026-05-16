@@ -136,6 +136,13 @@ namespace Iguina.Entities
         public string? TooltipText;
 
         /// <summary>
+        /// Active animations attached to this entity. Ticked once per frame by
+        /// <c>_DoUpdate</c>; entries whose <see cref="Animations.Animator.IsDone"/>
+        /// goes true are removed automatically.
+        /// </summary>
+        public List<Animations.Animator> Animators { get; } = new();
+
+        /// <summary>
         /// Sound id played via <see cref="UISystem.PlaySound"/> when this entity is
         /// clicked (left mouse released). Null disables click audio.
         /// </summary>
@@ -1874,6 +1881,16 @@ namespace Iguina.Entities
 
             // update self
             Update(dt);
+
+            // tick animators; remove any that signal IsDone
+            if (Animators.Count > 0)
+            {
+                for (var i = Animators.Count - 1; i >= 0; i--)
+                {
+                    Animators[i].Tick(this, dt);
+                    if (Animators[i].IsDone) Animators.RemoveAt(i);
+                }
+            }
 
             // update internal children and children
             foreach (var child in _internalChildren)

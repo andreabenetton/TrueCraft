@@ -22,7 +22,14 @@ namespace Iguina.Demo.MonoGame
         string _assetsRoot;
         Texture2D _whiteTexture;
 
-        FontSystem _fontSystem;
+        /// <summary>
+        /// Font registry keyed by font id. The empty/null/default key resolves to
+        /// <c>default_font</c>, which is embedded in this assembly; additional
+        /// families are added at runtime via <see cref="RegisterFont(string, byte[])"/>.
+        /// </summary>
+        Dictionary<string, FontSystem> _fontSystems = new();
+        const string DefaultFontId = "default_font";
+
         Dictionary<string, Texture2D> _textures = new();
         Dictionary<string, Texture2D> _grayscaleClones = new();
 
@@ -54,25 +61,45 @@ namespace Iguina.Demo.MonoGame
             // Load the default font (Open Sans Regular) embedded in this assembly.
             // FontStashSharp rasterizes TTF on demand at the requested pixel size,
             // so we don't need MGCB's spritefont pipeline.
-            _fontSystem = new FontSystem();
-            using (var s = typeof(MonoGameRenderer).Assembly.GetManifestResourceStream("default_font.ttf"))
-            {
-                if (s == null) throw new InvalidOperationException("Embedded default_font.ttf missing");
-                using var ms = new MemoryStream();
-                s.CopyTo(ms);
-                _fontSystem.AddFont(ms.ToArray());
-            }
+            using var s = typeof(MonoGameRenderer).Assembly.GetManifestResourceStream("default_font.ttf")
+                ?? throw new InvalidOperationException("Embedded default_font.ttf missing");
+            using var ms = new MemoryStream();
+            s.CopyTo(ms);
+            RegisterFont(DefaultFontId, ms.ToArray());
         }
 
         /// <summary>
-        /// Get a <see cref="DynamicSpriteFont"/> at the requested pixel size from the
-        /// embedded default font. <paramref name="fontName"/> is accepted for source
-        /// compatibility with stylesheets that name a font identifier; the renderer
-        /// currently ships a single font and ignores the name.
+        /// Register an additional font family at runtime. Callers pass the raw
+        /// TTF/OTF bytes; FontStashSharp rasterizes glyphs on demand at each
+        /// requested pixel size. Pass an existing id to replace its TTF.
+        /// </summary>
+        public void RegisterFont(string fontId, byte[] ttf)
+        {
+            var system = new FontSystem();
+            system.AddFont(ttf);
+            _fontSystems[fontId] = system;
+        }
+
+        /// <summary>
+        /// Register an additional font family by file path. Loads the bytes once
+        /// and forwards to <see cref="RegisterFont(string, byte[])"/>.
+        /// </summary>
+        public void RegisterFont(string fontId, string ttfPath)
+        {
+            RegisterFont(fontId, File.ReadAllBytes(ttfPath));
+        }
+
+        /// <summary>
+        /// Get a <see cref="DynamicSpriteFont"/> at the requested pixel size. Looks up
+        /// the registered font family by <paramref name="fontName"/>; falls back to
+        /// the default font (Open Sans) for unknown ids or null.
         /// </summary>
         DynamicSpriteFont GetFont(string? fontName, int fontSize)
         {
-            return _fontSystem.GetFont(fontSize * GlobalTextScale);
+            var key = fontName ?? DefaultFontId;
+            if (!_fontSystems.TryGetValue(key, out var system))
+                system = _fontSystems[DefaultFontId];
+            return system.GetFont(fontSize * GlobalTextScale);
         }
 
         /// <summary>

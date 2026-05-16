@@ -1,8 +1,7 @@
 {
     "Default": {
         "TextFillColor": {"R": 235, "G": 235, "B": 235, "A": 255},
-        "TextOutlineColor": {"R": 0, "G": 0, "B": 0, "A": 200},
-        "TextOutlineWidth": 1,
+        "TextOutlineWidth": 0,
         "FontIdentifier": "Pixel_Regular",
         "FontSize": 18,
         "TextSpacing": 1

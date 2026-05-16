@@ -19,12 +19,14 @@ namespace TrueCraft.Launcher
         [STAThread]
         public static void Main(string[] args)
         {
-            var launcherConfig = new LauncherConfiguration();
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("launchersettings.json", optional: false, reloadOnChange: false)
+                .Build();
 
             var services = new ServiceCollection();
-            services.AddSerilogLogging(launcherConfig.Configuration);
-            services.AddSingleton(launcherConfig);
-            services.AddSingleton<IConfiguration>(launcherConfig.Configuration);
+            services.AddSerilogLogging(configuration);
+            services.AddSingleton<IConfiguration>(configuration);
 
             // Launcher runs an embedded singleplayer server — bake the singleplayer
             // overrides into NodeOptions directly. No file source needed since

@@ -33,7 +33,13 @@
       "Serilog.Enrichers.Process",
       "Serilog.Exceptions"
     ],
-    "MinimumLevel": "Information",
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "System": "Warning"
+      }
+    },
     "WriteTo": [
       {
         "Name": "Async",

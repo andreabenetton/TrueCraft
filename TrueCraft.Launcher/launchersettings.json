@@ -8,7 +8,13 @@
       "Serilog.Enrichers.Process",
       "Serilog.Exceptions"
     ],
-    "MinimumLevel": "Debug",
+    "MinimumLevel": {
+      "Default": "Debug",
+      "Override": {
+        "Microsoft": "Information",
+        "System": "Information"
+      }
+    },
     "WriteTo": [
       {
         "Name": "Async",

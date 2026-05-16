@@ -1,4 +1,5 @@
-﻿using Iguina.Defs;
+﻿using System;
+using Iguina.Defs;
 using Iguina.Utils;
 using System.Text.RegularExpressions;
 
@@ -28,6 +29,17 @@ namespace Iguina.Entities
         string _textValue;
         LineAndStyleCommands[]? _cachedProcessedText;
         int _cachedTextWidth = 0;
+
+        /// <summary>
+        /// When non-null, the paragraph renders glyph-by-glyph with each character's
+        /// baseline shifted by the returned Y delta. The index is into the unwrapped
+        /// <see cref="Text"/> value. Used by <see cref="Animations.TextWaveAnimator"/>
+        /// for the bobbing-per-character effect; leave null for normal single-call
+        /// rendering. Style-command paragraphs (<see cref="EnableStyleCommands"/>)
+        /// fall back to whole-line rendering — per-glyph offsets there would need
+        /// per-segment integration not covered by this hook.
+        /// </summary>
+        public Func<int, float>? PerGlyphOffsetY;
         int _cachedTextFontSize = 0;
         string? _cachedTextFontId;
         int _lineHeight;
@@ -616,17 +628,24 @@ namespace Iguina.Entities
                         // draw line without style commands
                         if (styleCommands == null || styleCommands.Count == 0)
                         {
+                            string lineToDraw = line.Line;
                             if (_beforeDrawingLineNoStyleCommands != null)
                             {
-                                var processedLine = _beforeDrawingLineNoStyleCommands(line.Line, lineIndex, lineStartIndex);
-                                if (!string.IsNullOrEmpty(processedLine))
-                                {
-                                    UISystem.Renderer.DrawText(effectId, processedLine, font, fontSize, position, currTextStyle.FillColor ?? fillColor, currTextStyle.OutlineColor ?? outlineColor, currTextStyle.OutlineWidth ?? outlineWidth, spacing);
-                                }
+                                lineToDraw = _beforeDrawingLineNoStyleCommands(line.Line, lineIndex, lineStartIndex) ?? string.Empty;
                             }
-                            else
+                            if (!string.IsNullOrEmpty(lineToDraw))
                             {
-                                UISystem.Renderer.DrawText(effectId, line.Line, font, fontSize, position, currTextStyle.FillColor ?? fillColor, currTextStyle.OutlineColor ?? outlineColor, currTextStyle.OutlineWidth ?? outlineWidth, spacing);
+                                var lineFill = currTextStyle.FillColor ?? fillColor;
+                                var lineOutline = currTextStyle.OutlineColor ?? outlineColor;
+                                var lineOutlineWidth = currTextStyle.OutlineWidth ?? outlineWidth;
+                                if (PerGlyphOffsetY != null)
+                                {
+                                    DrawLinePerGlyph(lineToDraw, position, font, fontSize, lineFill, lineOutline, lineOutlineWidth, spacing, effectId, lineStartIndex);
+                                }
+                                else
+                                {
+                                    UISystem.Renderer.DrawText(effectId, lineToDraw, font, fontSize, position, lineFill, lineOutline, lineOutlineWidth, spacing);
+                                }
                             }
                         }
                         // draw line with style commands
@@ -701,6 +720,28 @@ namespace Iguina.Entities
                 {
                     DrawStateText(state, internalBoundingRect, 1f);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Render a single wrapped line one glyph at a time, applying
+        /// <see cref="PerGlyphOffsetY"/> to each character's baseline. Character
+        /// indices passed to the callback are over the unwrapped <see cref="Text"/>,
+        /// so wave phases stay coherent across line breaks. Advance widths come
+        /// from <see cref="Drivers.IRenderer.MeasureText"/> on each single character;
+        /// kerning is therefore not honoured, but this is acceptable for the
+        /// animation use case (attention-grabbing bob, not precise typography).
+        /// </summary>
+        void DrawLinePerGlyph(string line, Point basePosition, string? font, int fontSize, Color fill, Color outline, int outlineWidth, float spacing, string? effectId, int lineStartIndex)
+        {
+            var x = basePosition.X;
+            for (var i = 0; i < line.Length; i++)
+            {
+                var glyph = line.Substring(i, 1);
+                var dy = (int)PerGlyphOffsetY!(lineStartIndex + i);
+                var glyphPos = new Point(x, basePosition.Y + dy);
+                UISystem.Renderer.DrawText(effectId, glyph, font, fontSize, glyphPos, fill, outline, outlineWidth, spacing);
+                x += UISystem.Renderer.MeasureText(glyph, font, fontSize, spacing).X;
             }
         }
     }

@@ -19,6 +19,8 @@ namespace TrueCraft.Launcher
         [STAThread]
         public static void Main(string[] args)
         {
+            App.EnableBootstrapLogger();
+
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("launchersettings.json", optional: false, reloadOnChange: false)

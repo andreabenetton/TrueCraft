@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Debugging;
 using TrueCraft.Core.Profiling;
 
 namespace TrueCraft
@@ -44,6 +45,24 @@ namespace TrueCraft
 
         public static Microsoft.Extensions.Logging.ILogger LoggerFor(string name) =>
             Services.GetRequiredService<ILoggerFactory>().CreateLogger(name);
+
+        /// <summary>
+        ///     Wires a minimal Serilog logger that writes to Console, intended to be
+        ///     called as the very first line of <c>Program.Main</c>. Pre-DI errors
+        ///     (missing config file, bad JSON, package mismatch) then hit Console with a
+        ///     usable stack instead of vanishing. <see cref="AddSerilogLogging"/> later
+        ///     replaces this with the configured pipeline. Also enables Serilog's
+        ///     self-diagnostic stream so sink misconfiguration surfaces on
+        ///     <see cref="Console.Error"/>.
+        /// </summary>
+        public static void EnableBootstrapLogger()
+        {
+            SelfLog.Enable(Console.Error);
+            Log.Logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .CreateLogger();
+        }
     }
 
     public static class ServiceCollectionLoggingExtensions

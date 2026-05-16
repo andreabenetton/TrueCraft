@@ -35,6 +35,8 @@ namespace TrueCraft
 
         public static async Task Main(string[] args)
         {
+            App.EnableBootstrapLogger();
+
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("nodesettings.json", optional: false, reloadOnChange: false)

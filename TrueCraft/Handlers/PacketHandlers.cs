@@ -8,14 +8,14 @@ namespace TrueCraft.Handlers
 {
     public static class PacketHandlers
     {
-        public static void RegisterHandlers(IMultiplayerServer server)
+        public static void RegisterHandlers(IMultiplayerServer server, LoginHandlers loginHandlers)
         {
             server.RegisterPacketHandler(new KeepAlivePacket().ID, HandleKeepAlive);
             server.RegisterPacketHandler(new ChatMessagePacket().ID, HandleChatMessage);
             server.RegisterPacketHandler(new DisconnectPacket().ID, HandleDisconnect);
 
-            server.RegisterPacketHandler(new HandshakePacket().ID, LoginHandlers.HandleHandshakePacket);
-            server.RegisterPacketHandler(new LoginRequestPacket().ID, LoginHandlers.HandleLoginRequestPacket);
+            server.RegisterPacketHandler(new HandshakePacket().ID, loginHandlers.HandleHandshakePacket);
+            server.RegisterPacketHandler(new LoginRequestPacket().ID, loginHandlers.HandleLoginRequestPacket);
 
             server.RegisterPacketHandler(new PlayerGroundedPacket().ID, (a, b, c) => Task.CompletedTask);
             server.RegisterPacketHandler(new PlayerPositionPacket().ID, EntityHandlers.HandlePlayerPositionPacket);

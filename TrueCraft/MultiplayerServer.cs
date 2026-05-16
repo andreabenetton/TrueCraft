@@ -97,7 +97,7 @@ namespace TrueCraft
 
         public MultiplayerServer(IBlockRepository blockRepository, IItemRepository itemRepository,
             ICraftingRepository craftingRepository, IOptions<NodeOptions> nodeOpts,
-            IOptions<AccessOptions> accessOpts)
+            IOptions<AccessOptions> accessOpts, Handlers.LoginHandlers loginHandlers)
         {
             _node = nodeOpts.Value;
             var reader = new PacketReader();
@@ -122,7 +122,7 @@ namespace TrueCraft
             AccessConfiguration = accessOpts.Value;
 
             reader.RegisterCorePackets();
-            Handlers.PacketHandlers.RegisterHandlers(this);
+            Handlers.PacketHandlers.RegisterHandlers(this, loginHandlers);
         }
 
         public void RegisterPacketHandler(byte packetId, PacketHandler handler)

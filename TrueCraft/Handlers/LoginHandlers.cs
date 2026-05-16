@@ -1,20 +1,26 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using TrueCraft.API.Server;
-using TrueCraft.API.Networking;
-using TrueCraft.Core.Networking.Packets;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using TrueCraft.API;
+using TrueCraft.API.Networking;
+using TrueCraft.API.Server;
 using TrueCraft.Core.Entities;
+using TrueCraft.Core.Networking.Packets;
 using TrueCraft.Options;
 
 namespace TrueCraft.Handlers
 {
-    internal static class LoginHandlers
+    public class LoginHandlers
     {
-        public static Task HandleHandshakePacket(IPacket packet, IRemoteClient client, IMultiplayerServer server)
+        private readonly NodeOptions _node;
+
+        public LoginHandlers(IOptions<NodeOptions> nodeOpts)
+        {
+            _node = nodeOpts.Value;
+        }
+
+        public Task HandleHandshakePacket(IPacket packet, IRemoteClient client, IMultiplayerServer server)
         {
             var handshakePacket = (HandshakePacket) packet;
             var remoteClient = (RemoteClient)client;
@@ -23,7 +29,7 @@ namespace TrueCraft.Handlers
             return Task.CompletedTask;
         }
 
-        public static async Task HandleLoginRequestPacket(IPacket packet, IRemoteClient client, IMultiplayerServer server)
+        public async Task HandleLoginRequestPacket(IPacket packet, IRemoteClient client, IMultiplayerServer server)
         {
             var loginRequestPacket = (LoginRequestPacket)packet;
             var remoteClient = (RemoteClient)client;
@@ -79,10 +85,9 @@ namespace TrueCraft.Handlers
                 server.Scheduler.ScheduleEvent("remote.keepalive", remoteClient, TimeSpan.FromSeconds(10), remoteClient.SendKeepAlive);
                 server.Scheduler.ScheduleEvent("remote.chunks", remoteClient, TimeSpan.FromSeconds(1), remoteClient.ExpandChunkRadius);
 
-                var node = App.Services.GetRequiredService<IOptions<NodeOptions>>().Value;
-                if (!string.IsNullOrEmpty(node.MOTD))
-                    remoteClient.SendMessage(node.MOTD);
-                if (!node.Singleplayer)
+                if (!string.IsNullOrEmpty(_node.MOTD))
+                    remoteClient.SendMessage(_node.MOTD);
+                if (!_node.Singleplayer)
                     server.SendMessage(ChatColor.Yellow + "{0} joined the server.", remoteClient.Username);
                 AuditLog.PlayerJoined(remoteClient.Username,
                     ((RemoteClient)remoteClient).Connection.RemoteEndPoint?.ToString() ?? "<unknown>");

@@ -78,6 +78,7 @@ namespace TrueCraft
                 repo.DiscoverRecipes();
                 return repo;
             });
+            services.AddSingleton<TrueCraft.Handlers.LoginHandlers>();
             services.AddSingleton<MultiplayerServer>();
             services.AddSingleton<CommandManager>();
             App.Services = services.BuildServiceProvider();

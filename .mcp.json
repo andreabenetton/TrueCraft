@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "screenshot": {
+      "command": "tools/screenshot-mcp/run.sh",
+      "args": []
+    }
+  }
+}

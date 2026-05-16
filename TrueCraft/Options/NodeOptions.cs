@@ -43,6 +43,6 @@ namespace TrueCraft.Options
         public bool EnableEventLoading { get; set; } = true;
 
         [ConfigurationKeyName("disable-events")]
-        public string[] DisabledEvents { get; set; } = Array.Empty<string>();
+        public string[] DisabledEvents { get; set; } = [];
     }
 }

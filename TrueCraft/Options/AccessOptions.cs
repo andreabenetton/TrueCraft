@@ -12,10 +12,10 @@ namespace TrueCraft.Options
     {
         public const string SectionName = "Access";
 
-        public string[] Blacklist { get; set; } = Array.Empty<string>();
-        public string[] Whitelist { get; set; } = Array.Empty<string>();
+        public string[] Blacklist { get; set; } = [];
+        public string[] Whitelist { get; set; } = [];
 
         [Microsoft.Extensions.Configuration.ConfigurationKeyName("ops")]
-        public string[] Oplist { get; set; } = Array.Empty<string>();
+        public string[] Oplist { get; set; } = [];
     }
 }

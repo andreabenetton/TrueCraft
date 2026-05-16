@@ -114,7 +114,7 @@ namespace TrueCraft.Launcher.Views
                 return;
             var server = new FavoriteServer { Name = name, Address = address };
             UserSettings.Local.FavoriteServers =
-                (UserSettings.Local.FavoriteServers ?? Array.Empty<FavoriteServer>())
+                (UserSettings.Local.FavoriteServers ?? [])
                 .Concat(new[] { server }).ToArray();
             UserSettings.Local.Save();
             _serverList.AddItem(server.Name);

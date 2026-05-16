@@ -78,6 +78,10 @@ namespace TrueCraft
                 .ReadFrom.Configuration(configuration)
                 .CreateLogger();
 
+            // Independent Serilog pipeline for security-relevant audit events (joins,
+            // leaves, chat). Reads from the optional "Audit" section.
+            AuditLog.Configure(configuration);
+
             services.AddLogging(builder =>
             {
                 builder.ClearProviders();

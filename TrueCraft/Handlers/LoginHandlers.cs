@@ -84,6 +84,8 @@ namespace TrueCraft.Handlers
                     remoteClient.SendMessage(node.MOTD);
                 if (!node.Singleplayer)
                     server.SendMessage(ChatColor.Yellow + "{0} joined the server.", remoteClient.Username);
+                AuditLog.PlayerJoined(remoteClient.Username,
+                    ((RemoteClient)remoteClient).Connection.RemoteEndPoint?.ToString() ?? "<unknown>");
             }
         }
     }

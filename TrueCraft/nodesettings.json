@@ -71,5 +71,20 @@
       "WithEnvironmentName",
       "WithExceptionDetails"
     ]
+  },
+  "Audit": {
+    "Using": [ "Serilog.Sinks.File" ],
+    "MinimumLevel": "Information",
+    "WriteTo": [
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/audit..log",
+          "rollingInterval": "Day",
+          "formatter": "Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact"
+        }
+      }
+    ],
+    "Enrich": [ "FromLogContext", "WithMachineName", "WithProcessId" ]
   }
 }

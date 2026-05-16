@@ -206,6 +206,7 @@ namespace TrueCraft
                 message = message.Substring(1);
 
             Server.SendMessage("<{0}> {1}", username, message);
+            AuditLog.Chat(username, message);
         }
 
         /// <summary>

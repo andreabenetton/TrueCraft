@@ -371,6 +371,7 @@ namespace TrueCraft
             if (client.LoggedIn)
             {
                 SendMessage(ChatColor.Yellow + "{0} has left the server.", client.Username);
+                AuditLog.PlayerLeft(client.Username);
                 GetEntityManagerForWorld(client.World).DespawnEntity(client.Entity);
                 GetEntityManagerForWorld(client.World).FlushDespawns();
             }

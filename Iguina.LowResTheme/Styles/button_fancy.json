@@ -1,0 +1,30 @@
+{
+    "InheritFrom": "paragraph_base_style.json",
+    "Default": {
+        "FillTextureFramed": {
+            "TextureId": "Textures/button_fancy.png",
+            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 55, "Height": 18},
+            "FrameWidth": {"X": 19, "Y": 0}
+        },
+        "TextAlignment": "Center",
+        "Padding": {"Left": 12, "Right": 12, "Top": 6, "Bottom": 6},
+        "DefaultWidth": {"Value": 100, "Unit": "Percents"}
+    },
+    "Targeted": {
+        "FillTextureFramed": {
+            "TextureId": "Textures/button_fancy_hover.png",
+            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 55, "Height": 18},
+            "FrameWidth": {"X": 19, "Y": 0}
+        }
+    },
+    "Interacted": {
+        "FillTextureFramed": {
+            "TextureId": "Textures/button_fancy_down.png",
+            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 55, "Height": 18},
+            "FrameWidth": {"X": 19, "Y": 0}
+        }
+    },
+    "Disabled": {"EffectIdentifier": "disabled"},
+    "DefaultTextAnchor": "Center",
+    "InterpolateStatesSpeed": 5
+}

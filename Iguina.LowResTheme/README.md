@@ -53,12 +53,19 @@ CC0/CC-BY-licensed; the combined theme ships under MIT.
 
 ## Coverage
 
-Stylesheets included: panel, button, checkbox, radio_button,
-text_input, paragraph, title, horizontal_line, list_panel, list_item,
-dropdown_icon, slider_horizontal, slider_handle, scrollbar_vertical,
-scrollbar_vertical_handle, progress_bar_horizontal,
+Stylesheets included: panel, button (default + alternative + fancy),
+panel_simple, panel_fancy, panel_golden, panel_tabs_button, checkbox,
+radio_button, text_input, paragraph, title, horizontal_line, list_panel,
+list_item, dropdown_icon, slider_horizontal, slider_handle,
+scrollbar_vertical, scrollbar_vertical_handle, progress_bar_horizontal,
 progress_bar_horizontal_fill, message_box_backdrop.
 
-Not yet covered: vertical sliders, color picker, panel tabs, fancy /
-golden / alternative panel/button variants. Add by creating a JSON
-under `Styles/` pointing at the corresponding `Textures/*.png`.
+Textures: top-level lowres widgets (38 PNGs) plus the `Icons/`
+subfolder (~50 item icons — Apple, Sword, Armor, etc.) for use with
+the `Icon` / `Image` entities.
+
+Fonts: `Pixel_Regular.fnt` + `Pixel_Regular_0.png` (Pixel UniCode,
+bitmap-rasterized at 30px — the GeonBit lowres font, pixel-perfect).
+
+Not yet covered: vertical sliders, color picker. Add by creating a
+JSON under `Styles/` pointing at the corresponding `Textures/*.png`.

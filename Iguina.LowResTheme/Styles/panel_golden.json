@@ -1,0 +1,12 @@
+{
+    "Default": {
+        "FillTextureFramed": {
+            "TextureId": "Textures/panel_golden.png",
+            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 64, "Height": 64},
+            "FrameWidth": {"X": 13, "Y": 13}
+        },
+        "Padding": {"Left": 16, "Right": 16, "Top": 14, "Bottom": 14}
+    },
+    "Disabled": {"EffectIdentifier": "disabled"},
+    "InterpolateStatesSpeed": 5
+}

@@ -1,0 +1,12 @@
+{
+    "Default": {
+        "FillTextureFramed": {
+            "TextureId": "Textures/panel_fancy.png",
+            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 50, "Height": 50},
+            "FrameWidth": {"X": 10, "Y": 10}
+        },
+        "Padding": {"Left": 14, "Right": 14, "Top": 12, "Bottom": 12}
+    },
+    "Disabled": {"EffectIdentifier": "disabled"},
+    "InterpolateStatesSpeed": 5
+}

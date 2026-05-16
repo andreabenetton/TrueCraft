@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.IO.Compression;
 
@@ -9,15 +9,25 @@ namespace TrueCraft.Core;
 /// </summary>
 public class TexturePack
 {
-    public static readonly TexturePack Unknown = new TexturePack(
-        "?",
-        File.OpenRead(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/default-pack.png")),
-        File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/default-pack.txt")));
+    // Lazily constructed so a missing Content asset doesn't tank class
+    // loading (and every static field that touches TexturePack with it).
+    private static readonly Lazy<TexturePack> _unknown = new(() => Load("?"));
+    private static readonly Lazy<TexturePack> _default = new(() => Load("Default"));
 
-    public static readonly TexturePack Default = new TexturePack(
-        "Default",
-        File.OpenRead(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/pack.png")),
-        File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/pack.txt")));
+    public static TexturePack Unknown => _unknown.Value;
+    public static TexturePack Default => _default.Value;
+
+    // Unknown and Default share the same on-disk default assets — they
+    // existed as separate names historically but only one set of asset
+    // files (default-pack.png / default-pack.txt) is shipped.
+    private static TexturePack Load(string name)
+    {
+        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        return new TexturePack(
+            name,
+            File.OpenRead(Path.Combine(baseDir, "Content/default-pack.png")),
+            File.ReadAllText(Path.Combine(baseDir, "Content/default-pack.txt")));
+    }
 
     public TexturePack(string name, Stream image, string description)
     {

@@ -70,3 +70,5 @@ desktop.ini
 config.yaml
 packets.log
 world/manifest.nbt
+logs/
+*.log

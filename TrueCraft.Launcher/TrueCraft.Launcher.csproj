@@ -4,26 +4,11 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>TrueCraft.Launcher</RootNamespace>
     <AssemblyName>TrueCraft.Launcher</AssemblyName>
-
-    <!-- MGCB wiring (see also the BuildContentWithMGCB target below). -->
-    <MonoGamePlatform>DesktopGL</MonoGamePlatform>
-    <!--
-      The dotnet-mgcb global tool resolver fails on Fedora's dotnet-host-10.0.7
-      stack with "Settings file 'DotnetToolSettings.xml' was not found in the
-      package" — both SDK 8 and SDK 9 hit this. We bypass tool restore entirely
-      by setting AutoRestoreMGCBTool=false and pointing MGCBCommand directly at
-      the mgcb.dll inside the dotnet-mgcb NuGet package's cache.
-    -->
-    <AutoRestoreMGCBTool>false</AutoRestoreMGCBTool>
-    <DotnetCommand>dotnet</DotnetCommand>
-    <MGCBCommand>$(Pkgdotnet-mgcb)/tools/net8.0/any/mgcb.dll</MGCBCommand>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.4.1" />
     <PackageReference Include="NVorbis" Version="0.10.5" />
-    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.4.1" PrivateAssets="all" />
-    <PackageReference Include="dotnet-mgcb" Version="3.8.4.1" ExcludeAssets="all" GeneratePathProperty="true" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
@@ -51,18 +36,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <MonoGameContentReference Include="Content\Content.mgcb" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!--
-      Copy non-MGCB Content assets (PNGs/OGGs loaded at runtime via streams,
-      not via ContentManager.Load). Excludes the MGCB intermediate/output dirs
-      so we don't double-copy the xnb files MonoGame.Content.Builder.Task
-      links explicitly.
-    -->
-    <None Include="Content\**"
-          Exclude="Content\bin\**;Content\obj\**;Content\Content.mgcb">
+    <!-- Copy raw Content assets (the OGG decoded by NVorbis, etc.) to output. -->
+    <None Include="Content\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="launchersettings.json" CopyToOutputDirectory="Always" />

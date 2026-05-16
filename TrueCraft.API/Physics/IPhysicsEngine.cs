@@ -1,13 +1,12 @@
 ﻿using System;
 using TrueCraft.API.World;
 
-namespace TrueCraft.API.Physics
+namespace TrueCraft.API.Physics;
+
+public interface IPhysicsEngine
 {
-    public interface IPhysicsEngine
-    {
-        IWorld World { get; set; }
-        void AddEntity(IPhysicsEntity entity);
-        void RemoveEntity(IPhysicsEntity entity);
-        void Update(TimeSpan time);
-    }
+    IWorld World { get; set; }
+    void AddEntity(IPhysicsEntity entity);
+    void RemoveEntity(IPhysicsEntity entity);
+    void Update(TimeSpan time);
 }

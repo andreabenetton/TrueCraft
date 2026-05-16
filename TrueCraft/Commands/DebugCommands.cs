@@ -10,517 +10,516 @@ using TrueCraft.Core.AI;
 using TrueCraft.Core.Entities;
 using System.Threading.Tasks;
 
-namespace TrueCraft.Commands
+namespace TrueCraft.Commands;
+
+public class PositionCommand : Command
 {
-    public class PositionCommand : Command
+    public override string Name
     {
-        public override string Name
-        {
-            get { return "pos"; }
-        }
+        get { return "pos"; }
+    }
 
-        public override string Description
-        {
-            get { return "Shows your position."; }
-        }
+    public override string Description
+    {
+        get { return "Shows your position."; }
+    }
 
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
 
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 0)
         {
-            if (arguments.Length != 0)
+            Help(client, alias, arguments);
+            return;
+        }
+        client.SendMessage(client.Entity.Position.ToString());
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/pos: Shows your position.");
+    }
+}
+
+public class SaveCommand : Command
+{
+    public override string Name
+    {
+        get { return "save"; }
+    }
+
+    public override string Description
+    {
+        get { return "Saves the world!"; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 0)
+        {
+            Help(client, alias, arguments);
+            return;
+        }
+        client.World.Save();
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/save: Saves the world!");
+    }
+}
+
+public class SkyLightCommand : Command
+{
+    public override string Name
+    {
+        get { return "sl"; }
+    }
+
+    public override string Description
+    {
+        get { return "Shows sky light at your current position."; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        int mod = 0;
+        if (arguments.Length == 1)
+            int.TryParse(arguments[0], out mod);
+        client.SendMessage(client.World.GetSkyLight(
+            (Coordinates3D)(client.Entity.Position + new Vector3(0, -mod, 0))).ToString());
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/sl");
+    }
+}
+
+public class SpawnCommand : Command
+{
+    public override string Name
+    {
+        get { return "spawn"; }
+    }
+
+    public override string Description
+    {
+        get { return "Spawns a mob."; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 1)
+        {
+            Help(client, alias, arguments);
+            return;
+        }
+        var entityTypes = new List<Type>();
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (var t in assembly.GetTypes())
             {
-                Help(client, alias, arguments);
-                return;
+                if (typeof(IEntity).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
+                    entityTypes.Add(t);
             }
-            client.SendMessage(client.Entity.Position.ToString());
         }
 
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
+        arguments[0] = arguments[0].ToUpper();
+        var type = entityTypes.SingleOrDefault(t => t.Name.ToUpper() == arguments[0] + "ENTITY");
+        if (type is null)
         {
-            client.SendMessage("/pos: Shows your position.");
+            client.SendMessage(ChatColor.Red + "Unknown entity type.");
+            return;
+        }
+        var entity = (IEntity)Activator.CreateInstance(type);
+        var em = client.Server.GetEntityManagerForWorld(client.World);
+        entity.Position = client.Entity.Position + MathHelper.FowardVector(client.Entity.Yaw) * 3;
+        em.SpawnEntity(entity);
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/spawn [type]: Spawns a mob of that type.");
+    }
+}
+
+public class ToMeCommand : Command
+{
+    public override string Name
+    {
+        get { return "tome"; }
+    }
+
+    public override string Description
+    {
+        get { return "Moves a mob towards your position."; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 1)
+        {
+            Help(client, alias, arguments);
+            return;
+        }
+
+        int id;
+        if (!int.TryParse(arguments[0], out id))
+        {
+            Help(client, alias, arguments);
+            return;
+        }
+
+        var manager = client.Server.GetEntityManagerForWorld(client.World);
+        var entity = manager.GetEntityByID(id) as MobEntity;
+        if (entity is null)
+        {
+            client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
+            return;
+        }
+
+        Task.Factory.StartNew(() =>
+        {
+            var astar = new AStarPathFinder();
+            var path = astar.FindPath(client.World, entity.BoundingBox, (Coordinates3D)entity.Position, (Coordinates3D)client.Entity.Position);
+            if (path is null)
+            {
+                client.SendMessage(ChatColor.Red + "It is impossible for this entity to reach you.");
+            }
+            else
+            {
+                client.SendMessage($"{ChatColor.Blue}Executing path with {path.Waypoints.Count()} waypoints");
+                entity.CurrentPath = path;
+            }
+        });
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/tome [id]: Moves a mob to your position.");
+    }
+}
+
+public class EntityInfoCommand : Command
+{
+    public override string Name
+    {
+        get { return "entity"; }
+    }
+
+    public override string Description
+    {
+        get { return "Provides information about an entity ID."; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 1)
+        {
+            Help(client, alias, arguments);
+            return;
+        }
+
+        int id;
+        if (!int.TryParse(arguments[0], out id))
+        {
+            Help(client, alias, arguments);
+            return;
+        }
+
+        var manager = client.Server.GetEntityManagerForWorld(client.World);
+        var entity = manager.GetEntityByID(id);
+        if (entity is null)
+        {
+            client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
+            return;
+        }
+        client.SendMessage($"{entity.GetType().Name} {entity.Position}");
+        if (entity is MobEntity mob)
+        {
+            var stateName = mob.CurrentState?.GetType().Name ?? "null";
+            var waypoint = mob.CurrentPath?.Waypoints.Last().ToString() ?? "null";
+            client.SendMessage($"{mob.Health}/{mob.MaxHealth} HP, {stateName} State, moving to to {waypoint}");
         }
     }
 
-    public class SaveCommand : Command
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
     {
-        public override string Name
-        {
-            get { return "save"; }
-        }
+        client.SendMessage("/entity [id]: Shows information about this entity.");
+    }
+}
 
-        public override string Description
-        {
-            get { return "Saves the world!"; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 0)
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-            client.World.Save();
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("/save: Saves the world!");
-        }
+public class DestroyCommand : Command
+{
+    public override string Name
+    {
+        get { return "destroy"; }
     }
 
-    public class SkyLightCommand : Command
+    public override string Description
     {
-        public override string Name
-        {
-            get { return "sl"; }
-        }
-
-        public override string Description
-        {
-            get { return "Shows sky light at your current position."; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            int mod = 0;
-            if (arguments.Length == 1)
-                int.TryParse(arguments[0], out mod);
-            client.SendMessage(client.World.GetSkyLight(
-                (Coordinates3D)(client.Entity.Position + new Vector3(0, -mod, 0))).ToString());
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("/sl");
-        }
+        get { return "Destroys a mob. Violently."; }
     }
 
-    public class SpawnCommand : Command
+    public override string[] Aliases
     {
-        public override string Name
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 1)
         {
-            get { return "spawn"; }
+            Help(client, alias, arguments);
+            return;
         }
 
-        public override string Description
+        int id;
+        if (!int.TryParse(arguments[0], out id))
         {
-            get { return "Spawns a mob."; }
+            Help(client, alias, arguments);
+            return;
         }
 
-        public override string[] Aliases
+        var manager = client.Server.GetEntityManagerForWorld(client.World);
+        var entity = manager.GetEntityByID(id) as MobEntity;
+        if (entity is null)
         {
-            get { return new string[0]; }
+            client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
+            return;
         }
 
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
+        manager.DespawnEntity(entity);
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/destroy [id]: " + Description);
+    }
+}
+
+public class TrashCommand : Command
+{
+    public override string Name
+    {
+        get { return "trash"; }
+    }
+
+    public override string Description
+    {
+        get { return "Discards selected item, hotbar, or entire inventory."; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 0)
         {
-            if (arguments.Length != 1)
+            if (arguments[0] == "hotbar")
             {
-                Help(client, alias, arguments);
-                return;
-            }
-            var entityTypes = new List<Type>();
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                foreach (var t in assembly.GetTypes())
+                // Discard hotbar items
+                for (short i = 36; i <= 44; i++)
                 {
-                    if (typeof(IEntity).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
-                        entityTypes.Add(t);
+                    client.Inventory[i] = ItemStack.EmptyStack;
                 }
             }
-
-            arguments[0] = arguments[0].ToUpper();
-            var type = entityTypes.SingleOrDefault(t => t.Name.ToUpper() == arguments[0] + "ENTITY");
-            if (type is null)
+            else if (arguments[0] == "all")
             {
-                client.SendMessage(ChatColor.Red + "Unknown entity type.");
-                return;
-            }
-            var entity = (IEntity)Activator.CreateInstance(type);
-            var em = client.Server.GetEntityManagerForWorld(client.World);
-            entity.Position = client.Entity.Position + MathHelper.FowardVector(client.Entity.Yaw) * 3;
-            em.SpawnEntity(entity);
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("/spawn [type]: Spawns a mob of that type.");
-        }
-    }
-
-    public class ToMeCommand : Command
-    {
-        public override string Name
-        {
-            get { return "tome"; }
-        }
-
-        public override string Description
-        {
-            get { return "Moves a mob towards your position."; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 1)
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-
-            int id;
-            if (!int.TryParse(arguments[0], out id))
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-
-            var manager = client.Server.GetEntityManagerForWorld(client.World);
-            var entity = manager.GetEntityByID(id) as MobEntity;
-            if (entity is null)
-            {
-                client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
-                return;
-            }
-
-            Task.Factory.StartNew(() =>
-            {
-                var astar = new AStarPathFinder();
-                var path = astar.FindPath(client.World, entity.BoundingBox, (Coordinates3D)entity.Position, (Coordinates3D)client.Entity.Position);
-                if (path is null)
+                // Discard all inventory items, including armor and crafting area contents
+                for (short i = 0; i <= 44; i++)
                 {
-                    client.SendMessage(ChatColor.Red + "It is impossible for this entity to reach you.");
-                }
-                else
-                {
-                    client.SendMessage($"{ChatColor.Blue}Executing path with {path.Waypoints.Count()} waypoints");
-                    entity.CurrentPath = path;
-                }
-            });
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("/tome [id]: Moves a mob to your position.");
-        }
-    }
-
-    public class EntityInfoCommand : Command
-    {
-        public override string Name
-        {
-            get { return "entity"; }
-        }
-
-        public override string Description
-        {
-            get { return "Provides information about an entity ID."; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 1)
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-
-            int id;
-            if (!int.TryParse(arguments[0], out id))
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-
-            var manager = client.Server.GetEntityManagerForWorld(client.World);
-            var entity = manager.GetEntityByID(id);
-            if (entity is null)
-            {
-                client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
-                return;
-            }
-            client.SendMessage($"{entity.GetType().Name} {entity.Position}");
-            if (entity is MobEntity mob)
-            {
-                var stateName = mob.CurrentState?.GetType().Name ?? "null";
-                var waypoint = mob.CurrentPath?.Waypoints.Last().ToString() ?? "null";
-                client.SendMessage($"{mob.Health}/{mob.MaxHealth} HP, {stateName} State, moving to to {waypoint}");
-            }
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("/entity [id]: Shows information about this entity.");
-        }
-    }
-
-    public class DestroyCommand : Command
-    {
-        public override string Name
-        {
-            get { return "destroy"; }
-        }
-
-        public override string Description
-        {
-            get { return "Destroys a mob. Violently."; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 1)
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-
-            int id;
-            if (!int.TryParse(arguments[0], out id))
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-
-            var manager = client.Server.GetEntityManagerForWorld(client.World);
-            var entity = manager.GetEntityByID(id) as MobEntity;
-            if (entity is null)
-            {
-                client.SendMessage(ChatColor.Red + "An entity with that ID does not exist in this world.");
-                return;
-            }
-
-            manager.DespawnEntity(entity);
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("/destroy [id]: " + Description);
-        }
-    }
-
-    public class TrashCommand : Command
-    {
-        public override string Name
-        {
-            get { return "trash"; }
-        }
-
-        public override string Description
-        {
-            get { return "Discards selected item, hotbar, or entire inventory."; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 0)
-            {
-                if (arguments[0] == "hotbar")
-                {
-                    // Discard hotbar items
-                    for (short i = 36; i <= 44; i++)
-                    {
-                        client.Inventory[i] = ItemStack.EmptyStack;
-                    }
-                }
-                else if (arguments[0] == "all")
-                {
-                    // Discard all inventory items, including armor and crafting area contents
-                    for (short i = 0; i <= 44; i++)
-                    {
-                        client.Inventory[i] = ItemStack.EmptyStack;
-                    }
-                }
-                else
-                {
-                    Help(client, alias, arguments);
-                    return;
+                    client.Inventory[i] = ItemStack.EmptyStack;
                 }
             }
             else
             {
-                // Discards selected item.
-                client.Inventory[client.SelectedSlot] = ItemStack.EmptyStack;
-            }
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("Correct usage is /trash <hotbar/all> or leave blank to clear\nselected slot.");
-        }
-    }
-
-    public class WhatCommand : Command
-    {
-        public override string Name
-        {
-            get { return "what"; }
-        }
-
-        public override string Description
-        {
-            get { return "Tells you what you're holding."; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 0)
-            {
                 Help(client, alias, arguments);
                 return;
             }
-            client.SendMessage(client.SelectedItem.ToString());
         }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
+        else
         {
-            client.SendMessage("/what: Tells you what you're holding.");
+            // Discards selected item.
+            client.Inventory[client.SelectedSlot] = ItemStack.EmptyStack;
         }
     }
 
-    public class LogCommand : Command
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
     {
-        public override string Name
-        {
-            get { return "log"; }
-        }
-
-        public override string Description
-        {
-            get { return "Toggles client logging."; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 0)
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-            client.EnableLogging = !client.EnableLogging;
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("/pos: Toggles client logging.");
-        }
+        client.SendMessage("Correct usage is /trash <hotbar/all> or leave blank to clear\nselected slot.");
     }
-    
-    public class ResendInvCommand : Command
+}
+
+public class WhatCommand : Command
+{
+    public override string Name
     {
-        public override string Name
-        {
-            get { return "reinv"; }
-        }
-
-        public override string Description
-        {
-            get { return "Resends your inventory to the selected client."; }
-        }
-
-        public override string[] Aliases
-        {
-            get { return new string[0]; }
-        }
-
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 0)
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-            client.QueuePacket(new WindowItemsPacket(0, client.Inventory.GetSlots()));
-        }
-
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
-        {
-            client.SendMessage("/reinv: Resends your inventory.");
-        }
+        get { return "what"; }
     }
 
-    public class RelightCommand : Command
+    public override string Description
     {
-        public override string Name
-        {
-            get { return "relight"; }
-        }
+        get { return "Tells you what you're holding."; }
+    }
 
-        public override string Description
-        {
-            get { return "Relights the chunk you're standing in."; }
-        }
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
 
-        public override string[] Aliases
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 0)
         {
-            get { return new string[0]; }
+            Help(client, alias, arguments);
+            return;
         }
+        client.SendMessage(client.SelectedItem.ToString());
+    }
 
-        public override void Handle(IRemoteClient client, string alias, string[] arguments)
-        {
-            if (arguments.Length != 0)
-            {
-                Help(client, alias, arguments);
-                return;
-            }
-            var server = client.Server as MultiplayerServer;
-            var chunk = client.World.FindChunk((Coordinates3D)client.Entity.Position);
-            var lighter = server.WorldLighters.SingleOrDefault(l => l.World == client.World);
-            if (lighter is not null)
-            {
-                lighter.InitialLighting(chunk, true);
-                (client as RemoteClient).UnloadChunk(chunk.Coordinates);
-                (client as RemoteClient).LoadChunk(chunk);
-            }
-        }
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/what: Tells you what you're holding.");
+    }
+}
 
-        public override void Help(IRemoteClient client, string alias, string[] arguments)
+public class LogCommand : Command
+{
+    public override string Name
+    {
+        get { return "log"; }
+    }
+
+    public override string Description
+    {
+        get { return "Toggles client logging."; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 0)
         {
-            client.SendMessage("/reinv: Resends your inventory.");
+            Help(client, alias, arguments);
+            return;
         }
+        client.EnableLogging = !client.EnableLogging;
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/pos: Toggles client logging.");
+    }
+}
+
+public class ResendInvCommand : Command
+{
+    public override string Name
+    {
+        get { return "reinv"; }
+    }
+
+    public override string Description
+    {
+        get { return "Resends your inventory to the selected client."; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 0)
+        {
+            Help(client, alias, arguments);
+            return;
+        }
+        client.QueuePacket(new WindowItemsPacket(0, client.Inventory.GetSlots()));
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/reinv: Resends your inventory.");
+    }
+}
+
+public class RelightCommand : Command
+{
+    public override string Name
+    {
+        get { return "relight"; }
+    }
+
+    public override string Description
+    {
+        get { return "Relights the chunk you're standing in."; }
+    }
+
+    public override string[] Aliases
+    {
+        get { return new string[0]; }
+    }
+
+    public override void Handle(IRemoteClient client, string alias, string[] arguments)
+    {
+        if (arguments.Length != 0)
+        {
+            Help(client, alias, arguments);
+            return;
+        }
+        var server = client.Server as MultiplayerServer;
+        var chunk = client.World.FindChunk((Coordinates3D)client.Entity.Position);
+        var lighter = server.WorldLighters.SingleOrDefault(l => l.World == client.World);
+        if (lighter is not null)
+        {
+            lighter.InitialLighting(chunk, true);
+            (client as RemoteClient).UnloadChunk(chunk.Coordinates);
+            (client as RemoteClient).LoadChunk(chunk);
+        }
+    }
+
+    public override void Help(IRemoteClient client, string alias, string[] arguments)
+    {
+        client.SendMessage("/reinv: Resends your inventory.");
     }
 }

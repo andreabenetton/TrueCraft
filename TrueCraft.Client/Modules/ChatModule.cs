@@ -7,336 +7,335 @@ using Microsoft.Xna.Framework.Input;
 using TrueCraft.Client.Input;
 using TrueCraft.Client.Rendering;
 
-namespace TrueCraft.Client.Modules
+namespace TrueCraft.Client.Modules;
+
+public class ChatModule : InputModule, IGraphicalModule
 {
-    public class ChatModule : InputModule, IGraphicalModule
+    private static readonly int TimeToFade = 9 * 1000;
+    private static readonly int TimeToExpire = 10 * 1000;
+    private static readonly int MaxLines = 10;
+
+    public ChatModule(TrueCraftGame game, FontRenderer font)
     {
-        private static readonly int TimeToFade = 9 * 1000;
-        private static readonly int TimeToExpire = 10 * 1000;
-        private static readonly int MaxLines = 10;
+        Game = game;
+        Font = font;
+        Messages = new List<Message>();
+        Background = new Texture2D(Game.GraphicsDevice, 1, 1);
+        Background.SetData(new[] {new Color(Color.Black, 160)});
+        SpriteBatch = new SpriteBatch(Game.GraphicsDevice);
+        Watch = new Stopwatch();
+        Watch.Start();
+        Text = string.Empty;
+        Game.Client.ChatMessage += (sender, e) => AddMessage(e.Message);
+    }
 
-        public ChatModule(TrueCraftGame game, FontRenderer font)
+    private TrueCraftGame Game { get; }
+    private Texture2D Background { get; }
+    private FontRenderer Font { get; }
+    private SpriteBatch SpriteBatch { get; }
+    private List<Message> Messages { get; }
+    private Stopwatch Watch { get; }
+    private bool Editing { get; set; }
+    private string Text { get; set; }
+
+    public void Draw(GameTime gameTime)
+    {
+        SpriteBatch.Begin();
+        const int height = 25;
+        int x = 5, y = (int) (Game.GraphicsDevice.Viewport.Height - Scale(22) * 2);
+        var width = Game.GraphicsDevice.Viewport.Width / 2;
+        var max = MaxLines;
+        if (Editing)
+            max = Game.GraphicsDevice.Viewport.Height / height;
+        for (var i = 0; i < Messages.Count && i < max; i++)
         {
-            Game = game;
-            Font = font;
-            Messages = new List<Message>();
-            Background = new Texture2D(Game.GraphicsDevice, 1, 1);
-            Background.SetData(new[] {new Color(Color.Black, 160)});
-            SpriteBatch = new SpriteBatch(Game.GraphicsDevice);
-            Watch = new Stopwatch();
-            Watch.Start();
-            Text = string.Empty;
-            Game.Client.ChatMessage += (sender, e) => AddMessage(e.Message);
+            var time = Watch.ElapsedMilliseconds - Messages[i].Arrived;
+            if (time >= TimeToExpire && !Editing)
+                continue;
+            byte alpha = 255;
+            if (time > TimeToFade && !Editing)
+            {
+                var t = TimeToExpire - time / (double) (TimeToExpire - TimeToFade);
+                alpha = (byte) (t * 256);
+            }
+
+            SpriteBatch.Draw(Background, new Rectangle(
+                x, y - i * height, width, height), new Color(Color.White, alpha));
+            Font.DrawText(SpriteBatch, x, y - i * height - 5, Messages[i].Text, alpha: alpha);
         }
 
-        private TrueCraftGame Game { get; }
-        private Texture2D Background { get; }
-        private FontRenderer Font { get; }
-        private SpriteBatch SpriteBatch { get; }
-        private List<Message> Messages { get; }
-        private Stopwatch Watch { get; }
-        private bool Editing { get; set; }
-        private string Text { get; set; }
-
-        public void Draw(GameTime gameTime)
+        if (Editing)
         {
-            SpriteBatch.Begin();
-            const int height = 25;
-            int x = 5, y = (int) (Game.GraphicsDevice.Viewport.Height - Scale(22) * 2);
-            var width = Game.GraphicsDevice.Viewport.Width / 2;
-            var max = MaxLines;
-            if (Editing)
-                max = Game.GraphicsDevice.Viewport.Height / height;
-            for (var i = 0; i < Messages.Count && i < max; i++)
-            {
-                var time = Watch.ElapsedMilliseconds - Messages[i].Arrived;
-                if (time >= TimeToExpire && !Editing)
-                    continue;
-                byte alpha = 255;
-                if (time > TimeToFade && !Editing)
-                {
-                    var t = TimeToExpire - time / (double) (TimeToExpire - TimeToFade);
-                    alpha = (byte) (t * 256);
-                }
-
-                SpriteBatch.Draw(Background, new Rectangle(
-                    x, y - i * height, width, height), new Color(Color.White, alpha));
-                Font.DrawText(SpriteBatch, x, y - i * height - 5, Messages[i].Text, alpha: alpha);
-            }
-
-            if (Editing)
-            {
-                SpriteBatch.Draw(Background,
-                    new Rectangle(0, Game.GraphicsDevice.Viewport.Height - height,
-                        Game.GraphicsDevice.Viewport.Width, height), Color.White);
-                if (Watch.Elapsed.Seconds % 2 == 0)
-                    Font.DrawText(SpriteBatch, 3, Game.GraphicsDevice.Viewport.Height - height - 5, Text);
-                else
-                    Font.DrawText(SpriteBatch, 3, Game.GraphicsDevice.Viewport.Height - height - 5, Text + "_");
-            }
-
-            SpriteBatch.End();
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-        }
-
-        public override bool KeyDown(GameTime gameTime, KeyboardKeyEventArgs e)
-        {
-            if (!Editing)
-            {
-                if (InputBindings.Matches(InputAction.OpenChat, e.Key))
-                {
-                    Editing = true;
-                    return true;
-                }
-
-                return false;
-            }
-
-            if (e.Key == Keys.Back)
-            {
-                Text = Text.Length > 0 ? Text.Substring(0, Text.Length - 1) : Text;
-            }
-            else if (e.Key == Keys.Escape)
-            {
-                Editing = false;
-                Text = string.Empty;
-            }
-            else if (e.Key == Keys.Enter)
-            {
-                Game.Client.SendMessage(Text);
-                Editing = false;
-                Text = string.Empty;
-            }
+            SpriteBatch.Draw(Background,
+                new Rectangle(0, Game.GraphicsDevice.Viewport.Height - height,
+                    Game.GraphicsDevice.Viewport.Width, height), Color.White);
+            if (Watch.Elapsed.Seconds % 2 == 0)
+                Font.DrawText(SpriteBatch, 3, Game.GraphicsDevice.Viewport.Height - height - 5, Text);
             else
-            {
-                var shift = Keyboard.GetState().IsKeyDown(Keys.LeftShift) ||
-                            Keyboard.GetState().IsKeyDown(Keys.RightShift);
+                Font.DrawText(SpriteBatch, 3, Game.GraphicsDevice.Viewport.Height - height - 5, Text + "_");
+        }
 
-                if (TryParseKey(e.Key, shift, out var value))
-                    Text += value;
+        SpriteBatch.End();
+    }
+
+    public override void Update(GameTime gameTime)
+    {
+    }
+
+    public override bool KeyDown(GameTime gameTime, KeyboardKeyEventArgs e)
+    {
+        if (!Editing)
+        {
+            if (InputBindings.Matches(InputAction.OpenChat, e.Key))
+            {
+                Editing = true;
+                return true;
             }
 
-            return true;
+            return false;
         }
 
-        public override bool KeyUp(GameTime gameTime, KeyboardKeyEventArgs e)
+        if (e.Key == Keys.Back)
         {
-            return Editing;
+            Text = Text.Length > 0 ? Text.Substring(0, Text.Length - 1) : Text;
         }
-
-        public void AddMessage(string text)
+        else if (e.Key == Keys.Escape)
         {
-            Console.WriteLine(text);
-            Messages.Insert(0, new Message {Text = text, Arrived = Watch.ElapsedMilliseconds});
+            Editing = false;
+            Text = string.Empty;
         }
-
-        private float Scale(float value)
+        else if (e.Key == Keys.Enter)
         {
-            return value * Game.ScaleFactor * 2;
+            Game.Client.SendMessage(Text);
+            Editing = false;
+            Text = string.Empty;
         }
-
-        private static bool TryParseKey(Keys key, bool shift, out char value)
+        else
         {
-            // Credit to Roy Triesscheijn for thinking of this.
-            // His implementation of this solution can be found at:
-            // http://roy-t.nl/index.php/2010/02/11/code-snippet-converting-keyboard-input-to-text-in-xna/
+            var shift = Keyboard.GetState().IsKeyDown(Keys.LeftShift) ||
+                        Keyboard.GetState().IsKeyDown(Keys.RightShift);
 
-            switch (key)
-            {
-                case Keys.NumPad1:
-                    value = '1';
-                    break;
-                case Keys.NumPad2:
-                    value = '2';
-                    break;
-                case Keys.NumPad3:
-                    value = '3';
-                    break;
-                case Keys.NumPad4:
-                    value = '4';
-                    break;
-                case Keys.NumPad5:
-                    value = '5';
-                    break;
-                case Keys.NumPad6:
-                    value = '6';
-                    break;
-                case Keys.NumPad7:
-                    value = '7';
-                    break;
-                case Keys.NumPad8:
-                    value = '8';
-                    break;
-                case Keys.NumPad9:
-                    value = '9';
-                    break;
-                case Keys.NumPad0:
-                    value = '0';
-                    break;
-
-                case Keys.D1:
-                    value = shift ? '!' : '1';
-                    break;
-                case Keys.D2:
-                    value = shift ? '@' : '2';
-                    break;
-                case Keys.D3:
-                    value = shift ? '#' : '3';
-                    break;
-                case Keys.D4:
-                    value = shift ? '$' : '4';
-                    break;
-                case Keys.D5:
-                    value = shift ? '%' : '5';
-                    break;
-                case Keys.D6:
-                    value = shift ? '^' : '6';
-                    break;
-                case Keys.D7:
-                    value = shift ? '&' : '7';
-                    break;
-                case Keys.D8:
-                    value = shift ? '*' : '8';
-                    break;
-                case Keys.D9:
-                    value = shift ? '(' : '9';
-                    break;
-                case Keys.D0:
-                    value = shift ? ')' : '0';
-                    break;
-
-                case Keys.A:
-                    value = shift ? 'A' : 'a';
-                    break;
-                case Keys.B:
-                    value = shift ? 'B' : 'b';
-                    break;
-                case Keys.C:
-                    value = shift ? 'C' : 'c';
-                    break;
-                case Keys.D:
-                    value = shift ? 'D' : 'd';
-                    break;
-                case Keys.E:
-                    value = shift ? 'E' : 'e';
-                    break;
-                case Keys.F:
-                    value = shift ? 'F' : 'f';
-                    break;
-                case Keys.G:
-                    value = shift ? 'G' : 'g';
-                    break;
-                case Keys.H:
-                    value = shift ? 'H' : 'h';
-                    break;
-                case Keys.I:
-                    value = shift ? 'I' : 'i';
-                    break;
-                case Keys.J:
-                    value = shift ? 'J' : 'j';
-                    break;
-                case Keys.K:
-                    value = shift ? 'K' : 'k';
-                    break;
-                case Keys.L:
-                    value = shift ? 'L' : 'l';
-                    break;
-                case Keys.M:
-                    value = shift ? 'M' : 'm';
-                    break;
-                case Keys.N:
-                    value = shift ? 'N' : 'n';
-                    break;
-                case Keys.O:
-                    value = shift ? 'O' : 'o';
-                    break;
-                case Keys.P:
-                    value = shift ? 'P' : 'p';
-                    break;
-                case Keys.Q:
-                    value = shift ? 'Q' : 'q';
-                    break;
-                case Keys.R:
-                    value = shift ? 'R' : 'r';
-                    break;
-                case Keys.S:
-                    value = shift ? 'S' : 's';
-                    break;
-                case Keys.T:
-                    value = shift ? 'T' : 't';
-                    break;
-                case Keys.U:
-                    value = shift ? 'U' : 'u';
-                    break;
-                case Keys.V:
-                    value = shift ? 'V' : 'v';
-                    break;
-                case Keys.W:
-                    value = shift ? 'W' : 'w';
-                    break;
-                case Keys.X:
-                    value = shift ? 'X' : 'x';
-                    break;
-                case Keys.Y:
-                    value = shift ? 'Y' : 'y';
-                    break;
-                case Keys.Z:
-                    value = shift ? 'Z' : 'z';
-                    break;
-
-                case Keys.OemTilde:
-                    value = shift ? '~' : '`';
-                    break;
-                case Keys.OemSemicolon:
-                    value = shift ? ':' : ';';
-                    break;
-                case Keys.OemQuotes:
-                    value = shift ? '"' : '\'';
-                    break;
-                case Keys.OemQuestion:
-                    value = shift ? '?' : '/';
-                    break;
-                case Keys.OemPlus:
-                    value = shift ? '+' : '=';
-                    break;
-                case Keys.OemPipe:
-                    value = shift ? '|' : '\\';
-                    break;
-                case Keys.OemPeriod:
-                    value = shift ? '>' : '.';
-                    break;
-                case Keys.OemOpenBrackets:
-                    value = shift ? '{' : '[';
-                    break;
-                case Keys.OemCloseBrackets:
-                    value = shift ? '}' : ']';
-                    break;
-                case Keys.OemMinus:
-                    value = shift ? '_' : '-';
-                    break;
-                case Keys.OemComma:
-                    value = shift ? '<' : ',';
-                    break;
-
-                case Keys.Space:
-                    value = ' ';
-                    break;
-
-                default:
-                    value = default;
-                    return false;
-            }
-
-            return true;
+            if (TryParseKey(e.Key, shift, out var value))
+                Text += value;
         }
 
-        private struct Message
+        return true;
+    }
+
+    public override bool KeyUp(GameTime gameTime, KeyboardKeyEventArgs e)
+    {
+        return Editing;
+    }
+
+    public void AddMessage(string text)
+    {
+        Console.WriteLine(text);
+        Messages.Insert(0, new Message {Text = text, Arrived = Watch.ElapsedMilliseconds});
+    }
+
+    private float Scale(float value)
+    {
+        return value * Game.ScaleFactor * 2;
+    }
+
+    private static bool TryParseKey(Keys key, bool shift, out char value)
+    {
+        // Credit to Roy Triesscheijn for thinking of this.
+        // His implementation of this solution can be found at:
+        // http://roy-t.nl/index.php/2010/02/11/code-snippet-converting-keyboard-input-to-text-in-xna/
+
+        switch (key)
         {
-            public string Text { get; set; }
-            public long Arrived { get; set; }
+            case Keys.NumPad1:
+                value = '1';
+                break;
+            case Keys.NumPad2:
+                value = '2';
+                break;
+            case Keys.NumPad3:
+                value = '3';
+                break;
+            case Keys.NumPad4:
+                value = '4';
+                break;
+            case Keys.NumPad5:
+                value = '5';
+                break;
+            case Keys.NumPad6:
+                value = '6';
+                break;
+            case Keys.NumPad7:
+                value = '7';
+                break;
+            case Keys.NumPad8:
+                value = '8';
+                break;
+            case Keys.NumPad9:
+                value = '9';
+                break;
+            case Keys.NumPad0:
+                value = '0';
+                break;
+
+            case Keys.D1:
+                value = shift ? '!' : '1';
+                break;
+            case Keys.D2:
+                value = shift ? '@' : '2';
+                break;
+            case Keys.D3:
+                value = shift ? '#' : '3';
+                break;
+            case Keys.D4:
+                value = shift ? '$' : '4';
+                break;
+            case Keys.D5:
+                value = shift ? '%' : '5';
+                break;
+            case Keys.D6:
+                value = shift ? '^' : '6';
+                break;
+            case Keys.D7:
+                value = shift ? '&' : '7';
+                break;
+            case Keys.D8:
+                value = shift ? '*' : '8';
+                break;
+            case Keys.D9:
+                value = shift ? '(' : '9';
+                break;
+            case Keys.D0:
+                value = shift ? ')' : '0';
+                break;
+
+            case Keys.A:
+                value = shift ? 'A' : 'a';
+                break;
+            case Keys.B:
+                value = shift ? 'B' : 'b';
+                break;
+            case Keys.C:
+                value = shift ? 'C' : 'c';
+                break;
+            case Keys.D:
+                value = shift ? 'D' : 'd';
+                break;
+            case Keys.E:
+                value = shift ? 'E' : 'e';
+                break;
+            case Keys.F:
+                value = shift ? 'F' : 'f';
+                break;
+            case Keys.G:
+                value = shift ? 'G' : 'g';
+                break;
+            case Keys.H:
+                value = shift ? 'H' : 'h';
+                break;
+            case Keys.I:
+                value = shift ? 'I' : 'i';
+                break;
+            case Keys.J:
+                value = shift ? 'J' : 'j';
+                break;
+            case Keys.K:
+                value = shift ? 'K' : 'k';
+                break;
+            case Keys.L:
+                value = shift ? 'L' : 'l';
+                break;
+            case Keys.M:
+                value = shift ? 'M' : 'm';
+                break;
+            case Keys.N:
+                value = shift ? 'N' : 'n';
+                break;
+            case Keys.O:
+                value = shift ? 'O' : 'o';
+                break;
+            case Keys.P:
+                value = shift ? 'P' : 'p';
+                break;
+            case Keys.Q:
+                value = shift ? 'Q' : 'q';
+                break;
+            case Keys.R:
+                value = shift ? 'R' : 'r';
+                break;
+            case Keys.S:
+                value = shift ? 'S' : 's';
+                break;
+            case Keys.T:
+                value = shift ? 'T' : 't';
+                break;
+            case Keys.U:
+                value = shift ? 'U' : 'u';
+                break;
+            case Keys.V:
+                value = shift ? 'V' : 'v';
+                break;
+            case Keys.W:
+                value = shift ? 'W' : 'w';
+                break;
+            case Keys.X:
+                value = shift ? 'X' : 'x';
+                break;
+            case Keys.Y:
+                value = shift ? 'Y' : 'y';
+                break;
+            case Keys.Z:
+                value = shift ? 'Z' : 'z';
+                break;
+
+            case Keys.OemTilde:
+                value = shift ? '~' : '`';
+                break;
+            case Keys.OemSemicolon:
+                value = shift ? ':' : ';';
+                break;
+            case Keys.OemQuotes:
+                value = shift ? '"' : '\'';
+                break;
+            case Keys.OemQuestion:
+                value = shift ? '?' : '/';
+                break;
+            case Keys.OemPlus:
+                value = shift ? '+' : '=';
+                break;
+            case Keys.OemPipe:
+                value = shift ? '|' : '\\';
+                break;
+            case Keys.OemPeriod:
+                value = shift ? '>' : '.';
+                break;
+            case Keys.OemOpenBrackets:
+                value = shift ? '{' : '[';
+                break;
+            case Keys.OemCloseBrackets:
+                value = shift ? '}' : ']';
+                break;
+            case Keys.OemMinus:
+                value = shift ? '_' : '-';
+                break;
+            case Keys.OemComma:
+                value = shift ? '<' : ',';
+                break;
+
+            case Keys.Space:
+                value = ' ';
+                break;
+
+            default:
+                value = default;
+                return false;
         }
+
+        return true;
+    }
+
+    private struct Message
+    {
+        public string Text { get; set; }
+        public long Arrived { get; set; }
     }
 }

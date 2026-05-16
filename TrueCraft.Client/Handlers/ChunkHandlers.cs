@@ -9,154 +9,153 @@ using TrueCraft.Client.Events;
 using TrueCraft.Core.Networking.Packets;
 using TrueCraft.Core.World;
 
-namespace TrueCraft.Client.Handlers
+namespace TrueCraft.Client.Handlers;
+
+internal static class ChunkHandlers
 {
-    internal static class ChunkHandlers
+    public static void HandleBlockChange(IPacket packet, MultiplayerClient client)
     {
-        public static void HandleBlockChange(IPacket packet, MultiplayerClient client)
-        {
-            var blockChangePacket = (BlockChangePacket) packet;
-            var coordinates = new Coordinates3D(blockChangePacket.X, blockChangePacket.Y, blockChangePacket.Z);
+        var blockChangePacket = (BlockChangePacket) packet;
+        var coordinates = new Coordinates3D(blockChangePacket.X, blockChangePacket.Y, blockChangePacket.Z);
 
-            Marshal(client, () =>
+        Marshal(client, () =>
+        {
+            Coordinates3D adjusted;
+            IChunk chunk;
+            try
             {
-                Coordinates3D adjusted;
-                IChunk chunk;
-                try
-                {
-                    adjusted = client.World.World.FindBlockPosition(coordinates, out chunk);
-                }
-                catch (ArgumentException)
-                {
-                    // Relevant chunk is not loaded - ignore packet
-                    return;
-                }
-
-                chunk.SetBlockID(adjusted, (byte) blockChangePacket.BlockID);
-                chunk.SetMetadata(adjusted, (byte) blockChangePacket.Metadata);
-                client.OnBlockChanged(new BlockChangeEventArgs(coordinates, new BlockDescriptor(),
-                    new BlockDescriptor()));
-                client.OnChunkModified(new ChunkEventArgs(new ReadOnlyChunk(chunk)));
-            });
-        }
-
-        public static void HandleChunkPreamble(IPacket packet, MultiplayerClient client)
-        {
-            var chunkPreamblePacket = (ChunkPreamblePacket) packet;
-            var coords = new Coordinates2D(chunkPreamblePacket.X, chunkPreamblePacket.Z);
-            Marshal(client, () => client.World.SetChunk(coords, new Chunk(coords)));
-        }
-
-        public static void HandleChunkData(IPacket packet, MultiplayerClient client)
-        {
-            var chunkDataPacket = (ChunkDataPacket) packet;
-            var coords = new Coordinates3D(chunkDataPacket.X, chunkDataPacket.Y, chunkDataPacket.Z);
-            // Decompression is heavy and self-contained; do it on the network thread.
-            var data = ZlibDecompress(chunkDataPacket.CompressedData);
-
-            Marshal(client, () =>
+                adjusted = client.World.World.FindBlockPosition(coordinates, out chunk);
+            }
+            catch (ArgumentException)
             {
-                var adjustedCoords = client.World.World.FindBlockPosition(coords, out var chunk);
+                // Relevant chunk is not loaded - ignore packet
+                return;
+            }
 
-                if (chunkDataPacket.Width == Chunk.Width
-                    && chunkDataPacket.Height == Chunk.Height
-                    && chunkDataPacket.Depth == Chunk.Depth) // Fast path
-                {
-                    // Chunk data offsets
-                    var metadataOffset = chunk.Data.Length;
-                    var lightOffset = metadataOffset + chunk.Metadata.Length;
-                    var skylightOffset = lightOffset + chunk.BlockLight.Length;
+            chunk.SetBlockID(adjusted, (byte) blockChangePacket.BlockID);
+            chunk.SetMetadata(adjusted, (byte) blockChangePacket.Metadata);
+            client.OnBlockChanged(new BlockChangeEventArgs(coordinates, new BlockDescriptor(),
+                new BlockDescriptor()));
+            client.OnChunkModified(new ChunkEventArgs(new ReadOnlyChunk(chunk)));
+        });
+    }
 
-                    // Block IDs
-                    Buffer.BlockCopy(data, 0, chunk.Data, 0, chunk.Data.Length);
-                    // Block metadata
-                    if (metadataOffset < data.Length)
-                        Buffer.BlockCopy(data, metadataOffset,
-                            chunk.Metadata.Data, 0, chunk.Metadata.Data.Length);
-                    // Block light
-                    if (lightOffset < data.Length)
-                        Buffer.BlockCopy(data, lightOffset,
-                            chunk.BlockLight.Data, 0, chunk.BlockLight.Data.Length);
-                    // Sky light
-                    if (skylightOffset < data.Length)
-                        Buffer.BlockCopy(data, skylightOffset,
-                            chunk.SkyLight.Data, 0, chunk.SkyLight.Data.Length);
-                }
-                else // Slow path
+    public static void HandleChunkPreamble(IPacket packet, MultiplayerClient client)
+    {
+        var chunkPreamblePacket = (ChunkPreamblePacket) packet;
+        var coords = new Coordinates2D(chunkPreamblePacket.X, chunkPreamblePacket.Z);
+        Marshal(client, () => client.World.SetChunk(coords, new Chunk(coords)));
+    }
+
+    public static void HandleChunkData(IPacket packet, MultiplayerClient client)
+    {
+        var chunkDataPacket = (ChunkDataPacket) packet;
+        var coords = new Coordinates3D(chunkDataPacket.X, chunkDataPacket.Y, chunkDataPacket.Z);
+        // Decompression is heavy and self-contained; do it on the network thread.
+        var data = ZlibDecompress(chunkDataPacket.CompressedData);
+
+        Marshal(client, () =>
+        {
+            var adjustedCoords = client.World.World.FindBlockPosition(coords, out var chunk);
+
+            if (chunkDataPacket.Width == Chunk.Width
+                && chunkDataPacket.Height == Chunk.Height
+                && chunkDataPacket.Depth == Chunk.Depth) // Fast path
+            {
+                // Chunk data offsets
+                var metadataOffset = chunk.Data.Length;
+                var lightOffset = metadataOffset + chunk.Metadata.Length;
+                var skylightOffset = lightOffset + chunk.BlockLight.Length;
+
+                // Block IDs
+                Buffer.BlockCopy(data, 0, chunk.Data, 0, chunk.Data.Length);
+                // Block metadata
+                if (metadataOffset < data.Length)
+                    Buffer.BlockCopy(data, metadataOffset,
+                        chunk.Metadata.Data, 0, chunk.Metadata.Data.Length);
+                // Block light
+                if (lightOffset < data.Length)
+                    Buffer.BlockCopy(data, lightOffset,
+                        chunk.BlockLight.Data, 0, chunk.BlockLight.Data.Length);
+                // Sky light
+                if (skylightOffset < data.Length)
+                    Buffer.BlockCopy(data, skylightOffset,
+                        chunk.SkyLight.Data, 0, chunk.SkyLight.Data.Length);
+            }
+            else // Slow path
+            {
+                int x = adjustedCoords.X, y = adjustedCoords.Y, z = adjustedCoords.Z;
+                var fullLength =
+                    chunkDataPacket.Width * chunkDataPacket.Height *
+                    chunkDataPacket.Depth; // Length of full sized byte section
+                var nibbleLength = fullLength / 2; // Length of nibble sections
+                for (var i = 0; i < fullLength; i++) // Iterate through block IDs
                 {
-                    int x = adjustedCoords.X, y = adjustedCoords.Y, z = adjustedCoords.Z;
-                    var fullLength =
-                        chunkDataPacket.Width * chunkDataPacket.Height *
-                        chunkDataPacket.Depth; // Length of full sized byte section
-                    var nibbleLength = fullLength / 2; // Length of nibble sections
-                    for (var i = 0; i < fullLength; i++) // Iterate through block IDs
+                    chunk.SetBlockID(new Coordinates3D(x, y, z), data[i]);
+                    y++;
+                    if (y >= chunkDataPacket.Height)
                     {
-                        chunk.SetBlockID(new Coordinates3D(x, y, z), data[i]);
-                        y++;
-                        if (y >= chunkDataPacket.Height)
+                        y = 0;
+                        z++;
+                        if (z >= chunkDataPacket.Depth)
                         {
-                            y = 0;
-                            z++;
-                            if (z >= chunkDataPacket.Depth)
-                            {
-                                z = 0;
-                                x++;
-                                if (x >= chunkDataPacket.Width) x = 0;
-                            }
+                            z = 0;
+                            x++;
+                            if (x >= chunkDataPacket.Width) x = 0;
                         }
                     }
-
-                    x = adjustedCoords.X;
-                    y = adjustedCoords.Y;
-                    z = adjustedCoords.Z;
-                    for (var i = fullLength; i < nibbleLength; i++) // Iterate through metadata
-                    {
-                        var m = data[i];
-                        chunk.SetMetadata(new Coordinates3D(x, y, z), (byte) (m & 0xF));
-                        chunk.SetMetadata(new Coordinates3D(x, y + 1, z), (byte) (m & (0xF0 << 8)));
-                        y += 2;
-                        if (y >= chunkDataPacket.Height)
-                        {
-                            y = 0;
-                            z++;
-                            if (z >= chunkDataPacket.Depth)
-                            {
-                                z = 0;
-                                x++;
-                                if (x >= chunkDataPacket.Width) x = 0;
-                            }
-                        }
-                    }
-
-                    // TODO: Lighting
                 }
 
-                chunk.UpdateHeightMap();
-                chunk.TerrainPopulated = true;
-                client.OnChunkLoaded(new ChunkEventArgs(new ReadOnlyChunk(chunk)));
-            });
-        }
+                x = adjustedCoords.X;
+                y = adjustedCoords.Y;
+                z = adjustedCoords.Z;
+                for (var i = fullLength; i < nibbleLength; i++) // Iterate through metadata
+                {
+                    var m = data[i];
+                    chunk.SetMetadata(new Coordinates3D(x, y, z), (byte) (m & 0xF));
+                    chunk.SetMetadata(new Coordinates3D(x, y + 1, z), (byte) (m & (0xF0 << 8)));
+                    y += 2;
+                    if (y >= chunkDataPacket.Height)
+                    {
+                        y = 0;
+                        z++;
+                        if (z >= chunkDataPacket.Depth)
+                        {
+                            z = 0;
+                            x++;
+                            if (x >= chunkDataPacket.Width) x = 0;
+                        }
+                    }
+                }
 
-        /// <summary>
-        ///     Run <paramref name="action"/> on the game thread if a marshaller is attached,
-        ///     otherwise inline. Keeps headless / test scenarios working without a game loop.
-        /// </summary>
-        private static void Marshal(MultiplayerClient client, Action action)
-        {
-            var invoke = client.MainThreadInvoke;
-            if (invoke is not null)
-                invoke(action);
-            else
-                action();
-        }
+                // TODO: Lighting
+            }
 
-        private static byte[] ZlibDecompress(byte[] compressed)
-        {
-            using var source = new MemoryStream(compressed);
-            using var zlib = new ZLibStream(source, CompressionMode.Decompress);
-            using var output = new MemoryStream();
-            zlib.CopyTo(output);
-            return output.ToArray();
-        }
+            chunk.UpdateHeightMap();
+            chunk.TerrainPopulated = true;
+            client.OnChunkLoaded(new ChunkEventArgs(new ReadOnlyChunk(chunk)));
+        });
+    }
+
+    /// <summary>
+    ///     Run <paramref name="action"/> on the game thread if a marshaller is attached,
+    ///     otherwise inline. Keeps headless / test scenarios working without a game loop.
+    /// </summary>
+    private static void Marshal(MultiplayerClient client, Action action)
+    {
+        var invoke = client.MainThreadInvoke;
+        if (invoke is not null)
+            invoke(action);
+        else
+            action();
+    }
+
+    private static byte[] ZlibDecompress(byte[] compressed)
+    {
+        using var source = new MemoryStream(compressed);
+        using var zlib = new ZLibStream(source, CompressionMode.Decompress);
+        using var output = new MemoryStream();
+        zlib.CopyTo(output);
+        return output.ToArray();
     }
 }

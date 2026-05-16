@@ -6,61 +6,60 @@ using System.IO;
 using System.Linq;
 using Xunit;
 
-namespace Test.TrueCraft.Nbt
+namespace Test.TrueCraft.Nbt;
+
+internal static class CollectionAssert
 {
-    internal static class CollectionAssert
+    public static void AreEqual(IEnumerable expected, IEnumerable actual)
     {
-        public static void AreEqual(IEnumerable expected, IEnumerable actual)
-        {
-            var ex = expected?.Cast<object>().ToList();
-            var ac = actual?.Cast<object>().ToList();
-            Assert.Equal(ex, ac);
-        }
-
-        public static void AreEquivalent(IEnumerable expected, IEnumerable actual)
-        {
-            var ex = expected.Cast<object>().ToList();
-            var ac = actual.Cast<object>().ToList();
-            Assert.Equal(ex.Count, ac.Count);
-            foreach (var item in ex) Assert.Contains(item, ac);
-        }
+        var ex = expected?.Cast<object>().ToList();
+        var ac = actual?.Cast<object>().ToList();
+        Assert.Equal(ex, ac);
     }
 
-    internal static class FileAssert
+    public static void AreEquivalent(IEnumerable expected, IEnumerable actual)
     {
-        public static void AreEqual(string expectedPath, string actualPath)
-        {
-            using var ex = File.OpenRead(expectedPath);
-            using var ac = File.OpenRead(actualPath);
-            AreEqual(ex, ac);
-        }
+        var ex = expected.Cast<object>().ToList();
+        var ac = actual.Cast<object>().ToList();
+        Assert.Equal(ex.Count, ac.Count);
+        foreach (var item in ex) Assert.Contains(item, ac);
+    }
+}
 
-        public static void AreEqual(Stream expected, Stream actual)
-        {
-            if (expected.CanSeek) expected.Position = 0;
-            if (actual.CanSeek) actual.Position = 0;
-            const int BufSize = 4096;
-            var bufA = new byte[BufSize];
-            var bufB = new byte[BufSize];
-            while (true)
-            {
-                int readA = expected.Read(bufA, 0, BufSize);
-                int readB = actual.Read(bufB, 0, BufSize);
-                Assert.Equal(readA, readB);
-                if (readA == 0) break;
-                for (int i = 0; i < readA; i++)
-                    if (bufA[i] != bufB[i])
-                        Assert.Fail($"Files differ at byte {i}: expected 0x{bufA[i]:X2}, actual 0x{bufB[i]:X2}");
-            }
-        }
+internal static class FileAssert
+{
+    public static void AreEqual(string expectedPath, string actualPath)
+    {
+        using var ex = File.OpenRead(expectedPath);
+        using var ac = File.OpenRead(actualPath);
+        AreEqual(ex, ac);
     }
 
-    internal static class XAssert
+    public static void AreEqual(Stream expected, Stream actual)
     {
-        public static void DoesNotThrow(Action action)
+        if (expected.CanSeek) expected.Position = 0;
+        if (actual.CanSeek) actual.Position = 0;
+        const int BufSize = 4096;
+        var bufA = new byte[BufSize];
+        var bufB = new byte[BufSize];
+        while (true)
         {
-            var ex = Record.Exception(action);
-            Assert.Null(ex);
+            int readA = expected.Read(bufA, 0, BufSize);
+            int readB = actual.Read(bufB, 0, BufSize);
+            Assert.Equal(readA, readB);
+            if (readA == 0) break;
+            for (int i = 0; i < readA; i++)
+                if (bufA[i] != bufB[i])
+                    Assert.Fail($"Files differ at byte {i}: expected 0x{bufA[i]:X2}, actual 0x{bufB[i]:X2}");
         }
+    }
+}
+
+internal static class XAssert
+{
+    public static void DoesNotThrow(Action action)
+    {
+        var ex = Record.Exception(action);
+        Assert.Null(ex);
     }
 }

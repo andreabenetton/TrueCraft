@@ -1,102 +1,101 @@
 ﻿using System;
 using System.Text;
 
-namespace TrueCraft.Nbt.Tags
+namespace TrueCraft.Nbt.Tags;
+
+/// <summary> A tag containing a double-precision floating point number. </summary>
+public sealed class NbtDouble : NbtTag
 {
-    /// <summary> A tag containing a double-precision floating point number. </summary>
-    public sealed class NbtDouble : NbtTag
+    /// <summary> Creates an unnamed NbtDouble tag with the default value of 0. </summary>
+    public NbtDouble()
     {
-        /// <summary> Creates an unnamed NbtDouble tag with the default value of 0. </summary>
-        public NbtDouble()
-        {
-        }
+    }
 
 
-        /// <summary> Creates an unnamed NbtDouble tag with the given value. </summary>
-        /// <param name="value"> Value to assign to this tag. </param>
-        public NbtDouble(double value)
-            : this(null, value)
-        {
-        }
+    /// <summary> Creates an unnamed NbtDouble tag with the given value. </summary>
+    /// <param name="value"> Value to assign to this tag. </param>
+    public NbtDouble(double value)
+        : this(null, value)
+    {
+    }
 
 
-        /// <summary> Creates an NbtDouble tag with the given name and value. </summary>
-        /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
-        /// <param name="value"> Value to assign to this tag. </param>
-        public NbtDouble([CanBeNull] string tagName, double value = 0)
-        {
-            name = tagName;
-            Value = value;
-        }
+    /// <summary> Creates an NbtDouble tag with the given name and value. </summary>
+    /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
+    /// <param name="value"> Value to assign to this tag. </param>
+    public NbtDouble([CanBeNull] string tagName, double value = 0)
+    {
+        name = tagName;
+        Value = value;
+    }
 
 
-        /// <summary> Creates a copy of given NbtDouble tag. </summary>
-        /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
-        /// <exception cref="ArgumentNullException"> <paramref name="other" /> is <c>null</c>. </exception>
-        public NbtDouble([NotNull] NbtDouble other)
-        {
-            if (other is null) throw new ArgumentNullException(nameof(other));
-            name = other.name;
-            Value = other.Value;
-        }
+    /// <summary> Creates a copy of given NbtDouble tag. </summary>
+    /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
+    /// <exception cref="ArgumentNullException"> <paramref name="other" /> is <c>null</c>. </exception>
+    public NbtDouble([NotNull] NbtDouble other)
+    {
+        if (other is null) throw new ArgumentNullException(nameof(other));
+        name = other.name;
+        Value = other.Value;
+    }
 
-        /// <summary> Type of this tag (Double). </summary>
-        public override NbtTagType TagType => NbtTagType.Double;
+    /// <summary> Type of this tag (Double). </summary>
+    public override NbtTagType TagType => NbtTagType.Double;
 
-        /// <summary> Value/payload of this tag (a double-precision floating point number). </summary>
-        public double Value { get; set; }
-
-
-        internal override bool ReadTag(NbtBinaryReader readStream)
-        {
-            if (readStream.Selector is not null && !readStream.Selector(this))
-            {
-                readStream.ReadDouble();
-                return false;
-            }
-
-            Value = readStream.ReadDouble();
-            return true;
-        }
+    /// <summary> Value/payload of this tag (a double-precision floating point number). </summary>
+    public double Value { get; set; }
 
 
-        internal override void SkipTag(NbtBinaryReader readStream)
+    internal override bool ReadTag(NbtBinaryReader readStream)
+    {
+        if (readStream.Selector is not null && !readStream.Selector(this))
         {
             readStream.ReadDouble();
+            return false;
         }
 
-
-        internal override void WriteTag(NbtBinaryWriter writeStream)
-        {
-            writeStream.Write(NbtTagType.Double);
-            if (Name is null) throw new NbtFormatException("Name is null");
-            writeStream.Write(Name);
-            writeStream.Write(Value);
-        }
+        Value = readStream.ReadDouble();
+        return true;
+    }
 
 
-        internal override void WriteData(NbtBinaryWriter writeStream)
-        {
-            writeStream.Write(Value);
-        }
+    internal override void SkipTag(NbtBinaryReader readStream)
+    {
+        readStream.ReadDouble();
+    }
 
 
-        /// <inheritdoc />
-        public override object Clone()
-        {
-            return new NbtDouble(this);
-        }
+    internal override void WriteTag(NbtBinaryWriter writeStream)
+    {
+        writeStream.Write(NbtTagType.Double);
+        if (Name is null) throw new NbtFormatException("Name is null");
+        writeStream.Write(Name);
+        writeStream.Write(Value);
+    }
 
 
-        internal override void PrettyPrint(StringBuilder sb, string indentString, int indentLevel)
-        {
-            for (var i = 0; i < indentLevel; i++) sb.Append(indentString);
+    internal override void WriteData(NbtBinaryWriter writeStream)
+    {
+        writeStream.Write(Value);
+    }
 
-            sb.Append("TAG_Double");
-            if (!string.IsNullOrEmpty(Name)) sb.AppendFormat("(\"{0}\")", Name);
 
-            sb.Append(": ");
-            sb.Append(Value);
-        }
+    /// <inheritdoc />
+    public override object Clone()
+    {
+        return new NbtDouble(this);
+    }
+
+
+    internal override void PrettyPrint(StringBuilder sb, string indentString, int indentLevel)
+    {
+        for (var i = 0; i < indentLevel; i++) sb.Append(indentString);
+
+        sb.Append("TAG_Double");
+        if (!string.IsNullOrEmpty(Name)) sb.AppendFormat("(\"{0}\")", Name);
+
+        sb.Append(": ");
+        sb.Append(Value);
     }
 }

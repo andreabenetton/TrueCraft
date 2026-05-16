@@ -1,18 +1,17 @@
-﻿namespace TrueCraft.API
+namespace TrueCraft.API;
+
+/// <summary>
+///     Enumerates the different dimensions in the world in TrueCraft.
+/// </summary>
+public enum Dimension
 {
     /// <summary>
-    ///     Enumerates the different dimensions in the world in TrueCraft.
+    ///     The Nether dimension.
     /// </summary>
-    public enum Dimension
-    {
-        /// <summary>
-        ///     The Nether dimension.
-        /// </summary>
-        Nether = -1,
+    Nether = -1,
 
-        /// <summary>
-        ///     The Overworld dimension.
-        /// </summary>
-        Overworld = 0
-    }
+    /// <summary>
+    ///     The Overworld dimension.
+    /// </summary>
+    Overworld = 0
 }

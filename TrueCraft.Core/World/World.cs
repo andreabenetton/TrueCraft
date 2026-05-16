@@ -11,552 +11,551 @@ using TrueCraft.API.World;
 using TrueCraft.Nbt;
 using TrueCraft.Nbt.Tags;
 
-namespace TrueCraft.Core.World
+namespace TrueCraft.Core.World;
+
+public class World : IDisposable, IWorld, IEnumerable<IChunk>
 {
-    public class World : IDisposable, IWorld, IEnumerable<IChunk>
+    public static readonly int Height = 128;
+    private int _Seed;
+    private Coordinates3D? _SpawnPoint;
+
+    private readonly Dictionary<Thread, IChunk> ChunkCache = new Dictionary<Thread, IChunk>();
+    private readonly object ChunkCacheLock = new object();
+
+    public World()
     {
-        public static readonly int Height = 128;
-        private int _Seed;
-        private Coordinates3D? _SpawnPoint;
+        Regions = new Dictionary<Coordinates2D, IRegion>();
+        BaseTime = DateTime.UtcNow;
+    }
 
-        private readonly Dictionary<Thread, IChunk> ChunkCache = new Dictionary<Thread, IChunk>();
-        private readonly object ChunkCacheLock = new object();
+    public World(string name) : this()
+    {
+        Name = name;
+        Seed = MathHelper.Random.Next();
+    }
 
-        public World()
+    public World(string name, IChunkProvider chunkProvider) : this(name)
+    {
+        ChunkProvider = chunkProvider;
+        ChunkProvider.Initialize(this);
+    }
+
+    public World(string name, int seed, IChunkProvider chunkProvider) : this(name, chunkProvider)
+    {
+        Seed = seed;
+    }
+
+    public string BaseDirectory { get; internal set; }
+    public IDictionary<Coordinates2D, IRegion> Regions { get; set; }
+    public DateTime BaseTime { get; set; }
+
+    public void Dispose()
+    {
+        foreach (var region in Regions)
+            region.Value.Dispose();
+        BlockChanged = null;
+        ChunkGenerated = null;
+    }
+
+    public string Name { get; set; }
+
+    public int Seed
+    {
+        get => _Seed;
+        set
         {
-            Regions = new Dictionary<Coordinates2D, IRegion>();
-            BaseTime = DateTime.UtcNow;
+            _Seed = value;
+            BiomeDiagram = new BiomeMap(_Seed);
         }
+    }
 
-        public World(string name) : this()
+    public Coordinates3D SpawnPoint
+    {
+        get
         {
-            Name = name;
-            Seed = MathHelper.Random.Next();
+            if (_SpawnPoint is null)
+                _SpawnPoint = ChunkProvider.GetSpawn(this);
+            return _SpawnPoint.Value;
         }
+        set => _SpawnPoint = value;
+    }
 
-        public World(string name, IChunkProvider chunkProvider) : this(name)
-        {
-            ChunkProvider = chunkProvider;
-            ChunkProvider.Initialize(this);
-        }
+    public IBiomeMap BiomeDiagram { get; set; }
+    public IChunkProvider ChunkProvider { get; set; }
+    public IBlockRepository BlockRepository { get; set; }
 
-        public World(string name, int seed, IChunkProvider chunkProvider) : this(name, chunkProvider)
-        {
-            Seed = seed;
-        }
+    public long Time
+    {
+        get => (long) ((DateTime.UtcNow - BaseTime).TotalSeconds * 20) % 24000;
+        set => BaseTime = DateTime.UtcNow.AddSeconds(-value / 20);
+    }
 
-        public string BaseDirectory { get; internal set; }
-        public IDictionary<Coordinates2D, IRegion> Regions { get; set; }
-        public DateTime BaseTime { get; set; }
+    public event EventHandler<BlockChangeEventArgs> BlockChanged;
+    public event EventHandler<ChunkLoadedEventArgs> ChunkGenerated;
+    public event EventHandler<ChunkLoadedEventArgs> ChunkLoaded;
 
-        public void Dispose()
+    /// <summary>
+    ///     Finds a chunk that contains the specified block coordinates.
+    /// </summary>
+    public IChunk FindChunk(Coordinates3D coordinates, bool generate = true)
+    {
+        IChunk chunk;
+        FindBlockPosition(coordinates, out chunk, generate);
+        return chunk;
+    }
+
+    public IChunk GetChunk(Coordinates2D coordinates, bool generate = true)
+    {
+        var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
+        var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
+
+        var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ), generate);
+        if (region is null)
+            return null;
+        return region.GetChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32),
+            generate);
+    }
+
+    public byte GetBlockID(Coordinates3D coordinates)
+    {
+        IChunk chunk;
+        coordinates = FindBlockPosition(coordinates, out chunk);
+        return chunk.GetBlockID(coordinates);
+    }
+
+    public byte GetMetadata(Coordinates3D coordinates)
+    {
+        IChunk chunk;
+        coordinates = FindBlockPosition(coordinates, out chunk);
+        return chunk.GetMetadata(coordinates);
+    }
+
+    public byte GetSkyLight(Coordinates3D coordinates)
+    {
+        IChunk chunk;
+        coordinates = FindBlockPosition(coordinates, out chunk);
+        return chunk.GetSkyLight(coordinates);
+    }
+
+    public byte GetBlockLight(Coordinates3D coordinates)
+    {
+        IChunk chunk;
+        coordinates = FindBlockPosition(coordinates, out chunk);
+        return chunk.GetBlockLight(coordinates);
+    }
+
+    public NbtCompound GetTileEntity(Coordinates3D coordinates)
+    {
+        IChunk chunk;
+        coordinates = FindBlockPosition(coordinates, out chunk);
+        return chunk.GetTileEntity(coordinates);
+    }
+
+    public BlockDescriptor GetBlockData(Coordinates3D coordinates)
+    {
+        IChunk chunk;
+        var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
+        return GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
+    }
+
+    public void SetBlockData(Coordinates3D coordinates, BlockDescriptor descriptor)
+    {
+        IChunk chunk;
+        var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
+        var old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
+        chunk.SetBlockID(adjustedCoordinates, descriptor.ID);
+        chunk.SetMetadata(adjustedCoordinates, descriptor.Metadata);
+        if (BlockChanged is not null)
+            BlockChanged(this,
+                new BlockChangeEventArgs(coordinates, old,
+                    GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
+    }
+
+    public void SetBlockID(Coordinates3D coordinates, byte value)
+    {
+        IChunk chunk;
+        var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
+        var old = new BlockDescriptor();
+        if (BlockChanged is not null)
+            old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
+        chunk.SetBlockID(adjustedCoordinates, value);
+        if (BlockChanged is not null)
+            BlockChanged(this,
+                new BlockChangeEventArgs(coordinates, old,
+                    GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
+    }
+
+    public void SetMetadata(Coordinates3D coordinates, byte value)
+    {
+        IChunk chunk;
+        var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
+        var old = new BlockDescriptor();
+        if (BlockChanged is not null)
+            old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
+        chunk.SetMetadata(adjustedCoordinates, value);
+        if (BlockChanged is not null)
+            BlockChanged(this,
+                new BlockChangeEventArgs(coordinates, old,
+                    GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
+    }
+
+    public void SetSkyLight(Coordinates3D coordinates, byte value)
+    {
+        IChunk chunk;
+        var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
+        var old = new BlockDescriptor();
+        if (BlockChanged is not null)
+            old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
+        chunk.SetSkyLight(adjustedCoordinates, value);
+        if (BlockChanged is not null)
+            BlockChanged(this,
+                new BlockChangeEventArgs(coordinates, old,
+                    GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
+    }
+
+    public void SetBlockLight(Coordinates3D coordinates, byte value)
+    {
+        IChunk chunk;
+        var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
+        var old = new BlockDescriptor();
+        if (BlockChanged is not null)
+            old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
+        chunk.SetBlockLight(adjustedCoordinates, value);
+        if (BlockChanged is not null)
+            BlockChanged(this,
+                new BlockChangeEventArgs(coordinates, old,
+                    GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
+    }
+
+    public void SetTileEntity(Coordinates3D coordinates, NbtCompound value)
+    {
+        IChunk chunk;
+        coordinates = FindBlockPosition(coordinates, out chunk);
+        chunk.SetTileEntity(coordinates, value);
+    }
+
+    public void Save()
+    {
+        lock (Regions)
         {
             foreach (var region in Regions)
-                region.Value.Dispose();
-            BlockChanged = null;
-            ChunkGenerated = null;
+                region.Value.Save(Path.Combine(BaseDirectory, Region.GetRegionFileName(region.Key)));
         }
 
-        public string Name { get; set; }
-
-        public int Seed
+        var file = new NbtFile();
+        file.RootTag.Add(new NbtCompound("SpawnPoint", new[]
         {
-            get => _Seed;
-            set
+            new NbtInt("X", SpawnPoint.X),
+            new NbtInt("Y", SpawnPoint.Y),
+            new NbtInt("Z", SpawnPoint.Z)
+        }));
+        file.RootTag.Add(new NbtInt("Seed", Seed));
+        file.RootTag.Add(new NbtString("ChunkProvider", ChunkProvider.GetType().FullName));
+        file.RootTag.Add(new NbtString("Name", Name));
+        file.SaveToFile(Path.Combine(BaseDirectory, "manifest.nbt"), NbtCompression.ZLib);
+    }
+
+    public void Save(string path)
+    {
+        if (!Directory.Exists(path))
+            Directory.CreateDirectory(path);
+        BaseDirectory = path;
+        Save();
+    }
+
+
+    public async Task SaveAsync(CancellationToken cancellationToken = default)
+    {
+        // Snapshot the region dictionary under the sync lock; once we have the snapshot we can await
+        // each region's async save without holding a non-awaitable monitor.
+        KeyValuePair<Coordinates2D, IRegion>[] snapshot;
+        lock (Regions)
+        {
+            snapshot = Regions.ToArray();
+        }
+
+        foreach (var entry in snapshot)
+        {
+            if (entry.Value is Region r)
             {
-                _Seed = value;
-                BiomeDiagram = new BiomeMap(_Seed);
-            }
-        }
-
-        public Coordinates3D SpawnPoint
-        {
-            get
-            {
-                if (_SpawnPoint is null)
-                    _SpawnPoint = ChunkProvider.GetSpawn(this);
-                return _SpawnPoint.Value;
-            }
-            set => _SpawnPoint = value;
-        }
-
-        public IBiomeMap BiomeDiagram { get; set; }
-        public IChunkProvider ChunkProvider { get; set; }
-        public IBlockRepository BlockRepository { get; set; }
-
-        public long Time
-        {
-            get => (long) ((DateTime.UtcNow - BaseTime).TotalSeconds * 20) % 24000;
-            set => BaseTime = DateTime.UtcNow.AddSeconds(-value / 20);
-        }
-
-        public event EventHandler<BlockChangeEventArgs> BlockChanged;
-        public event EventHandler<ChunkLoadedEventArgs> ChunkGenerated;
-        public event EventHandler<ChunkLoadedEventArgs> ChunkLoaded;
-
-        /// <summary>
-        ///     Finds a chunk that contains the specified block coordinates.
-        /// </summary>
-        public IChunk FindChunk(Coordinates3D coordinates, bool generate = true)
-        {
-            IChunk chunk;
-            FindBlockPosition(coordinates, out chunk, generate);
-            return chunk;
-        }
-
-        public IChunk GetChunk(Coordinates2D coordinates, bool generate = true)
-        {
-            var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
-            var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
-
-            var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ), generate);
-            if (region is null)
-                return null;
-            return region.GetChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32),
-                generate);
-        }
-
-        public byte GetBlockID(Coordinates3D coordinates)
-        {
-            IChunk chunk;
-            coordinates = FindBlockPosition(coordinates, out chunk);
-            return chunk.GetBlockID(coordinates);
-        }
-
-        public byte GetMetadata(Coordinates3D coordinates)
-        {
-            IChunk chunk;
-            coordinates = FindBlockPosition(coordinates, out chunk);
-            return chunk.GetMetadata(coordinates);
-        }
-
-        public byte GetSkyLight(Coordinates3D coordinates)
-        {
-            IChunk chunk;
-            coordinates = FindBlockPosition(coordinates, out chunk);
-            return chunk.GetSkyLight(coordinates);
-        }
-
-        public byte GetBlockLight(Coordinates3D coordinates)
-        {
-            IChunk chunk;
-            coordinates = FindBlockPosition(coordinates, out chunk);
-            return chunk.GetBlockLight(coordinates);
-        }
-
-        public NbtCompound GetTileEntity(Coordinates3D coordinates)
-        {
-            IChunk chunk;
-            coordinates = FindBlockPosition(coordinates, out chunk);
-            return chunk.GetTileEntity(coordinates);
-        }
-
-        public BlockDescriptor GetBlockData(Coordinates3D coordinates)
-        {
-            IChunk chunk;
-            var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
-            return GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
-        }
-
-        public void SetBlockData(Coordinates3D coordinates, BlockDescriptor descriptor)
-        {
-            IChunk chunk;
-            var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
-            var old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
-            chunk.SetBlockID(adjustedCoordinates, descriptor.ID);
-            chunk.SetMetadata(adjustedCoordinates, descriptor.Metadata);
-            if (BlockChanged is not null)
-                BlockChanged(this,
-                    new BlockChangeEventArgs(coordinates, old,
-                        GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
-        }
-
-        public void SetBlockID(Coordinates3D coordinates, byte value)
-        {
-            IChunk chunk;
-            var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
-            var old = new BlockDescriptor();
-            if (BlockChanged is not null)
-                old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
-            chunk.SetBlockID(adjustedCoordinates, value);
-            if (BlockChanged is not null)
-                BlockChanged(this,
-                    new BlockChangeEventArgs(coordinates, old,
-                        GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
-        }
-
-        public void SetMetadata(Coordinates3D coordinates, byte value)
-        {
-            IChunk chunk;
-            var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
-            var old = new BlockDescriptor();
-            if (BlockChanged is not null)
-                old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
-            chunk.SetMetadata(adjustedCoordinates, value);
-            if (BlockChanged is not null)
-                BlockChanged(this,
-                    new BlockChangeEventArgs(coordinates, old,
-                        GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
-        }
-
-        public void SetSkyLight(Coordinates3D coordinates, byte value)
-        {
-            IChunk chunk;
-            var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
-            var old = new BlockDescriptor();
-            if (BlockChanged is not null)
-                old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
-            chunk.SetSkyLight(adjustedCoordinates, value);
-            if (BlockChanged is not null)
-                BlockChanged(this,
-                    new BlockChangeEventArgs(coordinates, old,
-                        GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
-        }
-
-        public void SetBlockLight(Coordinates3D coordinates, byte value)
-        {
-            IChunk chunk;
-            var adjustedCoordinates = FindBlockPosition(coordinates, out chunk);
-            var old = new BlockDescriptor();
-            if (BlockChanged is not null)
-                old = GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates);
-            chunk.SetBlockLight(adjustedCoordinates, value);
-            if (BlockChanged is not null)
-                BlockChanged(this,
-                    new BlockChangeEventArgs(coordinates, old,
-                        GetBlockDataFromChunk(adjustedCoordinates, chunk, coordinates)));
-        }
-
-        public void SetTileEntity(Coordinates3D coordinates, NbtCompound value)
-        {
-            IChunk chunk;
-            coordinates = FindBlockPosition(coordinates, out chunk);
-            chunk.SetTileEntity(coordinates, value);
-        }
-
-        public void Save()
-        {
-            lock (Regions)
-            {
-                foreach (var region in Regions)
-                    region.Value.Save(Path.Combine(BaseDirectory, Region.GetRegionFileName(region.Key)));
-            }
-
-            var file = new NbtFile();
-            file.RootTag.Add(new NbtCompound("SpawnPoint", new[]
-            {
-                new NbtInt("X", SpawnPoint.X),
-                new NbtInt("Y", SpawnPoint.Y),
-                new NbtInt("Z", SpawnPoint.Z)
-            }));
-            file.RootTag.Add(new NbtInt("Seed", Seed));
-            file.RootTag.Add(new NbtString("ChunkProvider", ChunkProvider.GetType().FullName));
-            file.RootTag.Add(new NbtString("Name", Name));
-            file.SaveToFile(Path.Combine(BaseDirectory, "manifest.nbt"), NbtCompression.ZLib);
-        }
-
-        public void Save(string path)
-        {
-            if (!Directory.Exists(path))
-                Directory.CreateDirectory(path);
-            BaseDirectory = path;
-            Save();
-        }
-
-
-        public async Task SaveAsync(CancellationToken cancellationToken = default)
-        {
-            // Snapshot the region dictionary under the sync lock; once we have the snapshot we can await
-            // each region's async save without holding a non-awaitable monitor.
-            KeyValuePair<Coordinates2D, IRegion>[] snapshot;
-            lock (Regions)
-            {
-                snapshot = Regions.ToArray();
-            }
-
-            foreach (var entry in snapshot)
-            {
-                if (entry.Value is Region r)
-                {
-                    await r.SaveAsync(Path.Combine(BaseDirectory, Region.GetRegionFileName(entry.Key)),
-                        cancellationToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    entry.Value.Save(Path.Combine(BaseDirectory, Region.GetRegionFileName(entry.Key)));
-                }
-            }
-
-            var file = new NbtFile();
-            file.RootTag.Add(new NbtCompound("SpawnPoint", new[]
-            {
-                new NbtInt("X", SpawnPoint.X),
-                new NbtInt("Y", SpawnPoint.Y),
-                new NbtInt("Z", SpawnPoint.Z)
-            }));
-            file.RootTag.Add(new NbtInt("Seed", Seed));
-            file.RootTag.Add(new NbtString("ChunkProvider", ChunkProvider.GetType().FullName));
-            file.RootTag.Add(new NbtString("Name", Name));
-            await file.SaveToFileAsync(Path.Combine(BaseDirectory, "manifest.nbt"), NbtCompression.ZLib,
-                cancellationToken).ConfigureAwait(false);
-        }
-
-
-        public async Task SaveAsync(string path, CancellationToken cancellationToken = default)
-        {
-            if (!Directory.Exists(path))
-                Directory.CreateDirectory(path);
-            BaseDirectory = path;
-            await SaveAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        public Coordinates3D FindBlockPosition(Coordinates3D coordinates, out IChunk chunk, bool generate = true)
-        {
-            if (coordinates.Y < 0 || coordinates.Y >= Chunk.Height)
-                throw new ArgumentOutOfRangeException("coordinates", "Coordinates are out of range");
-
-            var chunkX = coordinates.X / Chunk.Width;
-            var chunkZ = coordinates.Z / Chunk.Depth;
-
-            if (coordinates.X < 0)
-                chunkX = (coordinates.X + 1) / Chunk.Width - 1;
-            if (coordinates.Z < 0)
-                chunkZ = (coordinates.Z + 1) / Chunk.Depth - 1;
-
-            if (ChunkCache.ContainsKey(Thread.CurrentThread))
-            {
-                var cache = ChunkCache[Thread.CurrentThread];
-                if (cache is not null && chunkX == cache.Coordinates.X && chunkZ == cache.Coordinates.Z)
-                {
-                    chunk = cache;
-                }
-                else
-                {
-                    cache = GetChunk(new Coordinates2D(chunkX, chunkZ), generate);
-                    lock (ChunkCacheLock)
-                    {
-                        ChunkCache[Thread.CurrentThread] = cache;
-                    }
-                }
+                await r.SaveAsync(Path.Combine(BaseDirectory, Region.GetRegionFileName(entry.Key)),
+                    cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                var cache = GetChunk(new Coordinates2D(chunkX, chunkZ), generate);
+                entry.Value.Save(Path.Combine(BaseDirectory, Region.GetRegionFileName(entry.Key)));
+            }
+        }
+
+        var file = new NbtFile();
+        file.RootTag.Add(new NbtCompound("SpawnPoint", new[]
+        {
+            new NbtInt("X", SpawnPoint.X),
+            new NbtInt("Y", SpawnPoint.Y),
+            new NbtInt("Z", SpawnPoint.Z)
+        }));
+        file.RootTag.Add(new NbtInt("Seed", Seed));
+        file.RootTag.Add(new NbtString("ChunkProvider", ChunkProvider.GetType().FullName));
+        file.RootTag.Add(new NbtString("Name", Name));
+        await file.SaveToFileAsync(Path.Combine(BaseDirectory, "manifest.nbt"), NbtCompression.ZLib,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+
+    public async Task SaveAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (!Directory.Exists(path))
+            Directory.CreateDirectory(path);
+        BaseDirectory = path;
+        await SaveAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public Coordinates3D FindBlockPosition(Coordinates3D coordinates, out IChunk chunk, bool generate = true)
+    {
+        if (coordinates.Y < 0 || coordinates.Y >= Chunk.Height)
+            throw new ArgumentOutOfRangeException("coordinates", "Coordinates are out of range");
+
+        var chunkX = coordinates.X / Chunk.Width;
+        var chunkZ = coordinates.Z / Chunk.Depth;
+
+        if (coordinates.X < 0)
+            chunkX = (coordinates.X + 1) / Chunk.Width - 1;
+        if (coordinates.Z < 0)
+            chunkZ = (coordinates.Z + 1) / Chunk.Depth - 1;
+
+        if (ChunkCache.ContainsKey(Thread.CurrentThread))
+        {
+            var cache = ChunkCache[Thread.CurrentThread];
+            if (cache is not null && chunkX == cache.Coordinates.X && chunkZ == cache.Coordinates.Z)
+            {
+                chunk = cache;
+            }
+            else
+            {
+                cache = GetChunk(new Coordinates2D(chunkX, chunkZ), generate);
                 lock (ChunkCacheLock)
                 {
                     ChunkCache[Thread.CurrentThread] = cache;
                 }
             }
-
-            chunk = GetChunk(new Coordinates2D(chunkX, chunkZ), generate);
-            return new Coordinates3D(
-                (coordinates.X % Chunk.Width + Chunk.Width) % Chunk.Width,
-                coordinates.Y,
-                (coordinates.Z % Chunk.Depth + Chunk.Depth) % Chunk.Depth);
         }
-
-        public bool IsValidPosition(Coordinates3D position)
+        else
         {
-            return position.Y >= 0 && position.Y < Chunk.Height;
-        }
-
-        public IEnumerator<IChunk> GetEnumerator()
-        {
-            return new ChunkEnumerator(this);
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        public static World LoadWorld(string baseDirectory)
-        {
-            if (!Directory.Exists(baseDirectory))
-                throw new DirectoryNotFoundException();
-
-            var world = new World(Path.GetFileName(baseDirectory));
-            world.BaseDirectory = baseDirectory;
-
-            if (File.Exists(Path.Combine(baseDirectory, "manifest.nbt")))
+            var cache = GetChunk(new Coordinates2D(chunkX, chunkZ), generate);
+            lock (ChunkCacheLock)
             {
-                var file = new NbtFile(Path.Combine(baseDirectory, "manifest.nbt"));
-                world.SpawnPoint = new Coordinates3D(file.RootTag["SpawnPoint"]["X"].IntValue,
-                    file.RootTag["SpawnPoint"]["Y"].IntValue,
-                    file.RootTag["SpawnPoint"]["Z"].IntValue);
-                world.Seed = file.RootTag["Seed"].IntValue;
-                var providerName = file.RootTag["ChunkProvider"].StringValue;
-                var provider = (IChunkProvider) Activator.CreateInstance(Type.GetType(providerName));
-                provider.Initialize(world);
-                if (file.RootTag.Contains("Name"))
-                    world.Name = file.RootTag["Name"].StringValue;
-                world.ChunkProvider = provider;
-            }
-
-            return world;
-        }
-
-
-        public static async Task<World> LoadWorldAsync(string baseDirectory,
-            CancellationToken cancellationToken = default)
-        {
-            if (!Directory.Exists(baseDirectory))
-                throw new DirectoryNotFoundException();
-
-            var world = new World(Path.GetFileName(baseDirectory));
-            world.BaseDirectory = baseDirectory;
-
-            var manifestPath = Path.Combine(baseDirectory, "manifest.nbt");
-            if (File.Exists(manifestPath))
-            {
-                var file = new NbtFile();
-                await file.LoadFromFileAsync(manifestPath, cancellationToken).ConfigureAwait(false);
-                world.SpawnPoint = new Coordinates3D(file.RootTag["SpawnPoint"]["X"].IntValue,
-                    file.RootTag["SpawnPoint"]["Y"].IntValue,
-                    file.RootTag["SpawnPoint"]["Z"].IntValue);
-                world.Seed = file.RootTag["Seed"].IntValue;
-                var providerName = file.RootTag["ChunkProvider"].StringValue;
-                var provider = (IChunkProvider) Activator.CreateInstance(Type.GetType(providerName));
-                provider.Initialize(world);
-                if (file.RootTag.Contains("Name"))
-                    world.Name = file.RootTag["Name"].StringValue;
-                world.ChunkProvider = provider;
-            }
-
-            return world;
-        }
-
-        public void GenerateChunk(Coordinates2D coordinates)
-        {
-            var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
-            var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
-
-            var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ));
-            region.GenerateChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32));
-        }
-
-        public void SetChunk(Coordinates2D coordinates, Chunk chunk)
-        {
-            var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
-            var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
-
-            var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ));
-            lock (region)
-            {
-                chunk.IsModified = true;
-                region.SetChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32), chunk);
+                ChunkCache[Thread.CurrentThread] = cache;
             }
         }
 
-        public void UnloadRegion(Coordinates2D coordinates)
+        chunk = GetChunk(new Coordinates2D(chunkX, chunkZ), generate);
+        return new Coordinates3D(
+            (coordinates.X % Chunk.Width + Chunk.Width) % Chunk.Width,
+            coordinates.Y,
+            (coordinates.Z % Chunk.Depth + Chunk.Depth) % Chunk.Depth);
+    }
+
+    public bool IsValidPosition(Coordinates3D position)
+    {
+        return position.Y >= 0 && position.Y < Chunk.Height;
+    }
+
+    public IEnumerator<IChunk> GetEnumerator()
+    {
+        return new ChunkEnumerator(this);
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    public static World LoadWorld(string baseDirectory)
+    {
+        if (!Directory.Exists(baseDirectory))
+            throw new DirectoryNotFoundException();
+
+        var world = new World(Path.GetFileName(baseDirectory));
+        world.BaseDirectory = baseDirectory;
+
+        if (File.Exists(Path.Combine(baseDirectory, "manifest.nbt")))
         {
-            lock (Regions)
-            {
-                Regions[coordinates].Save(Path.Combine(BaseDirectory, Region.GetRegionFileName(coordinates)));
-                Regions.Remove(coordinates);
-            }
+            var file = new NbtFile(Path.Combine(baseDirectory, "manifest.nbt"));
+            world.SpawnPoint = new Coordinates3D(file.RootTag["SpawnPoint"]["X"].IntValue,
+                file.RootTag["SpawnPoint"]["Y"].IntValue,
+                file.RootTag["SpawnPoint"]["Z"].IntValue);
+            world.Seed = file.RootTag["Seed"].IntValue;
+            var providerName = file.RootTag["ChunkProvider"].StringValue;
+            var provider = (IChunkProvider) Activator.CreateInstance(Type.GetType(providerName));
+            provider.Initialize(world);
+            if (file.RootTag.Contains("Name"))
+                world.Name = file.RootTag["Name"].StringValue;
+            world.ChunkProvider = provider;
         }
 
-        public void UnloadChunk(Coordinates2D coordinates)
-        {
-            var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
-            var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
+        return world;
+    }
 
-            var regionPosition = new Coordinates2D(regionX, regionZ);
-            if (!Regions.ContainsKey(regionPosition))
-                throw new ArgumentOutOfRangeException("coordinates");
-            Regions[regionPosition]
-                .UnloadChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32));
+
+    public static async Task<World> LoadWorldAsync(string baseDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Directory.Exists(baseDirectory))
+            throw new DirectoryNotFoundException();
+
+        var world = new World(Path.GetFileName(baseDirectory));
+        world.BaseDirectory = baseDirectory;
+
+        var manifestPath = Path.Combine(baseDirectory, "manifest.nbt");
+        if (File.Exists(manifestPath))
+        {
+            var file = new NbtFile();
+            await file.LoadFromFileAsync(manifestPath, cancellationToken).ConfigureAwait(false);
+            world.SpawnPoint = new Coordinates3D(file.RootTag["SpawnPoint"]["X"].IntValue,
+                file.RootTag["SpawnPoint"]["Y"].IntValue,
+                file.RootTag["SpawnPoint"]["Z"].IntValue);
+            world.Seed = file.RootTag["Seed"].IntValue;
+            var providerName = file.RootTag["ChunkProvider"].StringValue;
+            var provider = (IChunkProvider) Activator.CreateInstance(Type.GetType(providerName));
+            provider.Initialize(world);
+            if (file.RootTag.Contains("Name"))
+                world.Name = file.RootTag["Name"].StringValue;
+            world.ChunkProvider = provider;
         }
 
-        private BlockDescriptor GetBlockDataFromChunk(Coordinates3D adjustedCoordinates, IChunk chunk,
-            Coordinates3D coordinates)
-        {
-            return new BlockDescriptor
-            {
-                ID = chunk.GetBlockID(adjustedCoordinates),
-                Metadata = chunk.GetMetadata(adjustedCoordinates),
-                BlockLight = chunk.GetBlockLight(adjustedCoordinates),
-                SkyLight = chunk.GetSkyLight(adjustedCoordinates),
-                Coordinates = coordinates
-            };
-        }
+        return world;
+    }
 
-        private Region LoadOrGenerateRegion(Coordinates2D coordinates, bool generate = true)
+    public void GenerateChunk(Coordinates2D coordinates)
+    {
+        var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
+        var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
+
+        var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ));
+        region.GenerateChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32));
+    }
+
+    public void SetChunk(Coordinates2D coordinates, Chunk chunk)
+    {
+        var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
+        var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
+
+        var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ));
+        lock (region)
         {
-            if (Regions.ContainsKey(coordinates))
-                return (Region) Regions[coordinates];
-            if (!generate)
-                return null;
-            Region region;
-            if (BaseDirectory is not null)
-            {
-                var file = Path.Combine(BaseDirectory, Region.GetRegionFileName(coordinates));
-                if (File.Exists(file))
-                    region = new Region(coordinates, this, file);
-                else
-                    region = new Region(coordinates, this);
-            }
+            chunk.IsModified = true;
+            region.SetChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32), chunk);
+        }
+    }
+
+    public void UnloadRegion(Coordinates2D coordinates)
+    {
+        lock (Regions)
+        {
+            Regions[coordinates].Save(Path.Combine(BaseDirectory, Region.GetRegionFileName(coordinates)));
+            Regions.Remove(coordinates);
+        }
+    }
+
+    public void UnloadChunk(Coordinates2D coordinates)
+    {
+        var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
+        var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
+
+        var regionPosition = new Coordinates2D(regionX, regionZ);
+        if (!Regions.ContainsKey(regionPosition))
+            throw new ArgumentOutOfRangeException("coordinates");
+        Regions[regionPosition]
+            .UnloadChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32));
+    }
+
+    private BlockDescriptor GetBlockDataFromChunk(Coordinates3D adjustedCoordinates, IChunk chunk,
+        Coordinates3D coordinates)
+    {
+        return new BlockDescriptor
+        {
+            ID = chunk.GetBlockID(adjustedCoordinates),
+            Metadata = chunk.GetMetadata(adjustedCoordinates),
+            BlockLight = chunk.GetBlockLight(adjustedCoordinates),
+            SkyLight = chunk.GetSkyLight(adjustedCoordinates),
+            Coordinates = coordinates
+        };
+    }
+
+    private Region LoadOrGenerateRegion(Coordinates2D coordinates, bool generate = true)
+    {
+        if (Regions.ContainsKey(coordinates))
+            return (Region) Regions[coordinates];
+        if (!generate)
+            return null;
+        Region region;
+        if (BaseDirectory is not null)
+        {
+            var file = Path.Combine(BaseDirectory, Region.GetRegionFileName(coordinates));
+            if (File.Exists(file))
+                region = new Region(coordinates, this, file);
             else
-            {
                 region = new Region(coordinates, this);
-            }
-
-            lock (Regions)
-            {
-                Regions[coordinates] = region;
-            }
-
-            return region;
         }
-
-        protected internal void OnChunkGenerated(ChunkLoadedEventArgs e)
+        else
         {
-            if (ChunkGenerated is not null)
-                ChunkGenerated(this, e);
+            region = new Region(coordinates, this);
         }
 
-        protected internal void OnChunkLoaded(ChunkLoadedEventArgs e)
+        lock (Regions)
         {
-            if (ChunkLoaded is not null)
-                ChunkLoaded(this, e);
+            Regions[coordinates] = region;
         }
 
-        public class ChunkEnumerator : IEnumerator<IChunk>
+        return region;
+    }
+
+    protected internal void OnChunkGenerated(ChunkLoadedEventArgs e)
+    {
+        if (ChunkGenerated is not null)
+            ChunkGenerated(this, e);
+    }
+
+    protected internal void OnChunkLoaded(ChunkLoadedEventArgs e)
+    {
+        if (ChunkLoaded is not null)
+            ChunkLoaded(this, e);
+    }
+
+    public class ChunkEnumerator : IEnumerator<IChunk>
+    {
+        public ChunkEnumerator(World world)
         {
-            public ChunkEnumerator(World world)
-            {
-                World = world;
-                Index = -1;
-                var regions = world.Regions.Values.ToList();
-                var chunks = new List<IChunk>();
-                foreach (var region in regions)
-                    chunks.AddRange(region.Chunks.Values);
-                Chunks = chunks;
-            }
-
-            public World World { get; set; }
-            private int Index { get; set; }
-            private IList<IChunk> Chunks { get; }
-
-            public bool MoveNext()
-            {
-                Index++;
-                return Index < Chunks.Count;
-            }
-
-            public void Reset()
-            {
-                Index = -1;
-            }
-
-            public void Dispose()
-            {
-            }
-
-            public IChunk Current => Chunks[Index];
-
-            object IEnumerator.Current => Current;
+            World = world;
+            Index = -1;
+            var regions = world.Regions.Values.ToList();
+            var chunks = new List<IChunk>();
+            foreach (var region in regions)
+                chunks.AddRange(region.Chunks.Values);
+            Chunks = chunks;
         }
+
+        public World World { get; set; }
+        private int Index { get; set; }
+        private IList<IChunk> Chunks { get; }
+
+        public bool MoveNext()
+        {
+            Index++;
+            return Index < Chunks.Count;
+        }
+
+        public void Reset()
+        {
+            Index = -1;
+        }
+
+        public void Dispose()
+        {
+        }
+
+        public IChunk Current => Chunks[Index];
+
+        object IEnumerator.Current => Current;
     }
 }

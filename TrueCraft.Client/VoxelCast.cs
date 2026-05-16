@@ -2,52 +2,51 @@
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 
-namespace TrueCraft.Client
+namespace TrueCraft.Client;
+
+/// <summary>
+///     Efficient ray caster that can cast a ray into a voxel map
+///     and return the voxel that it intersects with.
+/// </summary>
+public static class VoxelCast
 {
-    /// <summary>
-    ///     Efficient ray caster that can cast a ray into a voxel map
-    ///     and return the voxel that it intersects with.
-    /// </summary>
-    public static class VoxelCast
+    // Thanks to http://gamedev.stackexchange.com/questions/47362/cast-ray-to-select-block-in-voxel-game
+
+    public static Tuple<Coordinates3D, BlockFace> Cast(ReadOnlyWorld world,
+        Ray ray, IBlockRepository repository, int posmax, int negmax)
     {
-        // Thanks to http://gamedev.stackexchange.com/questions/47362/cast-ray-to-select-block-in-voxel-game
+        // TODO: There are more efficient ways of doing this, fwiw
 
-        public static Tuple<Coordinates3D, BlockFace> Cast(ReadOnlyWorld world,
-            Ray ray, IBlockRepository repository, int posmax, int negmax)
+        double min = negmax * 2;
+        var pick = -Coordinates3D.One;
+        var face = BlockFace.PositiveY;
+        for (var x = -posmax; x <= posmax; x++)
+        for (var y = -negmax; y <= posmax; y++)
+        for (var z = -posmax; z <= posmax; z++)
         {
-            // TODO: There are more efficient ways of doing this, fwiw
-
-            double min = negmax * 2;
-            var pick = -Coordinates3D.One;
-            var face = BlockFace.PositiveY;
-            for (var x = -posmax; x <= posmax; x++)
-            for (var y = -negmax; y <= posmax; y++)
-            for (var z = -posmax; z <= posmax; z++)
+            var coords = (Coordinates3D) (new Vector3(x, y, z) + ray.Position).Round();
+            if (!world.IsValidPosition(coords))
+                continue;
+            var id = world.GetBlockID(coords);
+            if (id != 0)
             {
-                var coords = (Coordinates3D) (new Vector3(x, y, z) + ray.Position).Round();
-                if (!world.IsValidPosition(coords))
-                    continue;
-                var id = world.GetBlockID(coords);
-                if (id != 0)
+                var provider = repository.GetBlockProvider(id);
+                var box = provider.InteractiveBoundingBox;
+                if (box is not null)
                 {
-                    var provider = repository.GetBlockProvider(id);
-                    var box = provider.InteractiveBoundingBox;
-                    if (box is not null)
+                    var distance = ray.Intersects(box.Value.OffsetBy(coords), out var _face);
+                    if (distance is not null && distance.Value < min)
                     {
-                        var distance = ray.Intersects(box.Value.OffsetBy(coords), out var _face);
-                        if (distance is not null && distance.Value < min)
-                        {
-                            min = distance.Value;
-                            pick = coords;
-                            face = _face;
-                        }
+                        min = distance.Value;
+                        pick = coords;
+                        face = _face;
                     }
                 }
             }
-
-            if (pick == -Coordinates3D.One)
-                return null;
-            return new Tuple<Coordinates3D, BlockFace>(pick, face);
         }
+
+        if (pick == -Coordinates3D.One)
+            return null;
+        return new Tuple<Coordinates3D, BlockFace>(pick, face);
     }
 }

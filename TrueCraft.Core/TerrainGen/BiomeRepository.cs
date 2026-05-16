@@ -4,92 +4,91 @@ using System.Linq;
 using TrueCraft.API.World;
 using TrueCraft.Core.TerrainGen.Biomes;
 
-namespace TrueCraft.Core.TerrainGen
+namespace TrueCraft.Core.TerrainGen;
+
+public class BiomeRepository : IBiomeRepository
 {
-    public class BiomeRepository : IBiomeRepository
+    private readonly IBiomeProvider[] BiomeProviders = new IBiomeProvider[0x100];
+
+    public BiomeRepository()
     {
-        private readonly IBiomeProvider[] BiomeProviders = new IBiomeProvider[0x100];
+        DiscoverBiomes();
+    }
 
-        public BiomeRepository()
+    public void RegisterBiomeProvider(IBiomeProvider provider)
+    {
+        BiomeProviders[provider.ID] = provider;
+    }
+
+    public IBiomeProvider GetBiome(byte id)
+    {
+        return BiomeProviders[id];
+    }
+
+    public IBiomeProvider GetBiome(double temperature, double rainfall, bool spawn)
+    {
+        var temperatureResults = new List<IBiomeProvider>();
+        foreach (var biome in BiomeProviders)
+            if (biome is not null && biome.Temperature.Equals(temperature))
+                temperatureResults.Add(biome);
+
+        if (temperatureResults.Count.Equals(0))
         {
-            DiscoverBiomes();
-        }
-
-        public void RegisterBiomeProvider(IBiomeProvider provider)
-        {
-            BiomeProviders[provider.ID] = provider;
-        }
-
-        public IBiomeProvider GetBiome(byte id)
-        {
-            return BiomeProviders[id];
-        }
-
-        public IBiomeProvider GetBiome(double temperature, double rainfall, bool spawn)
-        {
-            var temperatureResults = new List<IBiomeProvider>();
-            foreach (var biome in BiomeProviders)
-                if (biome is not null && biome.Temperature.Equals(temperature))
-                    temperatureResults.Add(biome);
-
-            if (temperatureResults.Count.Equals(0))
-            {
-                IBiomeProvider provider = null;
-                var temperatureDifference = 100.0f;
-                foreach (var biome in BiomeProviders)
-                    if (biome is not null)
-                    {
-                        var Difference = Math.Abs(temperature - biome.Temperature);
-                        if (provider is null || Difference < temperatureDifference)
-                        {
-                            provider = biome;
-                            temperatureDifference = (float) Difference;
-                        }
-                    }
-
-                temperatureResults.Add(provider);
-            }
-
-            foreach (var biome in BiomeProviders)
-                if (biome is not null
-                    && biome.Rainfall.Equals(rainfall)
-                    && temperatureResults.Contains(biome)
-                    && (!spawn || biome.Spawn))
-                    return biome;
-
-            IBiomeProvider biomeProvider = null;
-            var rainfallDifference = 100.0f;
+            IBiomeProvider provider = null;
+            var temperatureDifference = 100.0f;
             foreach (var biome in BiomeProviders)
                 if (biome is not null)
                 {
-                    var difference = Math.Abs(temperature - biome.Temperature);
-                    if ((biomeProvider is null || difference < rainfallDifference)
-                        && (!spawn || biome.Spawn))
+                    var Difference = Math.Abs(temperature - biome.Temperature);
+                    if (provider is null || Difference < temperatureDifference)
                     {
-                        biomeProvider = biome;
-                        rainfallDifference = (float) difference;
+                        provider = biome;
+                        temperatureDifference = (float) Difference;
                     }
                 }
 
-            return biomeProvider ?? new PlainsBiome();
+            temperatureResults.Add(provider);
         }
 
-        internal void DiscoverBiomes()
-        {
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                try
+        foreach (var biome in BiomeProviders)
+            if (biome is not null
+                && biome.Rainfall.Equals(rainfall)
+                && temperatureResults.Contains(biome)
+                && (!spawn || biome.Spawn))
+                return biome;
+
+        IBiomeProvider biomeProvider = null;
+        var rainfallDifference = 100.0f;
+        foreach (var biome in BiomeProviders)
+            if (biome is not null)
+            {
+                var difference = Math.Abs(temperature - biome.Temperature);
+                if ((biomeProvider is null || difference < rainfallDifference)
+                    && (!spawn || biome.Spawn))
                 {
-                    foreach (var type in assembly.GetTypes()
-                        .Where(t => typeof(IBiomeProvider).IsAssignableFrom(t) && !t.IsAbstract))
-                    {
-                        var instance = (IBiomeProvider) Activator.CreateInstance(type);
-                        RegisterBiomeProvider(instance);
-                    }
+                    biomeProvider = biome;
+                    rainfallDifference = (float) difference;
                 }
-                catch
+            }
+
+        return biomeProvider ?? new PlainsBiome();
+    }
+
+    internal void DiscoverBiomes()
+    {
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            try
+            {
+                foreach (var type in assembly.GetTypes()
+                    .Where(t => typeof(IBiomeProvider).IsAssignableFrom(t) && !t.IsAbstract))
                 {
-                    // There are some bugs with loading mscorlib during a unit test like this
+                    var instance = (IBiomeProvider) Activator.CreateInstance(type);
+                    RegisterBiomeProvider(instance);
                 }
-        }
+            }
+            catch
+            {
+                // There are some bugs with loading mscorlib during a unit test like this
+            }
     }
 }

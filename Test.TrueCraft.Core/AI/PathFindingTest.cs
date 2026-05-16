@@ -6,182 +6,181 @@ using TrueCraft.API.World;
 using TrueCraft.Core.AI;
 using TrueCraft.Core.TerrainGen;
 
-namespace Test.TrueCraft.Core.AI
+namespace Test.TrueCraft.Core.AI;
+
+
+public class PathFindingTest
 {
-
-    public class PathFindingTest
+    private void DrawGrid(PathResult path, IWorld world)
     {
-        private void DrawGrid(PathResult path, IWorld world)
+        for (int z = -8; z < 8; z++)
         {
-            for (int z = -8; z < 8; z++)
+            for (int x = -8; x < 8; x++)
             {
-                for (int x = -8; x < 8; x++)
+                var coords = new Coordinates3D(x, 4, z);
+                if (path.Waypoints.Contains(coords))
+                    Console.Write("o");
+                else
                 {
-                    var coords = new Coordinates3D(x, 4, z);
-                    if (path.Waypoints.Contains(coords))
-                        Console.Write("o");
+                    var id = world.GetBlockID(coords);
+                    if (id != 0)
+                        Console.Write("x");
                     else
-                    {
-                        var id = world.GetBlockID(coords);
-                        if (id != 0)
-                            Console.Write("x");
-                        else
-                            Console.Write("_");
-                    }
+                        Console.Write("_");
                 }
-                Console.WriteLine();
             }
+            Console.WriteLine();
         }
+    }
 
-        [Fact]
-        public void TestAStarLinearPath()
+    [Fact]
+    public void TestAStarLinearPath()
+    {
+        var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
+        var astar = new AStarPathFinder();
+
+        var watch = new Stopwatch();
+        watch.Start();
+        var path = astar.FindPath(world, new BoundingBox(),
+           new Coordinates3D(0, 4, 0), new Coordinates3D(5, 4, 0));
+        watch.Stop();
+        DrawGrid(path, world);
+        Console.WriteLine(watch.ElapsedMilliseconds + "ms");
+
+        var expected = new[]
         {
-            var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
-            var astar = new AStarPathFinder();
+            new Coordinates3D(0, 4, 0),
+            new Coordinates3D(1, 4, 0),
+            new Coordinates3D(2, 4, 0),
+            new Coordinates3D(3, 4, 0),
+            new Coordinates3D(4, 4, 0),
+            new Coordinates3D(5, 4, 0)
+        };
+        for (int i = 0; i < path.Waypoints.Count; i++)
+            Assert.Equal(expected[i], path.Waypoints[i]);
+    }
 
-            var watch = new Stopwatch();
-            watch.Start();
-            var path = astar.FindPath(world, new BoundingBox(),
-               new Coordinates3D(0, 4, 0), new Coordinates3D(5, 4, 0));
-            watch.Stop();
-            DrawGrid(path, world);
-            Console.WriteLine(watch.ElapsedMilliseconds + "ms");
+    [Fact]
+    public void TestAStarDiagonalPath()
+    {
+        var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
+        var astar = new AStarPathFinder();
+        var start = new Coordinates3D(0, 4, 0);
+        var end = new Coordinates3D(5, 4, 5);
 
-            var expected = new[]
-            {
-                new Coordinates3D(0, 4, 0),
-                new Coordinates3D(1, 4, 0),
-                new Coordinates3D(2, 4, 0),
-                new Coordinates3D(3, 4, 0),
-                new Coordinates3D(4, 4, 0),
-                new Coordinates3D(5, 4, 0)
-            };
-            for (int i = 0; i < path.Waypoints.Count; i++)
-                Assert.Equal(expected[i], path.Waypoints[i]);
-        }
+        var watch = new Stopwatch();
+        watch.Start();
+        var path = astar.FindPath(world, new BoundingBox(), start, end);
+        watch.Stop();
+        DrawGrid(path, world);
+        Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
-        [Fact]
-        public void TestAStarDiagonalPath()
-        {
-            var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
-            var astar = new AStarPathFinder();
-            var start = new Coordinates3D(0, 4, 0);
-            var end = new Coordinates3D(5, 4, 5);
+        // Just test the start and end, the exact results need to be eyeballed
+        Assert.Equal(start, path.Waypoints[0]);
+        Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
+    }
 
-            var watch = new Stopwatch();
-            watch.Start();
-            var path = astar.FindPath(world, new BoundingBox(), start, end);
-            watch.Stop();
-            DrawGrid(path, world);
-            Console.WriteLine(watch.ElapsedMilliseconds + "ms");
+    [Fact]
+    public void TestAStarObstacle()
+    {
+        var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
+        var astar = new AStarPathFinder();
+        var start = new Coordinates3D(0, 4, 0);
+        var end = new Coordinates3D(5, 4, 0);
+        world.SetBlockID(new Coordinates3D(3, 4, 0), 1); // Obstacle
 
-            // Just test the start and end, the exact results need to be eyeballed
-            Assert.Equal(start, path.Waypoints[0]);
-            Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
-        }
+        var watch = new Stopwatch();
+        watch.Start();
+        var path = astar.FindPath(world, new BoundingBox(), start, end);
+        watch.Stop();
+        DrawGrid(path, world);
+        Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
-        [Fact]
-        public void TestAStarObstacle()
-        {
-            var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
-            var astar = new AStarPathFinder();
-            var start = new Coordinates3D(0, 4, 0);
-            var end = new Coordinates3D(5, 4, 0);
-            world.SetBlockID(new Coordinates3D(3, 4, 0), 1); // Obstacle
+        // Just test the start and end, the exact results need to be eyeballed
+        Assert.Equal(start, path.Waypoints[0]);
+        Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
+        Assert.False(path.Waypoints.Contains(new Coordinates3D(3, 4, 0)));
+    }
 
-            var watch = new Stopwatch();
-            watch.Start();
-            var path = astar.FindPath(world, new BoundingBox(), start, end);
-            watch.Stop();
-            DrawGrid(path, world);
-            Console.WriteLine(watch.ElapsedMilliseconds + "ms");
+    [Fact]
+    public void TestAStarImpossible()
+    {
+        var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
+        var astar = new AStarPathFinder();
+        var start = new Coordinates3D(0, 4, 0);
+        var end = new Coordinates3D(5, 4, 0);
 
-            // Just test the start and end, the exact results need to be eyeballed
-            Assert.Equal(start, path.Waypoints[0]);
-            Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
-            Assert.False(path.Waypoints.Contains(new Coordinates3D(3, 4, 0)));
-        }
+        world.SetBlockID(start + Coordinates3D.East, 1);
+        world.SetBlockID(start + Coordinates3D.West, 1);
+        world.SetBlockID(start + Coordinates3D.North, 1);
+        world.SetBlockID(start + Coordinates3D.South, 1);
 
-        [Fact]
-        public void TestAStarImpossible()
-        {
-            var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
-            var astar = new AStarPathFinder();
-            var start = new Coordinates3D(0, 4, 0);
-            var end = new Coordinates3D(5, 4, 0);
+        var watch = new Stopwatch();
+        watch.Start();
+        var path = astar.FindPath(world, new BoundingBox(), start, end);
+        watch.Stop();
+        Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
-            world.SetBlockID(start + Coordinates3D.East, 1);
-            world.SetBlockID(start + Coordinates3D.West, 1);
-            world.SetBlockID(start + Coordinates3D.North, 1);
-            world.SetBlockID(start + Coordinates3D.South, 1);
+        Assert.Null(path);
+    }
 
-            var watch = new Stopwatch();
-            watch.Start();
-            var path = astar.FindPath(world, new BoundingBox(), start, end);
-            watch.Stop();
-            Console.WriteLine(watch.ElapsedMilliseconds + "ms");
+    [Fact]
+    public void TestAStarExitRoom()
+    {
+        var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
+        var astar = new AStarPathFinder();
+        var start = new Coordinates3D(0, 4, 0);
+        var end = new Coordinates3D(5, 4, 0);
 
-            Assert.Null(path);
-        }
+        // North wall
+        for (int x = -4; x < 4; x++)
+            world.SetBlockID(new Coordinates3D(x, 4, -4), 1);
+        // East wall
+        for (int z = -4; z < 4; z++)
+            world.SetBlockID(new Coordinates3D(3, 4, z), 1);
+        // South wall
+        for (int x = -4; x < 4; x++)
+            world.SetBlockID(new Coordinates3D(x, 4, 4), 1);
 
-        [Fact]
-        public void TestAStarExitRoom()
-        {
-            var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
-            var astar = new AStarPathFinder();
-            var start = new Coordinates3D(0, 4, 0);
-            var end = new Coordinates3D(5, 4, 0);
+        var watch = new Stopwatch();
+        watch.Start();
+        var path = astar.FindPath(world, new BoundingBox(), start, end);
+        watch.Stop();
+        DrawGrid(path, world);
+        Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
-            // North wall
-            for (int x = -4; x < 4; x++)
-                world.SetBlockID(new Coordinates3D(x, 4, -4), 1);
-            // East wall
-            for (int z = -4; z < 4; z++)
-                world.SetBlockID(new Coordinates3D(3, 4, z), 1);
-            // South wall
-            for (int x = -4; x < 4; x++)
-                world.SetBlockID(new Coordinates3D(x, 4, 4), 1);
+        // Just test the start and end, the exact results need to be eyeballed
+        Assert.Equal(start, path.Waypoints[0]);
+        Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
+    }
 
-            var watch = new Stopwatch();
-            watch.Start();
-            var path = astar.FindPath(world, new BoundingBox(), start, end);
-            watch.Stop();
-            DrawGrid(path, world);
-            Console.WriteLine(watch.ElapsedMilliseconds + "ms");
+    [Fact]
+    public void TestAStarAvoidRoom()
+    {
+        var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
+        var astar = new AStarPathFinder();
+        var start = new Coordinates3D(-5, 4, 0);
+        var end = new Coordinates3D(5, 4, 0);
 
-            // Just test the start and end, the exact results need to be eyeballed
-            Assert.Equal(start, path.Waypoints[0]);
-            Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
-        }
+        // North wall
+        for (int x = -4; x < 4; x++)
+            world.SetBlockID(new Coordinates3D(x, 4, -4), 1);
+        // East wall
+        for (int z = -4; z < 4; z++)
+            world.SetBlockID(new Coordinates3D(3, 4, z), 1);
+        // South wall
+        for (int x = -4; x < 4; x++)
+            world.SetBlockID(new Coordinates3D(x, 4, 4), 1);
 
-        [Fact]
-        public void TestAStarAvoidRoom()
-        {
-            var world = new global::TrueCraft.Core.World.World("default", new FlatlandGenerator());
-            var astar = new AStarPathFinder();
-            var start = new Coordinates3D(-5, 4, 0);
-            var end = new Coordinates3D(5, 4, 0);
+        var watch = new Stopwatch();
+        watch.Start();
+        var path = astar.FindPath(world, new BoundingBox(), start, end);
+        watch.Stop();
+        DrawGrid(path, world);
+        Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
-            // North wall
-            for (int x = -4; x < 4; x++)
-                world.SetBlockID(new Coordinates3D(x, 4, -4), 1);
-            // East wall
-            for (int z = -4; z < 4; z++)
-                world.SetBlockID(new Coordinates3D(3, 4, z), 1);
-            // South wall
-            for (int x = -4; x < 4; x++)
-                world.SetBlockID(new Coordinates3D(x, 4, 4), 1);
-
-            var watch = new Stopwatch();
-            watch.Start();
-            var path = astar.FindPath(world, new BoundingBox(), start, end);
-            watch.Stop();
-            DrawGrid(path, world);
-            Console.WriteLine(watch.ElapsedMilliseconds + "ms");
-
-            // Just test the start and end, the exact results need to be eyeballed
-            Assert.Equal(start, path.Waypoints[0]);
-            Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
-        }
+        // Just test the start and end, the exact results need to be eyeballed
+        Assert.Equal(start, path.Waypoints[0]);
+        Assert.Equal(end, path.Waypoints[path.Waypoints.Count - 1]);
     }
 }

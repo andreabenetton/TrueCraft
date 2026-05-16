@@ -1,9 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 
-namespace TrueCraft.Client.Modules
+namespace TrueCraft.Client.Modules;
+
+public interface IGameplayModule
 {
-    public interface IGameplayModule
-    {
-        void Update(GameTime gameTime);
-    }
+    void Update(GameTime gameTime);
 }

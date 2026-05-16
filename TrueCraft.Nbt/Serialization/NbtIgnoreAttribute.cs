@@ -1,8 +1,7 @@
 using System;
 
-namespace TrueCraft.Nbt.Serialization
+namespace TrueCraft.Nbt.Serialization;
+
+public class NbtIgnoreAttribute : Attribute
 {
-    public class NbtIgnoreAttribute : Attribute
-    {
-    }
 }

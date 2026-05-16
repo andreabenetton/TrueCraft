@@ -2,69 +2,68 @@
 using System.IO;
 using System.IO.Compression;
 
-namespace TrueCraft.Core
+namespace TrueCraft.Core;
+
+/// <summary>
+///     Represents a Minecraft 1.7.3 texture pack (.zip archive).
+/// </summary>
+public class TexturePack
 {
-    /// <summary>
-    ///     Represents a Minecraft 1.7.3 texture pack (.zip archive).
-    /// </summary>
-    public class TexturePack
+    public static readonly TexturePack Unknown = new TexturePack(
+        "?",
+        File.OpenRead(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/default-pack.png")),
+        File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/default-pack.txt")));
+
+    public static readonly TexturePack Default = new TexturePack(
+        "Default",
+        File.OpenRead(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/pack.png")),
+        File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/pack.txt")));
+
+    public TexturePack(string name, Stream image, string description)
     {
-        public static readonly TexturePack Unknown = new TexturePack(
-            "?",
-            File.OpenRead(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/default-pack.png")),
-            File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/default-pack.txt")));
+        Name = name;
+        Image = image;
+        Description = description;
+    }
 
-        public static readonly TexturePack Default = new TexturePack(
-            "Default",
-            File.OpenRead(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/pack.png")),
-            File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content/pack.txt")));
+    public string Name { get; }
 
-        public TexturePack(string name, Stream image, string description)
+    public Stream Image { get; }
+
+    public string Description { get; }
+
+    public static TexturePack FromArchive(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            throw new ArgumentException();
+
+        var description = Unknown.Description;
+        var image = Unknown.Image;
+        try
         {
-            Name = name;
-            Image = image;
-            Description = description;
+            using var archive = ZipFile.OpenRead(path);
+            foreach (var entry in archive.Entries)
+                if (entry.FullName == "pack.txt")
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    description = reader.ReadToEnd().TrimEnd('\n', '\r', ' ');
+                }
+                else if (entry.FullName == "pack.png")
+                {
+                    using var stream = entry.Open();
+                    var ms = new MemoryStream((int) entry.Length);
+                    stream.CopyTo(ms);
+                    ms.Seek(0, SeekOrigin.Begin);
+                    image = ms;
+                }
+        }
+        catch
+        {
+            return null;
         }
 
-        public string Name { get; }
-
-        public Stream Image { get; }
-
-        public string Description { get; }
-
-        public static TexturePack FromArchive(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-                throw new ArgumentException();
-
-            var description = Unknown.Description;
-            var image = Unknown.Image;
-            try
-            {
-                using var archive = ZipFile.OpenRead(path);
-                foreach (var entry in archive.Entries)
-                    if (entry.FullName == "pack.txt")
-                    {
-                        using var stream = entry.Open();
-                        using var reader = new StreamReader(stream);
-                        description = reader.ReadToEnd().TrimEnd('\n', '\r', ' ');
-                    }
-                    else if (entry.FullName == "pack.png")
-                    {
-                        using var stream = entry.Open();
-                        var ms = new MemoryStream((int) entry.Length);
-                        stream.CopyTo(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        image = ms;
-                    }
-            }
-            catch
-            {
-                return null;
-            }
-
-            var name = new FileInfo(path).Name;
-            return new TexturePack(name, image, description);
-        }
+        var name = new FileInfo(path).Name;
+        return new TexturePack(name, image, description);
     }
 }

@@ -4,65 +4,64 @@ using Microsoft.Xna.Framework;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Blocks;
 
-namespace TrueCraft.Client.Rendering.Blocks
+namespace TrueCraft.Client.Rendering.Blocks;
+
+public class CraftingTableRenderer : BlockRenderer
 {
-    public class CraftingTableRenderer : BlockRenderer
+    private static readonly Vector2 TopTexture = new Vector2(11, 2);
+    private static readonly Vector2 BottomTexture = new Vector2(4, 0);
+    private static readonly Vector2 SideATexture = new Vector2(11, 3);
+    private static readonly Vector2 SideBTexture = new Vector2(12, 3);
+
+    private static readonly Vector2[] Texture =
     {
-        private static readonly Vector2 TopTexture = new Vector2(11, 2);
-        private static readonly Vector2 BottomTexture = new Vector2(4, 0);
-        private static readonly Vector2 SideATexture = new Vector2(11, 3);
-        private static readonly Vector2 SideBTexture = new Vector2(12, 3);
+        // Positive Z
+        SideATexture + Vector2.UnitX + Vector2.UnitY,
+        SideATexture + Vector2.UnitY,
+        SideATexture,
+        SideATexture + Vector2.UnitX,
+        // Negative Z
+        SideATexture + Vector2.UnitX + Vector2.UnitY,
+        SideATexture + Vector2.UnitY,
+        SideATexture,
+        SideATexture + Vector2.UnitX,
+        // Positive X
+        SideBTexture + Vector2.UnitX + Vector2.UnitY,
+        SideBTexture + Vector2.UnitY,
+        SideBTexture,
+        SideBTexture + Vector2.UnitX,
+        // Negative X
+        SideBTexture + Vector2.UnitX + Vector2.UnitY,
+        SideBTexture + Vector2.UnitY,
+        SideBTexture,
+        SideBTexture + Vector2.UnitX,
+        // Negative Y
+        TopTexture + Vector2.UnitX + Vector2.UnitY,
+        TopTexture + Vector2.UnitY,
+        TopTexture,
+        TopTexture + Vector2.UnitX,
+        // Negative Y
+        BottomTexture + Vector2.UnitX + Vector2.UnitY,
+        BottomTexture + Vector2.UnitY,
+        BottomTexture,
+        BottomTexture + Vector2.UnitX
+    };
 
-        private static readonly Vector2[] Texture =
-        {
-            // Positive Z
-            SideATexture + Vector2.UnitX + Vector2.UnitY,
-            SideATexture + Vector2.UnitY,
-            SideATexture,
-            SideATexture + Vector2.UnitX,
-            // Negative Z
-            SideATexture + Vector2.UnitX + Vector2.UnitY,
-            SideATexture + Vector2.UnitY,
-            SideATexture,
-            SideATexture + Vector2.UnitX,
-            // Positive X
-            SideBTexture + Vector2.UnitX + Vector2.UnitY,
-            SideBTexture + Vector2.UnitY,
-            SideBTexture,
-            SideBTexture + Vector2.UnitX,
-            // Negative X
-            SideBTexture + Vector2.UnitX + Vector2.UnitY,
-            SideBTexture + Vector2.UnitY,
-            SideBTexture,
-            SideBTexture + Vector2.UnitX,
-            // Negative Y
-            TopTexture + Vector2.UnitX + Vector2.UnitY,
-            TopTexture + Vector2.UnitY,
-            TopTexture,
-            TopTexture + Vector2.UnitX,
-            // Negative Y
-            BottomTexture + Vector2.UnitX + Vector2.UnitY,
-            BottomTexture + Vector2.UnitY,
-            BottomTexture,
-            BottomTexture + Vector2.UnitX
-        };
+    static CraftingTableRenderer()
+    {
+        RegisterRenderer(CraftingTableBlock.BlockID, new CraftingTableRenderer());
+        for (var i = 0; i < Texture.Length; i++)
+            Texture[i] *= new Vector2(16f / 256f);
+    }
 
-        static CraftingTableRenderer()
-        {
-            RegisterRenderer(CraftingTableBlock.BlockID, new CraftingTableRenderer());
-            for (var i = 0; i < Texture.Length; i++)
-                Texture[i] *= new Vector2(16f / 256f);
-        }
+    public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
+        Tuple<int, int> textureMap,
+        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+    {
+        Span<int> lighting = stackalloc int[6];
+        for (var i = 0; i < 6; i++)
+            lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
 
-        public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
-            Tuple<int, int> textureMap,
-            List<VertexPositionNormalColorTexture> vertices, List<int> indices)
-        {
-            Span<int> lighting = stackalloc int[6];
-            for (var i = 0; i < 6; i++)
-                lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
-
-            CreateUniformCubeInto(offset, Texture, faces, Color.White, lighting, vertices, indices);
-        }
+        CreateUniformCubeInto(offset, Texture, faces, Color.White, lighting, vertices, indices);
     }
 }

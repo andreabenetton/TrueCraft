@@ -17,220 +17,219 @@ using TrueCraft.Core.TerrainGen;
 using TrueCraft.Core.World;
 using TrueCraft.Options;
 
-namespace TrueCraft
+namespace TrueCraft;
+
+public class Program
 {
-    public class Program
+    // Resolved per-use so the property is safe to read before/after App.Services init
+    // (Program's static field initializers run before Main, before App.Services is set).
+    private static ILogger Log => App.LoggerFor<Program>();
+    private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
+    private static MultiplayerServer Server => App.Services.GetRequiredService<MultiplayerServer>();
+    private static CommandManager CommandManager => App.Services.GetRequiredService<CommandManager>();
+    private static NodeOptions Node => App.Services.GetRequiredService<IOptions<NodeOptions>>().Value;
+
+    // Signaled by Ctrl-C / SIGINT to release the awaitable shutdown hold in Main.
+    private static readonly TaskCompletionSource ShutdownSignal =
+        new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public static async Task Main(string[] args)
     {
-        // Resolved per-use so the property is safe to read before/after App.Services init
-        // (Program's static field initializers run before Main, before App.Services is set).
-        private static ILogger Log => App.LoggerFor<Program>();
-        private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
-        private static MultiplayerServer Server => App.Services.GetRequiredService<MultiplayerServer>();
-        private static CommandManager CommandManager => App.Services.GetRequiredService<CommandManager>();
-        private static NodeOptions Node => App.Services.GetRequiredService<IOptions<NodeOptions>>().Value;
+        App.EnableBootstrapLogger();
 
-        // Signaled by Ctrl-C / SIGINT to release the awaitable shutdown hold in Main.
-        private static readonly TaskCompletionSource ShutdownSignal =
-            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("nodesettings.json", optional: false, reloadOnChange: false)
+            .Build();
 
-        public static async Task Main(string[] args)
+        var services = new ServiceCollection();
+        services.AddSerilogLogging(configuration);
+        services.AddSingleton<IConfiguration>(configuration);
+
+        services.AddOptions<NodeOptions>()
+            .Bind(configuration.GetSection(NodeOptions.SectionName))
+            .ValidateDataAnnotations();
+        services.AddOptions<DebugOptions>()
+            .Bind(configuration.GetSection(DebugOptions.SectionName))
+            .ValidateDataAnnotations();
+        services.AddOptions<ProfilerOptions>()
+            .Bind(configuration.GetSection(ProfilerOptions.SectionName))
+            .ValidateDataAnnotations();
+        services.AddOptions<AccessOptions>()
+            .Bind(configuration.GetSection(AccessOptions.SectionName))
+            .ValidateDataAnnotations();
+
+        services.AddSingleton<Profiler>();
+        services.AddSingleton<IBlockRepository>(_ =>
         {
-            App.EnableBootstrapLogger();
+            var repo = new BlockRepository();
+            repo.DiscoverBlockProviders();
+            return repo;
+        });
+        services.AddSingleton<IItemRepository>(_ =>
+        {
+            var repo = new ItemRepository();
+            repo.DiscoverItemProviders();
+            return repo;
+        });
+        services.AddSingleton<ICraftingRepository>(_ =>
+        {
+            var repo = new CraftingRepository();
+            repo.DiscoverRecipes();
+            return repo;
+        });
+        services.AddSingleton<TrueCraft.Handlers.LoginHandlers>();
+        services.AddSingleton<MultiplayerServer>();
+        services.AddSingleton<CommandManager>();
+        App.Services = services.BuildServiceProvider();
 
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("nodesettings.json", optional: false, reloadOnChange: false)
-                .Build();
+        // Force eager validation: any DataAnnotations violation in nodesettings.json
+        // throws OptionsValidationException here rather than silently misbehaving later.
+        _ = App.Services.GetRequiredService<IOptions<NodeOptions>>().Value;
+        _ = App.Services.GetRequiredService<IOptions<AccessOptions>>().Value;
+        var debug = App.Services.GetRequiredService<IOptions<DebugOptions>>().Value;
+        var profilerOpts = App.Services.GetRequiredService<IOptions<ProfilerOptions>>().Value;
 
-            var services = new ServiceCollection();
-            services.AddSerilogLogging(configuration);
-            services.AddSingleton<IConfiguration>(configuration);
+        var buckets = profilerOpts.Buckets?.Split(',');
+        if (buckets is not null)
+        {
+            foreach (var bucket in buckets)
+                Profiler.EnableBucket(bucket.Trim());
+        }
 
-            services.AddOptions<NodeOptions>()
-                .Bind(configuration.GetSection(NodeOptions.SectionName))
-                .ValidateDataAnnotations();
-            services.AddOptions<DebugOptions>()
-                .Bind(configuration.GetSection(DebugOptions.SectionName))
-                .ValidateDataAnnotations();
-            services.AddOptions<ProfilerOptions>()
-                .Bind(configuration.GetSection(ProfilerOptions.SectionName))
-                .ValidateDataAnnotations();
-            services.AddOptions<AccessOptions>()
-                .Bind(configuration.GetSection(AccessOptions.SectionName))
-                .ValidateDataAnnotations();
+        if (debug.DeleteWorldOnStartup && Directory.Exists("world"))
+            Directory.Delete("world", true);
+        if (debug.DeletePlayersOnStartup && Directory.Exists("players"))
+            Directory.Delete("players", true);
 
-            services.AddSingleton<Profiler>();
-            services.AddSingleton<IBlockRepository>(_ =>
+        IWorld world;
+        try
+        {
+            world = await World.LoadWorldAsync("world");
+            Server.AddWorld(world);
+        }
+        catch
+        {
+            world = new World("default", new StandardGenerator());
+            world.BlockRepository = Server.BlockRepository;
+            await world.SaveAsync("world");
+            Server.AddWorld(world);
+            Log.LogInformation("Generating world around spawn point...");
+            for (int x = -5; x < 5; x++)
             {
-                var repo = new BlockRepository();
-                repo.DiscoverBlockProviders();
-                return repo;
-            });
-            services.AddSingleton<IItemRepository>(_ =>
-            {
-                var repo = new ItemRepository();
-                repo.DiscoverItemProviders();
-                return repo;
-            });
-            services.AddSingleton<ICraftingRepository>(_ =>
-            {
-                var repo = new CraftingRepository();
-                repo.DiscoverRecipes();
-                return repo;
-            });
-            services.AddSingleton<TrueCraft.Handlers.LoginHandlers>();
-            services.AddSingleton<MultiplayerServer>();
-            services.AddSingleton<CommandManager>();
-            App.Services = services.BuildServiceProvider();
-
-            // Force eager validation: any DataAnnotations violation in nodesettings.json
-            // throws OptionsValidationException here rather than silently misbehaving later.
-            _ = App.Services.GetRequiredService<IOptions<NodeOptions>>().Value;
-            _ = App.Services.GetRequiredService<IOptions<AccessOptions>>().Value;
-            var debug = App.Services.GetRequiredService<IOptions<DebugOptions>>().Value;
-            var profilerOpts = App.Services.GetRequiredService<IOptions<ProfilerOptions>>().Value;
-
-            var buckets = profilerOpts.Buckets?.Split(',');
-            if (buckets is not null)
-            {
-                foreach (var bucket in buckets)
-                    Profiler.EnableBucket(bucket.Trim());
+                for (int z = -5; z < 5; z++)
+                    world.GetChunk(new Coordinates2D(x, z));
+                int progress = (int)(((x + 5) / 10.0) * 100);
+                if (progress % 10 == 0)
+                    Log.LogInformation("{Progress}% complete", progress + 10);
             }
-
-            if (debug.DeleteWorldOnStartup && Directory.Exists("world"))
-                Directory.Delete("world", true);
-            if (debug.DeletePlayersOnStartup && Directory.Exists("players"))
-                Directory.Delete("players", true);
-
-            IWorld world;
-            try
+            Log.LogInformation("Simulating the world for a moment...");
+            for (int x = -5; x < 5; x++)
             {
-                world = await World.LoadWorldAsync("world");
-                Server.AddWorld(world);
-            }
-            catch
-            {
-                world = new World("default", new StandardGenerator());
-                world.BlockRepository = Server.BlockRepository;
-                await world.SaveAsync("world");
-                Server.AddWorld(world);
-                Log.LogInformation("Generating world around spawn point...");
-                for (int x = -5; x < 5; x++)
+                for (int z = -5; z < 5; z++)
                 {
-                    for (int z = -5; z < 5; z++)
-                        world.GetChunk(new Coordinates2D(x, z));
-                    int progress = (int)(((x + 5) / 10.0) * 100);
-                    if (progress % 10 == 0)
-                        Log.LogInformation("{Progress}% complete", progress + 10);
-                }
-                Log.LogInformation("Simulating the world for a moment...");
-                for (int x = -5; x < 5; x++)
-                {
-                    for (int z = -5; z < 5; z++)
+                    var chunk = world.GetChunk(new Coordinates2D(x, z));
+                    for (byte _x = 0; _x < Chunk.Width; _x++)
                     {
-                        var chunk = world.GetChunk(new Coordinates2D(x, z));
-                        for (byte _x = 0; _x < Chunk.Width; _x++)
+                        for (byte _z = 0; _z < Chunk.Depth; _z++)
                         {
-                            for (byte _z = 0; _z < Chunk.Depth; _z++)
+                            for (int _y = 0; _y < chunk.GetHeight(_x, _z); _y++)
                             {
-                                for (int _y = 0; _y < chunk.GetHeight(_x, _z); _y++)
-                                {
-                                    var coords = new Coordinates3D(x + _x, _y, z + _z);
-                                    var data = world.GetBlockData(coords);
-                                    var provider = world.BlockRepository.GetBlockProvider(data.ID);
-                                    provider.BlockUpdate(data, data, Server, world);
-                                }
+                                var coords = new Coordinates3D(x + _x, _y, z + _z);
+                                var data = world.GetBlockData(coords);
+                                var provider = world.BlockRepository.GetBlockProvider(data.ID);
+                                provider.BlockUpdate(data, data, Server, world);
                             }
                         }
                     }
-                    int progress = (int)(((x + 5) / 10.0) * 100);
-                    if (progress % 10 == 0)
-                        Log.LogInformation("{Progress}% complete", progress + 10);
                 }
-                Log.LogInformation("Lighting the world (this will take a moment)...");
-                foreach (var lighter in Server.WorldLighters)
-                {
-                    while (lighter.TryLightNext()) ;
-                }
+                int progress = (int)(((x + 5) / 10.0) * 100);
+                if (progress % 10 == 0)
+                    Log.LogInformation("{Progress}% complete", progress + 10);
             }
-            await world.SaveAsync();
-            Server.ChatMessageReceived += HandleChatMessageReceived;
-            Server.Start(new IPEndPoint(IPAddress.Parse(Node.ServerAddress), Node.ServerPort));
-            Console.CancelKeyPress += HandleCancelKeyPress;
-            Server.Scheduler.ScheduleEvent("world.save", null,
-                TimeSpan.FromSeconds(Node.WorldSaveInterval),
-                (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
-
-            // Park here until SIGINT (HandleCancelKeyPress) signals shutdown. Replaces the previous
-            // `while (true) Thread.Yield();` spin so the main thread doesn't burn a core idling.
-            await ShutdownSignal.Task.ConfigureAwait(false);
-        }
-
-        static async Task SaveWorldsAsync(IMultiplayerServer server)
-        {
-            Log.LogInformation("Saving world...");
-            try
+            Log.LogInformation("Lighting the world (this will take a moment)...");
+            foreach (var lighter in Server.WorldLighters)
             {
-                foreach (var w in Server.Worlds)
-                    await w.SaveAsync().ConfigureAwait(false);
-                Log.LogInformation("Done.");
+                while (lighter.TryLightNext()) ;
             }
-            catch (Exception ex)
-            {
-                Log.LogError(ex, "World save failed");
-            }
-            server.Scheduler.ScheduleEvent("world.save", null,
-                TimeSpan.FromSeconds(Node.WorldSaveInterval),
-                (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
         }
+        await world.SaveAsync();
+        Server.ChatMessageReceived += HandleChatMessageReceived;
+        Server.Start(new IPEndPoint(IPAddress.Parse(Node.ServerAddress), Node.ServerPort));
+        Console.CancelKeyPress += HandleCancelKeyPress;
+        Server.Scheduler.ScheduleEvent("world.save", null,
+            TimeSpan.FromSeconds(Node.WorldSaveInterval),
+            (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
 
-        static void HandleCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        // Park here until SIGINT (HandleCancelKeyPress) signals shutdown. Replaces the previous
+        // `while (true) Thread.Yield();` spin so the main thread doesn't burn a core idling.
+        await ShutdownSignal.Task.ConfigureAwait(false);
+    }
+
+    static async Task SaveWorldsAsync(IMultiplayerServer server)
+    {
+        Log.LogInformation("Saving world...");
+        try
         {
-            e.Cancel = true; // suppress immediate process termination so we can shut down cleanly
-            Server.Stop();
-            ShutdownSignal.TrySetResult();
+            foreach (var w in Server.Worlds)
+                await w.SaveAsync().ConfigureAwait(false);
+            Log.LogInformation("Done.");
         }
-
-        static void HandleChatMessageReceived(object sender, ChatMessageEventArgs e)
+        catch (Exception ex)
         {
-            var message = e.Message;
-
-            if (!message.StartsWith("/") || message.StartsWith("//"))
-                SendChatMessage(e.Client.Username, message);
-            else
-                e.PreventDefault = ProcessChatCommand(e);
+            Log.LogError(ex, "World save failed");
         }
+        server.Scheduler.ScheduleEvent("world.save", null,
+            TimeSpan.FromSeconds(Node.WorldSaveInterval),
+            (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
+    }
 
-        private static void SendChatMessage(string username, string message)
-        {
-            if (message.StartsWith("//"))
-                message = message.Substring(1);
+    static void HandleCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+    {
+        e.Cancel = true; // suppress immediate process termination so we can shut down cleanly
+        Server.Stop();
+        ShutdownSignal.TrySetResult();
+    }
 
-            Server.SendMessage("<{0}> {1}", username, message);
-            AuditLog.Chat(username, message);
-        }
+    static void HandleChatMessageReceived(object sender, ChatMessageEventArgs e)
+    {
+        var message = e.Message;
 
-        /// <summary>
-        /// Parse sent message as chat command
-        /// </summary>
-        /// <param name="e"></param>
-        /// <returns>true if the command was successfully executed</returns>
-        private static bool ProcessChatCommand(ChatMessageEventArgs e)
-        {
-            var commandWithoutSlash = e.Message.TrimStart('/');
-            var messageArray = commandWithoutSlash
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (!message.StartsWith("/") || message.StartsWith("//"))
+            SendChatMessage(e.Client.Username, message);
+        else
+            e.PreventDefault = ProcessChatCommand(e);
+    }
 
-            if (messageArray.Length <= 0) return false; // command not found
+    private static void SendChatMessage(string username, string message)
+    {
+        if (message.StartsWith("//"))
+            message = message.Substring(1);
 
-            var alias = messageArray[0];
-            var trimmedMessageArray = new string[messageArray.Length - 1];
-            if (trimmedMessageArray.Length != 0)
-                Array.Copy(messageArray, 1, trimmedMessageArray, 0, messageArray.Length - 1);
+        Server.SendMessage("<{0}> {1}", username, message);
+        AuditLog.Chat(username, message);
+    }
 
-            CommandManager.HandleCommand(e.Client, alias, trimmedMessageArray);
+    /// <summary>
+    /// Parse sent message as chat command
+    /// </summary>
+    /// <param name="e"></param>
+    /// <returns>true if the command was successfully executed</returns>
+    private static bool ProcessChatCommand(ChatMessageEventArgs e)
+    {
+        var commandWithoutSlash = e.Message.TrimStart('/');
+        var messageArray = commandWithoutSlash
+            .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-            return true;
-        }
+        if (messageArray.Length <= 0) return false; // command not found
+
+        var alias = messageArray[0];
+        var trimmedMessageArray = new string[messageArray.Length - 1];
+        if (trimmedMessageArray.Length != 0)
+            Array.Copy(messageArray, 1, trimmedMessageArray, 0, messageArray.Length - 1);
+
+        CommandManager.HandleCommand(e.Client, alias, trimmedMessageArray);
+
+        return true;
     }
 }

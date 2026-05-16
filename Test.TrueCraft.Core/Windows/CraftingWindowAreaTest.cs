@@ -5,21 +5,20 @@ using TrueCraft.API.Logic;
 using TrueCraft.API.Windows;
 using TrueCraft.Core.Windows;
 
-namespace Test.TrueCraft.Core.Windows
+namespace Test.TrueCraft.Core.Windows;
+
+
+public class CraftingWindowAreaTest
 {
-
-    public class CraftingWindowAreaTest
+    [Fact]
+    public void TestCraftingWindowArea()
     {
-        [Fact]
-        public void TestCraftingWindowArea()
-        {
-            var recipe = new Mock<ICraftingRecipe>();
-            recipe.Setup(r => r.Output).Returns(new ItemStack(10));
-            var repository = new Mock<ICraftingRepository>();
-            repository.Setup(r => r.GetRecipe(It.IsAny<IWindowArea>())).Returns(recipe.Object);
+        var recipe = new Mock<ICraftingRecipe>();
+        recipe.Setup(r => r.Output).Returns(new ItemStack(10));
+        var repository = new Mock<ICraftingRepository>();
+        repository.Setup(r => r.GetRecipe(It.IsAny<IWindowArea>())).Returns(recipe.Object);
 
-            var area = new CraftingWindowArea(repository.Object, 0) {[0] = new ItemStack(11)};
-            Assert.Equal(new ItemStack(10), area[CraftingWindowArea.CraftingOutput]);
-        }
+        var area = new CraftingWindowArea(repository.Object, 0) {[0] = new ItemStack(11)};
+        Assert.Equal(new ItemStack(10), area[CraftingWindowArea.CraftingOutput]);
     }
 }

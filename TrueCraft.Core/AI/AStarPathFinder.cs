@@ -2,109 +2,108 @@
 using TrueCraft.API;
 using TrueCraft.API.World;
 
-namespace TrueCraft.Core.AI
+namespace TrueCraft.Core.AI;
+
+public class AStarPathFinder
 {
-    public class AStarPathFinder
+    private readonly Coordinates3D[][] DiagonalNeighbors =
     {
-        private readonly Coordinates3D[][] DiagonalNeighbors =
-        {
-            new[] {Coordinates3D.North, Coordinates3D.East},
-            new[] {Coordinates3D.North, Coordinates3D.West},
-            new[] {Coordinates3D.South, Coordinates3D.East},
-            new[] {Coordinates3D.South, Coordinates3D.West}
-        };
+        new[] {Coordinates3D.North, Coordinates3D.East},
+        new[] {Coordinates3D.North, Coordinates3D.West},
+        new[] {Coordinates3D.South, Coordinates3D.East},
+        new[] {Coordinates3D.South, Coordinates3D.West}
+    };
 
-        private readonly Coordinates3D[] Neighbors =
-        {
-            Coordinates3D.North,
-            Coordinates3D.East,
-            Coordinates3D.South,
-            Coordinates3D.West
-        };
+    private readonly Coordinates3D[] Neighbors =
+    {
+        Coordinates3D.North,
+        Coordinates3D.East,
+        Coordinates3D.South,
+        Coordinates3D.West
+    };
 
-        private PathResult TracePath(Coordinates3D start, Coordinates3D goal,
-            Dictionary<Coordinates3D, Coordinates3D> parents)
+    private PathResult TracePath(Coordinates3D start, Coordinates3D goal,
+        Dictionary<Coordinates3D, Coordinates3D> parents)
+    {
+        var list = new List<Coordinates3D>();
+        var current = goal;
+        while (current != start)
         {
-            var list = new List<Coordinates3D>();
-            var current = goal;
-            while (current != start)
-            {
-                current = parents[current];
-                list.Insert(0, current);
-            }
-
-            list.Add(goal);
-            return new PathResult {Waypoints = list};
+            current = parents[current];
+            list.Insert(0, current);
         }
 
-        private bool CanOccupyVoxel(IWorld world, BoundingBox box, Coordinates3D voxel)
+        list.Add(goal);
+        return new PathResult {Waypoints = list};
+    }
+
+    private bool CanOccupyVoxel(IWorld world, BoundingBox box, Coordinates3D voxel)
+    {
+        var id = world.GetBlockID(voxel);
+        if (world.BlockRepository is null)
+            return id == 0;
+        var provider = world.BlockRepository.GetBlockProvider(id);
+        if (provider is null)
+            return true;
+        return provider.BoundingBox is null;
+    }
+
+    private IEnumerable<Coordinates3D> GetNeighbors(IWorld world, BoundingBox subject, Coordinates3D current)
+    {
+        for (var i = 0; i < Neighbors.Length; i++)
         {
-            var id = world.GetBlockID(voxel);
-            if (world.BlockRepository is null)
-                return id == 0;
-            var provider = world.BlockRepository.GetBlockProvider(id);
-            if (provider is null)
-                return true;
-            return provider.BoundingBox is null;
+            var next = Neighbors[i] + current;
+            if (CanOccupyVoxel(world, subject, next))
+                yield return next;
         }
 
-        private IEnumerable<Coordinates3D> GetNeighbors(IWorld world, BoundingBox subject, Coordinates3D current)
+        for (var i = 0; i < DiagonalNeighbors.Length; i++)
         {
-            for (var i = 0; i < Neighbors.Length; i++)
-            {
-                var next = Neighbors[i] + current;
-                if (CanOccupyVoxel(world, subject, next))
-                    yield return next;
-            }
+            var pair = DiagonalNeighbors[i];
+            var next = pair[0] + pair[1] + current;
 
-            for (var i = 0; i < DiagonalNeighbors.Length; i++)
-            {
-                var pair = DiagonalNeighbors[i];
-                var next = pair[0] + pair[1] + current;
-
-                if (CanOccupyVoxel(world, subject, next)
-                    && CanOccupyVoxel(world, subject, pair[0] + current)
-                    && CanOccupyVoxel(world, subject, pair[1] + current))
-                    yield return next;
-            }
+            if (CanOccupyVoxel(world, subject, next)
+                && CanOccupyVoxel(world, subject, pair[0] + current)
+                && CanOccupyVoxel(world, subject, pair[1] + current))
+                yield return next;
         }
+    }
 
-        public PathResult FindPath(IWorld world, BoundingBox subject, Coordinates3D start, Coordinates3D goal)
+    public PathResult FindPath(IWorld world, BoundingBox subject, Coordinates3D start, Coordinates3D goal)
+    {
+        // Thanks to www.redblobgames.com/pathfinding/a-star/implementation.html
+        var parents = new Dictionary<Coordinates3D, Coordinates3D>();
+        var costs = new Dictionary<Coordinates3D, double>();
+        var openset = new PriorityQueue<Coordinates3D>();
+        var closedset = new HashSet<Coordinates3D>();
+
+        openset.Enqueue(start, 0);
+        parents[start] = start;
+        costs[start] = start.DistanceTo(goal);
+
+        while (openset.Count > 0)
         {
-            // Thanks to www.redblobgames.com/pathfinding/a-star/implementation.html
-            var parents = new Dictionary<Coordinates3D, Coordinates3D>();
-            var costs = new Dictionary<Coordinates3D, double>();
-            var openset = new PriorityQueue<Coordinates3D>();
-            var closedset = new HashSet<Coordinates3D>();
+            var current = openset.Dequeue();
+            if (current == goal)
+                return TracePath(start, goal, parents);
 
-            openset.Enqueue(start, 0);
-            parents[start] = start;
-            costs[start] = start.DistanceTo(goal);
+            closedset.Add(current);
 
-            while (openset.Count > 0)
+            foreach (var next in GetNeighbors(world, subject, current))
             {
-                var current = openset.Dequeue();
-                if (current == goal)
-                    return TracePath(start, goal, parents);
-
-                closedset.Add(current);
-
-                foreach (var next in GetNeighbors(world, subject, current))
+                if (closedset.Contains(next))
+                    continue;
+                var cost = (int) (costs[current] + current.DistanceTo(next));
+                if (!costs.ContainsKey(next) || cost < costs[next])
                 {
-                    if (closedset.Contains(next))
-                        continue;
-                    var cost = (int) (costs[current] + current.DistanceTo(next));
-                    if (!costs.ContainsKey(next) || cost < costs[next])
-                    {
-                        costs[next] = cost;
-                        var priority = cost + next.DistanceTo(goal);
-                        openset.Enqueue(next, priority);
-                        parents[next] = current;
-                    }
+                    costs[next] = cost;
+                    var priority = cost + next.DistanceTo(goal);
+                    openset.Enqueue(next, priority);
+                    parents[next] = current;
                 }
             }
-
-            return null;
         }
+
+        return null;
     }
 }

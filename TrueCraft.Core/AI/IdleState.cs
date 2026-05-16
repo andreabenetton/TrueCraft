@@ -3,26 +3,25 @@ using TrueCraft.API.AI;
 using TrueCraft.API.Entities;
 using TrueCraft.API.Server;
 
-namespace TrueCraft.Core.AI
+namespace TrueCraft.Core.AI;
+
+public class IdleState : IMobState
 {
-    public class IdleState : IMobState
+    public IdleState(IMobState nextState, DateTime? expiry = null)
     {
-        public IdleState(IMobState nextState, DateTime? expiry = null)
-        {
-            NextState = nextState;
-            if (expiry is not null)
-                Expiry = expiry.Value;
-            else
-                Expiry = DateTime.UtcNow.AddSeconds(MathHelper.Random.Next(5, 15));
-        }
+        NextState = nextState;
+        if (expiry is not null)
+            Expiry = expiry.Value;
+        else
+            Expiry = DateTime.UtcNow.AddSeconds(MathHelper.Random.Next(5, 15));
+    }
 
-        private DateTime Expiry { get; }
-        private IMobState NextState { get; }
+    private DateTime Expiry { get; }
+    private IMobState NextState { get; }
 
-        public void Update(IMobEntity entity, IEntityManager manager)
-        {
-            if (DateTime.UtcNow >= Expiry)
-                entity.CurrentState = NextState;
-        }
+    public void Update(IMobEntity entity, IEntityManager manager)
+    {
+        if (DateTime.UtcNow >= Expiry)
+            entity.CurrentState = NextState;
     }
 }

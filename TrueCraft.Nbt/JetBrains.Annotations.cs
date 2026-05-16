@@ -16,30 +16,29 @@
 
 using System;
 
-namespace TrueCraft.Nbt
+namespace TrueCraft.Nbt;
+
+/// <summary>
+///     Indicates that the value of marked element could be <c>null</c> sometimes,
+///     so the check for <c>null</c> is necessary before its usage.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter |
+                AttributeTargets.Property | AttributeTargets.Delegate | AttributeTargets.Field)]
+public sealed class CanBeNullAttribute : Attribute
 {
-    /// <summary>
-    ///     Indicates that the value of marked element could be <c>null</c> sometimes,
-    ///     so the check for <c>null</c> is necessary before its usage.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter |
-                    AttributeTargets.Property | AttributeTargets.Delegate | AttributeTargets.Field)]
-    public sealed class CanBeNullAttribute : Attribute
-    {
-    }
+}
 
 
-    /// <summary> Indicates that the value of marked element could never be <c>null</c>. </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter |
-                    AttributeTargets.Property | AttributeTargets.Delegate | AttributeTargets.Field)]
-    public sealed class NotNullAttribute : Attribute
-    {
-    }
+/// <summary> Indicates that the value of marked element could never be <c>null</c>. </summary>
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter |
+                AttributeTargets.Property | AttributeTargets.Delegate | AttributeTargets.Field)]
+public sealed class NotNullAttribute : Attribute
+{
+}
 
 
-    /// <summary> Indicates that method doesn't contain observable side effects. </summary>
-    [AttributeUsage(AttributeTargets.Method)]
-    public sealed class PureAttribute : Attribute
-    {
-    }
+/// <summary> Indicates that method doesn't contain observable side effects. </summary>
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class PureAttribute : Attribute
+{
 }

@@ -1,10 +1,9 @@
 ﻿using TrueCraft.API.Entities;
 using TrueCraft.API.Server;
 
-namespace TrueCraft.API.AI
+namespace TrueCraft.API.AI;
+
+public interface IMobState
 {
-    public interface IMobState
-    {
-        void Update(IMobEntity entity, IEntityManager manager);
-    }
+    void Update(IMobEntity entity, IEntityManager manager);
 }

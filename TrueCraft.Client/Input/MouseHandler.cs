@@ -2,127 +2,126 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-namespace TrueCraft.Client.Input
+namespace TrueCraft.Client.Input;
+
+/// <summary>
+///     Encapsulates mouse input in an event-driven manner.
+/// </summary>
+public sealed class MouseHandler : GameComponent
 {
     /// <summary>
-    ///     Encapsulates mouse input in an event-driven manner.
+    ///     Creates a new mouse component.
     /// </summary>
-    public sealed class MouseHandler : GameComponent
+    /// <param name="game">The parent game for the component.</param>
+    public MouseHandler(Game game)
+        : base(game)
     {
-        /// <summary>
-        ///     Creates a new mouse component.
-        /// </summary>
-        /// <param name="game">The parent game for the component.</param>
-        public MouseHandler(Game game)
-            : base(game)
+    }
+
+    /// <summary>
+    ///     Gets the state for this mouse component.
+    /// </summary>
+    public MouseState State { get; private set; }
+
+    /// <summary>
+    ///     Raised when this mouse component is moved.
+    /// </summary>
+    public event EventHandler<MouseMoveEventArgs> Move;
+
+    /// <summary>
+    ///     Raised when a button for this mouse component is pressed.
+    /// </summary>
+    public event EventHandler<MouseButtonEventArgs> ButtonDown;
+
+    /// <summary>
+    ///     Raised when a button for this mouse component is released.
+    /// </summary>
+    public event EventHandler<MouseButtonEventArgs> ButtonUp;
+
+    /// <summary>
+    ///     Raised when the scroll wheel for this mouse component is moved.
+    /// </summary>
+    public event EventHandler<MouseScrollEventArgs> Scroll;
+
+    /// <summary>
+    ///     Initializes this mouse component.
+    /// </summary>
+    public override void Initialize()
+    {
+        State = Mouse.GetState();
+
+        base.Initialize();
+    }
+
+    /// <summary>
+    ///     Updates this mouse component.
+    /// </summary>
+    /// <param name="gameTime">The game time for the update.</param>
+    public override void Update(GameTime gameTime)
+    {
+        var newState = Mouse.GetState();
+        Process(newState, State);
+        State = newState;
+
+        base.Update(gameTime);
+    }
+
+    /// <summary>
+    ///     Processes a change between two states.
+    /// </summary>
+    /// <param name="newState">The new state.</param>
+    /// <param name="oldState">The old state.</param>
+    private void Process(MouseState newState, MouseState oldState)
+    {
+        // Movement.
+        if (newState.X != oldState.X || newState.Y != oldState.Y)
         {
+            var args = new MouseMoveEventArgs(newState.X, newState.Y, newState.X - oldState.X,
+                newState.Y - oldState.Y);
+            Move?.Invoke(this, args);
         }
 
-        /// <summary>
-        ///     Gets the state for this mouse component.
-        /// </summary>
-        public MouseState State { get; private set; }
-
-        /// <summary>
-        ///     Raised when this mouse component is moved.
-        /// </summary>
-        public event EventHandler<MouseMoveEventArgs> Move;
-
-        /// <summary>
-        ///     Raised when a button for this mouse component is pressed.
-        /// </summary>
-        public event EventHandler<MouseButtonEventArgs> ButtonDown;
-
-        /// <summary>
-        ///     Raised when a button for this mouse component is released.
-        /// </summary>
-        public event EventHandler<MouseButtonEventArgs> ButtonUp;
-
-        /// <summary>
-        ///     Raised when the scroll wheel for this mouse component is moved.
-        /// </summary>
-        public event EventHandler<MouseScrollEventArgs> Scroll;
-
-        /// <summary>
-        ///     Initializes this mouse component.
-        /// </summary>
-        public override void Initialize()
+        // Scrolling.
+        if (newState.ScrollWheelValue != oldState.ScrollWheelValue)
         {
-            State = Mouse.GetState();
-
-            base.Initialize();
+            var args = new MouseScrollEventArgs(newState.X, newState.Y, newState.ScrollWheelValue,
+                newState.ScrollWheelValue - oldState.ScrollWheelValue);
+            Scroll?.Invoke(this, args);
         }
 
-        /// <summary>
-        ///     Updates this mouse component.
-        /// </summary>
-        /// <param name="gameTime">The game time for the update.</param>
-        public override void Update(GameTime gameTime)
-        {
-            var newState = Mouse.GetState();
-            Process(newState, State);
-            State = newState;
+        // A bit of code duplication here, shame XNA doesn't expose button state through an enumeration...
 
-            base.Update(gameTime);
+        DispatchButton(MouseButton.Left, newState.LeftButton, oldState.LeftButton, newState.X, newState.Y);
+        DispatchButton(MouseButton.Right, newState.RightButton, oldState.RightButton, newState.X, newState.Y);
+        DispatchButton(MouseButton.Middle, newState.MiddleButton, oldState.MiddleButton, newState.X, newState.Y);
+    }
+
+    private void DispatchButton(MouseButton button, ButtonState newState, ButtonState oldState, int x, int y)
+    {
+        if (newState == oldState)
+            return;
+
+        var args = new MouseButtonEventArgs(x, y, button, newState == ButtonState.Pressed);
+        if (args.IsPressed)
+            ButtonDown?.Invoke(this, args);
+        else
+            ButtonUp?.Invoke(this, args);
+    }
+
+    /// <summary>
+    ///     Called when this mouse component is being disposed of.
+    /// </summary>
+    /// <param name="disposing">Whether Dispose() called this method.</param>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Move = null;
+            ButtonDown = null;
+            ButtonUp = null;
+            Scroll = null;
         }
 
-        /// <summary>
-        ///     Processes a change between two states.
-        /// </summary>
-        /// <param name="newState">The new state.</param>
-        /// <param name="oldState">The old state.</param>
-        private void Process(MouseState newState, MouseState oldState)
-        {
-            // Movement.
-            if (newState.X != oldState.X || newState.Y != oldState.Y)
-            {
-                var args = new MouseMoveEventArgs(newState.X, newState.Y, newState.X - oldState.X,
-                    newState.Y - oldState.Y);
-                Move?.Invoke(this, args);
-            }
-
-            // Scrolling.
-            if (newState.ScrollWheelValue != oldState.ScrollWheelValue)
-            {
-                var args = new MouseScrollEventArgs(newState.X, newState.Y, newState.ScrollWheelValue,
-                    newState.ScrollWheelValue - oldState.ScrollWheelValue);
-                Scroll?.Invoke(this, args);
-            }
-
-            // A bit of code duplication here, shame XNA doesn't expose button state through an enumeration...
-
-            DispatchButton(MouseButton.Left, newState.LeftButton, oldState.LeftButton, newState.X, newState.Y);
-            DispatchButton(MouseButton.Right, newState.RightButton, oldState.RightButton, newState.X, newState.Y);
-            DispatchButton(MouseButton.Middle, newState.MiddleButton, oldState.MiddleButton, newState.X, newState.Y);
-        }
-
-        private void DispatchButton(MouseButton button, ButtonState newState, ButtonState oldState, int x, int y)
-        {
-            if (newState == oldState)
-                return;
-
-            var args = new MouseButtonEventArgs(x, y, button, newState == ButtonState.Pressed);
-            if (args.IsPressed)
-                ButtonDown?.Invoke(this, args);
-            else
-                ButtonUp?.Invoke(this, args);
-        }
-
-        /// <summary>
-        ///     Called when this mouse component is being disposed of.
-        /// </summary>
-        /// <param name="disposing">Whether Dispose() called this method.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                Move = null;
-                ButtonDown = null;
-                ButtonUp = null;
-                Scroll = null;
-            }
-
-            base.Dispose(disposing);
-        }
+        base.Dispose(disposing);
     }
 }

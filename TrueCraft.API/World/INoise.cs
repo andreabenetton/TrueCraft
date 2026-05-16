@@ -1,8 +1,7 @@
-﻿namespace TrueCraft.API.World
+namespace TrueCraft.API.World;
+
+public interface INoise
 {
-    public interface INoise
-    {
-        double Value2D(double x, double y);
-        double Value3D(double x, double y, double z);
-    }
+    double Value2D(double x, double y);
+    double Value3D(double x, double y, double z);
 }

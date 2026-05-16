@@ -1,9 +1,8 @@
 using TrueCraft.API.World;
 
-namespace TrueCraft.API.Entities
+namespace TrueCraft.API.Entities;
+
+public interface IBlockPhysicsProvider
 {
-    public interface IBlockPhysicsProvider
-    {
-        BoundingBox? GetBoundingBox(IWorld world, Coordinates3D coordinates);
-    }
+    BoundingBox? GetBoundingBox(IWorld world, Coordinates3D coordinates);
 }

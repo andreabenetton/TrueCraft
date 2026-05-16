@@ -1,21 +1,20 @@
 ﻿using TrueCraft.API.Networking;
 
-namespace TrueCraft.Core.Networking.Packets
+namespace TrueCraft.Core.Networking.Packets;
+
+public struct ChangeHeldItemPacket : IPacket
 {
-    public struct ChangeHeldItemPacket : IPacket
+    public byte ID => 0x10;
+
+    public short Slot;
+
+    public void ReadPacket(IMinecraftStream stream)
     {
-        public byte ID => 0x10;
+        Slot = stream.ReadInt16();
+    }
 
-        public short Slot;
-
-        public void ReadPacket(IMinecraftStream stream)
-        {
-            Slot = stream.ReadInt16();
-        }
-
-        public void WritePacket(IMinecraftStream stream)
-        {
-            stream.WriteInt16(Slot);
-        }
+    public void WritePacket(IMinecraftStream stream)
+    {
+        stream.WriteInt16(Slot);
     }
 }

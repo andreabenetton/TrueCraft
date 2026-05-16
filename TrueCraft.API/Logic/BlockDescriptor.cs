@@ -1,19 +1,18 @@
 ﻿using TrueCraft.API.World;
 
-namespace TrueCraft.API.Logic
+namespace TrueCraft.API.Logic;
+
+public struct BlockDescriptor
 {
-    public struct BlockDescriptor
-    {
-        public byte ID;
-        public byte Metadata;
-        public byte BlockLight;
+    public byte ID;
+    public byte Metadata;
+    public byte BlockLight;
 
-        public byte SkyLight;
+    public byte SkyLight;
 
-        // Optional
-        public Coordinates3D Coordinates;
+    // Optional
+    public Coordinates3D Coordinates;
 
-        // Optional
-        public IChunk Chunk;
-    }
+    // Optional
+    public IChunk Chunk;
 }

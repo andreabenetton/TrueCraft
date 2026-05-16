@@ -4,54 +4,53 @@ using TrueCraft.Core.Networking.Packets;
 using TrueCraft.API.Networking;
 using TrueCraft.Exceptions;
 
-namespace TrueCraft.Handlers
+namespace TrueCraft.Handlers;
+
+public static class PacketHandlers
 {
-    public static class PacketHandlers
+    public static void RegisterHandlers(IMultiplayerServer server, LoginHandlers loginHandlers)
     {
-        public static void RegisterHandlers(IMultiplayerServer server, LoginHandlers loginHandlers)
-        {
-            server.RegisterPacketHandler(new KeepAlivePacket().ID, HandleKeepAlive);
-            server.RegisterPacketHandler(new ChatMessagePacket().ID, HandleChatMessage);
-            server.RegisterPacketHandler(new DisconnectPacket().ID, HandleDisconnect);
+        server.RegisterPacketHandler(new KeepAlivePacket().ID, HandleKeepAlive);
+        server.RegisterPacketHandler(new ChatMessagePacket().ID, HandleChatMessage);
+        server.RegisterPacketHandler(new DisconnectPacket().ID, HandleDisconnect);
 
-            server.RegisterPacketHandler(new HandshakePacket().ID, loginHandlers.HandleHandshakePacket);
-            server.RegisterPacketHandler(new LoginRequestPacket().ID, loginHandlers.HandleLoginRequestPacket);
+        server.RegisterPacketHandler(new HandshakePacket().ID, loginHandlers.HandleHandshakePacket);
+        server.RegisterPacketHandler(new LoginRequestPacket().ID, loginHandlers.HandleLoginRequestPacket);
 
-            server.RegisterPacketHandler(new PlayerGroundedPacket().ID, (a, b, c) => Task.CompletedTask);
-            server.RegisterPacketHandler(new PlayerPositionPacket().ID, EntityHandlers.HandlePlayerPositionPacket);
-            server.RegisterPacketHandler(new PlayerLookPacket().ID, EntityHandlers.HandlePlayerLookPacket);
-            server.RegisterPacketHandler(new PlayerPositionAndLookPacket().ID, EntityHandlers.HandlePlayerPositionAndLookPacket);
+        server.RegisterPacketHandler(new PlayerGroundedPacket().ID, (a, b, c) => Task.CompletedTask);
+        server.RegisterPacketHandler(new PlayerPositionPacket().ID, EntityHandlers.HandlePlayerPositionPacket);
+        server.RegisterPacketHandler(new PlayerLookPacket().ID, EntityHandlers.HandlePlayerLookPacket);
+        server.RegisterPacketHandler(new PlayerPositionAndLookPacket().ID, EntityHandlers.HandlePlayerPositionAndLookPacket);
 
-            server.RegisterPacketHandler(new PlayerDiggingPacket().ID, InteractionHandlers.HandlePlayerDiggingPacket);
-            server.RegisterPacketHandler(new PlayerBlockPlacementPacket().ID, InteractionHandlers.HandlePlayerBlockPlacementPacket);
-            server.RegisterPacketHandler(new ChangeHeldItemPacket().ID, InteractionHandlers.HandleChangeHeldItem);
-            server.RegisterPacketHandler(new PlayerActionPacket().ID, InteractionHandlers.HandlePlayerAction);
-            server.RegisterPacketHandler(new AnimationPacket().ID, InteractionHandlers.HandleAnimation);
-            server.RegisterPacketHandler(new ClickWindowPacket().ID, InteractionHandlers.HandleClickWindowPacket);
-            server.RegisterPacketHandler(new CloseWindowPacket().ID, InteractionHandlers.HandleCloseWindowPacket);
-            server.RegisterPacketHandler(new UpdateSignPacket().ID, InteractionHandlers.HandleUpdateSignPacket);
-        }
+        server.RegisterPacketHandler(new PlayerDiggingPacket().ID, InteractionHandlers.HandlePlayerDiggingPacket);
+        server.RegisterPacketHandler(new PlayerBlockPlacementPacket().ID, InteractionHandlers.HandlePlayerBlockPlacementPacket);
+        server.RegisterPacketHandler(new ChangeHeldItemPacket().ID, InteractionHandlers.HandleChangeHeldItem);
+        server.RegisterPacketHandler(new PlayerActionPacket().ID, InteractionHandlers.HandlePlayerAction);
+        server.RegisterPacketHandler(new AnimationPacket().ID, InteractionHandlers.HandleAnimation);
+        server.RegisterPacketHandler(new ClickWindowPacket().ID, InteractionHandlers.HandleClickWindowPacket);
+        server.RegisterPacketHandler(new CloseWindowPacket().ID, InteractionHandlers.HandleCloseWindowPacket);
+        server.RegisterPacketHandler(new UpdateSignPacket().ID, InteractionHandlers.HandleUpdateSignPacket);
+    }
 
-        internal static Task HandleKeepAlive(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
-        {
-            // TODO
-            return Task.CompletedTask;
-        }
+    internal static Task HandleKeepAlive(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+    {
+        // TODO
+        return Task.CompletedTask;
+    }
 
-        internal static Task HandleChatMessage(IPacket _packet, IRemoteClient _client, IMultiplayerServer _server)
-        {
-            // TODO: Abstract this to support things like commands
-            // TODO: Sanitize messages
-            var packet = (ChatMessagePacket)_packet;
-            var server = (MultiplayerServer)_server;
-            var args = new ChatMessageEventArgs(_client, packet.Message);
-            server.OnChatMessageReceived(args);
-            return Task.CompletedTask;
-        }
+    internal static Task HandleChatMessage(IPacket _packet, IRemoteClient _client, IMultiplayerServer _server)
+    {
+        // TODO: Abstract this to support things like commands
+        // TODO: Sanitize messages
+        var packet = (ChatMessagePacket)_packet;
+        var server = (MultiplayerServer)_server;
+        var args = new ChatMessageEventArgs(_client, packet.Message);
+        server.OnChatMessageReceived(args);
+        return Task.CompletedTask;
+    }
 
-        internal static Task HandleDisconnect(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
-        {
-            throw new PlayerDisconnectException(true);
-        }
+    internal static Task HandleDisconnect(IPacket _packet, IRemoteClient _client, IMultiplayerServer server)
+    {
+        throw new PlayerDisconnectException(true);
     }
 }

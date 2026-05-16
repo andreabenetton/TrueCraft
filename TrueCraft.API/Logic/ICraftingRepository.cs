@@ -1,10 +1,9 @@
 using TrueCraft.API.Windows;
 
-namespace TrueCraft.API.Logic
+namespace TrueCraft.API.Logic;
+
+public interface ICraftingRepository
 {
-    public interface ICraftingRepository
-    {
-        ICraftingRecipe GetRecipe(IWindowArea craftingArea);
-        bool TestRecipe(IWindowArea craftingArea, ICraftingRecipe recipe, int x, int y);
-    }
+    ICraftingRecipe GetRecipe(IWindowArea craftingArea);
+    bool TestRecipe(IWindowArea craftingArea, ICraftingRecipe recipe, int x, int y);
 }

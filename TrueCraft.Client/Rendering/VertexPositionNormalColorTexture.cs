@@ -2,58 +2,57 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace TrueCraft.Client.Rendering
+namespace TrueCraft.Client.Rendering;
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct VertexPositionNormalColorTexture : IVertexType
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct VertexPositionNormalColorTexture : IVertexType
+    public Vector3 Position, Normal;
+    public Color Color;
+    public Vector2 Texture;
+
+    public static readonly VertexDeclaration VertexDeclaration = new VertexDeclaration(
+        new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
+        new VertexElement(12, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
+        new VertexElement(24, VertexElementFormat.Color, VertexElementUsage.Color, 0),
+        new VertexElement(28, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 0));
+
+    VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;
+
+    public VertexPositionNormalColorTexture(Vector3 position, Vector3 normal, Color color, Vector2 texture)
     {
-        public Vector3 Position, Normal;
-        public Color Color;
-        public Vector2 Texture;
+        Position = position;
+        Normal = normal;
+        Color = color;
+        Texture = texture;
+    }
 
-        public static readonly VertexDeclaration VertexDeclaration = new VertexDeclaration(
-            new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
-            new VertexElement(12, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
-            new VertexElement(24, VertexElementFormat.Color, VertexElementUsage.Color, 0),
-            new VertexElement(28, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 0));
+    public static bool operator ==(VertexPositionNormalColorTexture value1, VertexPositionNormalColorTexture value2)
+    {
+        return value1.Equals(value2);
+    }
 
-        VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;
+    public static bool operator !=(VertexPositionNormalColorTexture value1, VertexPositionNormalColorTexture value2)
+    {
+        return !value1.Equals(value2);
+    }
 
-        public VertexPositionNormalColorTexture(Vector3 position, Vector3 normal, Color color, Vector2 texture)
-        {
-            Position = position;
-            Normal = normal;
-            Color = color;
-            Texture = texture;
-        }
+    public bool Equals(VertexPositionNormalColorTexture other)
+    {
+        return Position == other.Position && Normal == other.Normal &&
+               Color == other.Color && Texture == other.Texture;
+    }
 
-        public static bool operator ==(VertexPositionNormalColorTexture value1, VertexPositionNormalColorTexture value2)
-        {
-            return value1.Equals(value2);
-        }
+    public override bool Equals(object obj)
+    {
+        if (obj is null || GetType() != obj.GetType()) return false;
 
-        public static bool operator !=(VertexPositionNormalColorTexture value1, VertexPositionNormalColorTexture value2)
-        {
-            return !value1.Equals(value2);
-        }
+        return Equals((VertexPositionNormalColorTexture) obj);
+    }
 
-        public bool Equals(VertexPositionNormalColorTexture other)
-        {
-            return Position == other.Position && Normal == other.Normal &&
-                   Color == other.Color && Texture == other.Texture;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is null || GetType() != obj.GetType()) return false;
-
-            return Equals((VertexPositionNormalColorTexture) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return Position.GetHashCode() ^ Normal.GetHashCode() ^
-                   Color.GetHashCode() ^ Texture.GetHashCode();
-        }
+    public override int GetHashCode()
+    {
+        return Position.GetHashCode() ^ Normal.GetHashCode() ^
+               Color.GetHashCode() ^ Texture.GetHashCode();
     }
 }

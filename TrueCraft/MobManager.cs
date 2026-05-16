@@ -4,45 +4,44 @@ using System.Collections.Generic;
 using TrueCraft.Core;
 using TrueCraft.API.AI;
 
-namespace TrueCraft
+namespace TrueCraft;
+
+public class MobManager
 {
-    public class MobManager
+    public EntityManager EntityManager { get; set; }
+
+    private Dictionary<Dimension, List<ISpawnRule>> SpawnRules { get; set; }
+
+    public MobManager(EntityManager manager)
     {
-        public EntityManager EntityManager { get; set; }
+        EntityManager = manager;
+        SpawnRules = new Dictionary<Dimension, List<ISpawnRule>>();
+    }
 
-        private Dictionary<Dimension, List<ISpawnRule>> SpawnRules { get; set; }
+    public void AddRules(Dimension dimension, ISpawnRule rules)
+    {
+        if (!SpawnRules.ContainsKey(dimension))
+            SpawnRules[dimension] = new List<ISpawnRule>();
+        SpawnRules[dimension].Add(rules);
+    }
 
-        public MobManager(EntityManager manager)
+    public void SpawnInitialMobs(IChunk chunk, Dimension dimension)
+    {
+        if (!SpawnRules.ContainsKey(dimension))
+            return;
+        var rules = SpawnRules[dimension];
+        foreach (var rule in rules)
         {
-            EntityManager = manager;
-            SpawnRules = new Dictionary<Dimension, List<ISpawnRule>>();
+            if (MathHelper.Random.Next(rule.ChunkSpawnChance) == 0)
+                rule.GenerateMobs(chunk, EntityManager);
         }
+    }
 
-        public void AddRules(Dimension dimension, ISpawnRule rules)
-        {
-            if (!SpawnRules.ContainsKey(dimension))
-                SpawnRules[dimension] = new List<ISpawnRule>();
-            SpawnRules[dimension].Add(rules);
-        }
-
-        public void SpawnInitialMobs(IChunk chunk, Dimension dimension)
-        {
-            if (!SpawnRules.ContainsKey(dimension))
-                return;
-            var rules = SpawnRules[dimension];
-            foreach (var rule in rules)
-            {
-                if (MathHelper.Random.Next(rule.ChunkSpawnChance) == 0)
-                    rule.GenerateMobs(chunk, EntityManager);
-            }
-        }
-
-        /// <summary>
-        /// Call at dusk and it'll spawn baddies.
-        /// </summary>
-        public void DayCycleSpawn(IChunk chunk, Dimension dimension)
-        {
-            // TODO
-        }
+    /// <summary>
+    /// Call at dusk and it'll spawn baddies.
+    /// </summary>
+    public void DayCycleSpawn(IChunk chunk, Dimension dimension)
+    {
+        // TODO
     }
 }

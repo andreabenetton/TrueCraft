@@ -3,87 +3,86 @@ using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic.Items;
 
-namespace TrueCraft.Core.Logic.Blocks
+namespace TrueCraft.Core.Logic.Blocks;
+
+public class SnowBlock : BlockProvider, ICraftingRecipe
 {
-    public class SnowBlock : BlockProvider, ICraftingRecipe
+    public static readonly byte BlockID = 0x50;
+
+    public override byte ID => 0x50;
+
+    public override double BlastResistance => 1;
+
+    public override double Hardness => 0.2;
+
+    public override byte Luminance => 0;
+
+    public override string DisplayName => "Snow Block";
+
+    public override SoundEffectClass SoundEffect => SoundEffectClass.Snow;
+
+    public ItemStack[,] Pattern
     {
-        public static readonly byte BlockID = 0x50;
-
-        public override byte ID => 0x50;
-
-        public override double BlastResistance => 1;
-
-        public override double Hardness => 0.2;
-
-        public override byte Luminance => 0;
-
-        public override string DisplayName => "Snow Block";
-
-        public override SoundEffectClass SoundEffect => SoundEffectClass.Snow;
-
-        public ItemStack[,] Pattern
+        get
         {
-            get
+            return new[,]
             {
-                return new[,]
-                {
-                    {new ItemStack(SnowballItem.ItemID), new ItemStack(SnowballItem.ItemID)},
-                    {new ItemStack(SnowballItem.ItemID), new ItemStack(SnowballItem.ItemID)}
-                };
-            }
-        }
-
-        public ItemStack Output => new ItemStack(BlockID);
-
-        public bool SignificantMetadata => false;
-
-        public override Tuple<int, int> GetTextureMap(byte metadata)
-        {
-            return new Tuple<int, int>(2, 4);
+                {new ItemStack(SnowballItem.ItemID), new ItemStack(SnowballItem.ItemID)},
+                {new ItemStack(SnowballItem.ItemID), new ItemStack(SnowballItem.ItemID)}
+            };
         }
     }
 
-    public class SnowfallBlock : BlockProvider
+    public ItemStack Output => new ItemStack(BlockID);
+
+    public bool SignificantMetadata => false;
+
+    public override Tuple<int, int> GetTextureMap(byte metadata)
     {
-        public static readonly byte BlockID = 0x4E;
+        return new Tuple<int, int>(2, 4);
+    }
+}
 
-        public override byte ID => 0x4E;
+public class SnowfallBlock : BlockProvider
+{
+    public static readonly byte BlockID = 0x4E;
 
-        public override double BlastResistance => 0.5;
+    public override byte ID => 0x4E;
 
-        public override double Hardness => 0.6;
+    public override double BlastResistance => 0.5;
 
-        public override byte Luminance => 0;
+    public override double Hardness => 0.6;
 
-        public override bool RenderOpaque => true;
+    public override byte Luminance => 0;
 
-        public override bool Opaque => false;
+    public override bool RenderOpaque => true;
 
-        public override string DisplayName => "Snow";
+    public override bool Opaque => false;
 
-        public override BoundingBox? BoundingBox => null;
+    public override string DisplayName => "Snow";
 
-        public override SoundEffectClass SoundEffect => SoundEffectClass.Snow;
+    public override BoundingBox? BoundingBox => null;
 
-        // TODO: This is metadata-aware
-        public override BoundingBox? InteractiveBoundingBox =>
-            new BoundingBox(Vector3.Zero, new Vector3(1, 1 / 16.0, 1));
+    public override SoundEffectClass SoundEffect => SoundEffectClass.Snow;
 
-        public override ToolType EffectiveTools => ToolType.Shovel;
+    // TODO: This is metadata-aware
+    public override BoundingBox? InteractiveBoundingBox =>
+        new BoundingBox(Vector3.Zero, new Vector3(1, 1 / 16.0, 1));
 
-        public override Coordinates3D GetSupportDirection(BlockDescriptor descriptor)
-        {
-            return Coordinates3D.Down;
-        }
+    public override ToolType EffectiveTools => ToolType.Shovel;
 
-        public override Tuple<int, int> GetTextureMap(byte metadata)
-        {
-            return new Tuple<int, int>(2, 4);
-        }
+    public override Coordinates3D GetSupportDirection(BlockDescriptor descriptor)
+    {
+        return Coordinates3D.Down;
+    }
 
-        protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
-        {
-            return new[] {new ItemStack(SnowballItem.ItemID)};
-        }
+    public override Tuple<int, int> GetTextureMap(byte metadata)
+    {
+        return new Tuple<int, int>(2, 4);
+    }
+
+    protected override ItemStack[] GetDrop(BlockDescriptor descriptor, ItemStack item)
+    {
+        return new[] {new ItemStack(SnowballItem.ItemID)};
     }
 }

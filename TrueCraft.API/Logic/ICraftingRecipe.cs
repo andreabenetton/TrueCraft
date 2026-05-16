@@ -1,9 +1,8 @@
-namespace TrueCraft.API.Logic
+namespace TrueCraft.API.Logic;
+
+public interface ICraftingRecipe
 {
-    public interface ICraftingRecipe
-    {
-        ItemStack[,] Pattern { get; }
-        ItemStack Output { get; }
-        bool SignificantMetadata { get; }
-    }
+    ItemStack[,] Pattern { get; }
+    ItemStack Output { get; }
+    bool SignificantMetadata { get; }
 }

@@ -1,19 +1,18 @@
-﻿namespace TrueCraft.Client.Input
+namespace TrueCraft.Client.Input;
+
+/// <summary>
+/// </summary>
+public enum MouseButton
 {
     /// <summary>
     /// </summary>
-    public enum MouseButton
-    {
-        /// <summary>
-        /// </summary>
-        Left,
+    Left,
 
-        /// <summary>
-        /// </summary>
-        Right,
+    /// <summary>
+    /// </summary>
+    Right,
 
-        /// <summary>
-        /// </summary>
-        Middle
-    }
+    /// <summary>
+    /// </summary>
+    Middle
 }

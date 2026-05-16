@@ -6,953 +6,952 @@ using System.Threading;
 using System.Threading.Tasks;
 using TrueCraft.Nbt.Tags;
 
-namespace TrueCraft.Nbt
+namespace TrueCraft.Nbt;
+
+/// <summary> Represents a complete NBT file. </summary>
+public sealed class NbtFile
 {
-    /// <summary> Represents a complete NBT file. </summary>
-    public sealed class NbtFile
+    // Size of buffers that are used to avoid frequent reads from / writes to compressed streams
+    private const int WriteBufferSize = 8 * 1024;
+
+    // Size of buffers used for reading to/from files
+    private const int FileStreamBufferSize = 64 * 1024;
+
+
+    private const string WrongZLibHeaderMessage = "Unrecognized ZLib header. Expected 0x78";
+
+    private static int defaultBufferSize = 8 * 1024;
+
+    private int _bufferSize;
+
+    [NotNull] private NbtCompound _rootTag;
+
+    /// <summary>
+    ///     Gets the file name used for most recent loading/saving of this file.
+    ///     May be <c>null</c>, if this <c>NbtFile</c> instance has not been loaded from, or saved to, a file.
+    /// </summary>
+    [CanBeNull]
+    public string FileName { get; private set; }
+
+    /// <summary>
+    ///     Gets the compression method used for most recent loading/saving of this file.
+    ///     Defaults to AutoDetect.
+    /// </summary>
+    public NbtCompression FileCompression { get; private set; }
+
+    /// <summary> Root tag of this file. Must be a named CompoundTag. Defaults to an empty-named tag. </summary>
+    /// <exception cref="ArgumentException"> If given tag is unnamed. </exception>
+    [NotNull]
+    public NbtCompound RootTag
     {
-        // Size of buffers that are used to avoid frequent reads from / writes to compressed streams
-        private const int WriteBufferSize = 8 * 1024;
-
-        // Size of buffers used for reading to/from files
-        private const int FileStreamBufferSize = 64 * 1024;
-
-
-        private const string WrongZLibHeaderMessage = "Unrecognized ZLib header. Expected 0x78";
-
-        private static int defaultBufferSize = 8 * 1024;
-
-        private int _bufferSize;
-
-        [NotNull] private NbtCompound _rootTag;
-
-        /// <summary>
-        ///     Gets the file name used for most recent loading/saving of this file.
-        ///     May be <c>null</c>, if this <c>NbtFile</c> instance has not been loaded from, or saved to, a file.
-        /// </summary>
-        [CanBeNull]
-        public string FileName { get; private set; }
-
-        /// <summary>
-        ///     Gets the compression method used for most recent loading/saving of this file.
-        ///     Defaults to AutoDetect.
-        /// </summary>
-        public NbtCompression FileCompression { get; private set; }
-
-        /// <summary> Root tag of this file. Must be a named CompoundTag. Defaults to an empty-named tag. </summary>
-        /// <exception cref="ArgumentException"> If given tag is unnamed. </exception>
-        [NotNull]
-        public NbtCompound RootTag
+        get => _rootTag;
+        set
         {
-            get => _rootTag;
-            set
-            {
-                if (value is null) throw new ArgumentNullException(nameof(value));
-                if (value.Name is null) throw new ArgumentException("Root tag must be named.");
-                _rootTag = value;
-            }
+            if (value is null) throw new ArgumentNullException(nameof(value));
+            if (value.Name is null) throw new ArgumentException("Root tag must be named.");
+            _rootTag = value;
         }
+    }
 
-        /// <summary> Whether new NbtFiles should default to big-endian encoding (default: true). </summary>
-        public static bool BigEndianByDefault { get; set; }
+    /// <summary> Whether new NbtFiles should default to big-endian encoding (default: true). </summary>
+    public static bool BigEndianByDefault { get; set; }
 
-        /// <summary> Whether this file should read/write tags in big-endian encoding format. </summary>
-        public bool BigEndian { get; set; }
+    /// <summary> Whether this file should read/write tags in big-endian encoding format. </summary>
+    public bool BigEndian { get; set; }
 
-        /// <summary>
-        ///     When <c>true</c>, strings are encoded as standard UTF-8 instead of Java's
-        ///     Modified UTF-8. Used by the network NBT framing introduced in the Java
-        ///     Edition 1.20.2 protocol; leave <c>false</c> (default) for on-disk NBT.
-        /// </summary>
-        public bool UseStandardUtf8 { get; set; }
+    /// <summary>
+    ///     When <c>true</c>, strings are encoded as standard UTF-8 instead of Java's
+    ///     Modified UTF-8. Used by the network NBT framing introduced in the Java
+    ///     Edition 1.20.2 protocol; leave <c>false</c> (default) for on-disk NBT.
+    /// </summary>
+    public bool UseStandardUtf8 { get; set; }
 
-        /// <summary>
-        ///     Maximum allowed nesting depth of compounds and lists during a load.
-        ///     Defaults to 512 to match Mojang's parser limit and to protect against
-        ///     stack-overflow on adversarial input. Set to 0 to disable.
-        /// </summary>
-        public int MaxDepth { get; set; } = 512;
+    /// <summary>
+    ///     Maximum allowed nesting depth of compounds and lists during a load.
+    ///     Defaults to 512 to match Mojang's parser limit and to protect against
+    ///     stack-overflow on adversarial input. Set to 0 to disable.
+    /// </summary>
+    public int MaxDepth { get; set; } = 512;
 
-        /// <summary>
-        ///     Maximum allowed element count for any single TAG_Byte_Array, TAG_Int_Array,
-        ///     TAG_Long_Array, or TAG_List during a load. Defaults to 16 * 1024 * 1024
-        ///     (~16 M elements; 128 MiB for a TAG_Long_Array). Set to 0 to disable.
-        /// </summary>
-        public int MaxArrayElements { get; set; } = 16 * 1024 * 1024;
+    /// <summary>
+    ///     Maximum allowed element count for any single TAG_Byte_Array, TAG_Int_Array,
+    ///     TAG_Long_Array, or TAG_List during a load. Defaults to 16 * 1024 * 1024
+    ///     (~16 M elements; 128 MiB for a TAG_Long_Array). Set to 0 to disable.
+    /// </summary>
+    public int MaxArrayElements { get; set; } = 16 * 1024 * 1024;
 
-        /// <summary>
-        ///     Whether the root TAG_Compound is preceded by a name on the wire.
-        ///     Defaults to <c>true</c> for the disk-format NBT every Java edition uses.
-        ///     Set to <c>false</c> for the nameless-root network NBT framing introduced
-        ///     in the Java Edition 1.20.2 protocol — that variant is also typically
-        ///     used with <see cref="UseStandardUtf8"/> = true.
-        /// </summary>
-        public bool RootHasName { get; set; } = true;
+    /// <summary>
+    ///     Whether the root TAG_Compound is preceded by a name on the wire.
+    ///     Defaults to <c>true</c> for the disk-format NBT every Java edition uses.
+    ///     Set to <c>false</c> for the nameless-root network NBT framing introduced
+    ///     in the Java Edition 1.20.2 protocol — that variant is also typically
+    ///     used with <see cref="UseStandardUtf8"/> = true.
+    /// </summary>
+    public bool RootHasName { get; set; } = true;
 
-        /// <summary>
-        ///     Gets or sets the default value of <c>BufferSize</c> property. Default is 8192.
-        ///     Set to 0 to disable buffering by default.
-        /// </summary>
-        /// <exception cref="ArgumentOutOfRangeException"> value is negative. </exception>
-        public static int DefaultBufferSize
+    /// <summary>
+    ///     Gets or sets the default value of <c>BufferSize</c> property. Default is 8192.
+    ///     Set to 0 to disable buffering by default.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"> value is negative. </exception>
+    public static int DefaultBufferSize
+    {
+        get => defaultBufferSize;
+        set
         {
-            get => defaultBufferSize;
-            set
-            {
-                if (value < 0)
-                    throw new ArgumentOutOfRangeException(nameof(value), value,
-                        "DefaultBufferSize cannot be negative.");
-
-                defaultBufferSize = value;
-            }
-        }
-
-        /// <summary>
-        ///     Gets or sets the size of internal buffer used for reading files and streams.
-        ///     Initialized to value of <c>DefaultBufferSize</c> property.
-        /// </summary>
-        /// <exception cref="ArgumentOutOfRangeException"> value is negative. </exception>
-        public int BufferSize
-        {
-            get => _bufferSize;
-            set
-            {
-                if (value < 0)
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "BufferSize cannot be negative.");
-
-                _bufferSize = value;
-            }
-        }
-
-
-        /// <summary> Reads the root name from the given NBT file. Automatically detects compression. </summary>
-        /// <param name="fileName"> Name of the file from which first tag will be read. </param>
-        /// <returns> Name of the root tag in the given NBT file. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
-        /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
-        /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
-        /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
-        [NotNull]
-        public static string ReadRootTagName([NotNull] string fileName)
-        {
-            return ReadRootTagName(fileName, NbtCompression.AutoDetect, BigEndianByDefault, defaultBufferSize);
-        }
-
-
-        /// <summary> Reads the root name from the given NBT file. </summary>
-        /// <param name="fileName"> Name of the file from which data will be loaded. </param>
-        /// <param name="compression"> Format in which the given file is compressed. </param>
-        /// <param name="bigEndian"> Whether the file uses big-endian (default) or little-endian encoding. </param>
-        /// <param name="bufferSize"> Buffer size to use for reading, in bytes. Default is 8192. </param>
-        /// <returns> Name of the root tag in the given NBT file. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for
-        ///     <paramref name="compression" />.
-        /// </exception>
-        /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
-        /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
-        /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
-        [NotNull]
-        public static string ReadRootTagName([NotNull] string fileName, NbtCompression compression, bool bigEndian,
-            int bufferSize)
-        {
-            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
-
-            if (!File.Exists(fileName)) throw new FileNotFoundException("Could not find the given NBT file.", fileName);
-
-            if (bufferSize < 0)
-                throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize,
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value,
                     "DefaultBufferSize cannot be negative.");
 
-            using (var readFileStream = File.OpenRead(fileName))
-            {
-                return ReadRootTagName(readFileStream, compression, bigEndian, bufferSize);
-            }
+            defaultBufferSize = value;
         }
+    }
 
-
-        /// <summary> Reads the root name from the given stream of NBT data. </summary>
-        /// <param name="stream">
-        ///     Stream from which data will be loaded. If compression is set to AutoDetect, this stream must
-        ///     support seeking.
-        /// </param>
-        /// <param name="compression"> Compression method to use for loading this stream. </param>
-        /// <param name="bigEndian"> Whether the stream uses big-endian (default) or little-endian encoding. </param>
-        /// <param name="bufferSize"> Buffer size to use for reading, in bytes. Default is 8192. </param>
-        /// <returns> Name of the root tag in the given stream. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="stream" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for
-        ///     <paramref name="compression" />.
-        /// </exception>
-        /// <exception cref="NotSupportedException"> If compression is set to AutoDetect, but the stream is not seekable. </exception>
-        /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
-        /// <exception cref="InvalidDataException">
-        ///     If file compression could not be detected, decompressing failed, or given
-        ///     stream does not support reading.
-        /// </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        [NotNull]
-        public static string ReadRootTagName([NotNull] Stream stream, NbtCompression compression, bool bigEndian,
-            int bufferSize)
+    /// <summary>
+    ///     Gets or sets the size of internal buffer used for reading files and streams.
+    ///     Initialized to value of <c>DefaultBufferSize</c> property.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"> value is negative. </exception>
+    public int BufferSize
+    {
+        get => _bufferSize;
+        set
         {
-            if (stream is null) throw new ArgumentNullException(nameof(stream));
-            if (bufferSize < 0)
-                throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize,
-                    "DefaultBufferSize cannot be negative.");
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "BufferSize cannot be negative.");
 
-            // detect compression, based on the first byte
-            if (compression == NbtCompression.AutoDetect) compression = DetectCompression(stream);
-
-            switch (compression)
-            {
-                case NbtCompression.GZip:
-                    using (var decStream = new GZipStream(stream, CompressionMode.Decompress, true))
-                    {
-                        if (bufferSize > 0)
-                            return GetRootNameInternal(new BufferedStream(decStream, bufferSize), bigEndian);
-
-                        return GetRootNameInternal(decStream, bigEndian);
-                    }
-
-                case NbtCompression.None:
-                    return GetRootNameInternal(stream, bigEndian);
-
-                case NbtCompression.ZLib:
-                    if (stream.ReadByte() != 0x78) throw new InvalidDataException(WrongZLibHeaderMessage);
-
-                    stream.ReadByte();
-                    using (var decStream = new DeflateStream(stream, CompressionMode.Decompress, true))
-                    {
-                        if (bufferSize > 0)
-                            return GetRootNameInternal(new BufferedStream(decStream, bufferSize), bigEndian);
-
-                        return GetRootNameInternal(decStream, bigEndian);
-                    }
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(compression));
-            }
+            _bufferSize = value;
         }
+    }
 
 
-        [NotNull]
-        private static string GetRootNameInternal([NotNull] Stream stream, bool bigEndian)
+    /// <summary> Reads the root name from the given NBT file. Automatically detects compression. </summary>
+    /// <param name="fileName"> Name of the file from which first tag will be read. </param>
+    /// <returns> Name of the root tag in the given NBT file. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
+    /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
+    /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
+    /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
+    [NotNull]
+    public static string ReadRootTagName([NotNull] string fileName)
+    {
+        return ReadRootTagName(fileName, NbtCompression.AutoDetect, BigEndianByDefault, defaultBufferSize);
+    }
+
+
+    /// <summary> Reads the root name from the given NBT file. </summary>
+    /// <param name="fileName"> Name of the file from which data will be loaded. </param>
+    /// <param name="compression"> Format in which the given file is compressed. </param>
+    /// <param name="bigEndian"> Whether the file uses big-endian (default) or little-endian encoding. </param>
+    /// <param name="bufferSize"> Buffer size to use for reading, in bytes. Default is 8192. </param>
+    /// <returns> Name of the root tag in the given NBT file. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for
+    ///     <paramref name="compression" />.
+    /// </exception>
+    /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
+    /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
+    /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
+    [NotNull]
+    public static string ReadRootTagName([NotNull] string fileName, NbtCompression compression, bool bigEndian,
+        int bufferSize)
+    {
+        if (fileName is null) throw new ArgumentNullException(nameof(fileName));
+
+        if (!File.Exists(fileName)) throw new FileNotFoundException("Could not find the given NBT file.", fileName);
+
+        if (bufferSize < 0)
+            throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize,
+                "DefaultBufferSize cannot be negative.");
+
+        using (var readFileStream = File.OpenRead(fileName))
         {
-            Debug.Assert(stream is not null);
-            var firstByte = stream.ReadByte();
-            if (firstByte < 0) throw new EndOfStreamException();
-
-            if (firstByte != (int) NbtTagType.Compound)
-                throw new NbtFormatException("Given NBT stream does not start with a TAG_Compound");
-
-            var reader = new NbtBinaryReader(stream, bigEndian);
-
-            return reader.ReadString();
+            return ReadRootTagName(readFileStream, compression, bigEndian, bufferSize);
         }
+    }
 
 
-        /// <summary> Prints contents of the root tag, and any child tags, to a string. </summary>
-        public override string ToString()
+    /// <summary> Reads the root name from the given stream of NBT data. </summary>
+    /// <param name="stream">
+    ///     Stream from which data will be loaded. If compression is set to AutoDetect, this stream must
+    ///     support seeking.
+    /// </param>
+    /// <param name="compression"> Compression method to use for loading this stream. </param>
+    /// <param name="bigEndian"> Whether the stream uses big-endian (default) or little-endian encoding. </param>
+    /// <param name="bufferSize"> Buffer size to use for reading, in bytes. Default is 8192. </param>
+    /// <returns> Name of the root tag in the given stream. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="stream" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for
+    ///     <paramref name="compression" />.
+    /// </exception>
+    /// <exception cref="NotSupportedException"> If compression is set to AutoDetect, but the stream is not seekable. </exception>
+    /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
+    /// <exception cref="InvalidDataException">
+    ///     If file compression could not be detected, decompressing failed, or given
+    ///     stream does not support reading.
+    /// </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    [NotNull]
+    public static string ReadRootTagName([NotNull] Stream stream, NbtCompression compression, bool bigEndian,
+        int bufferSize)
+    {
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+        if (bufferSize < 0)
+            throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize,
+                "DefaultBufferSize cannot be negative.");
+
+        // detect compression, based on the first byte
+        if (compression == NbtCompression.AutoDetect) compression = DetectCompression(stream);
+
+        switch (compression)
         {
-            return RootTag.ToString(NbtTag.DefaultIndentString);
+            case NbtCompression.GZip:
+                using (var decStream = new GZipStream(stream, CompressionMode.Decompress, true))
+                {
+                    if (bufferSize > 0)
+                        return GetRootNameInternal(new BufferedStream(decStream, bufferSize), bigEndian);
+
+                    return GetRootNameInternal(decStream, bigEndian);
+                }
+
+            case NbtCompression.None:
+                return GetRootNameInternal(stream, bigEndian);
+
+            case NbtCompression.ZLib:
+                if (stream.ReadByte() != 0x78) throw new InvalidDataException(WrongZLibHeaderMessage);
+
+                stream.ReadByte();
+                using (var decStream = new DeflateStream(stream, CompressionMode.Decompress, true))
+                {
+                    if (bufferSize > 0)
+                        return GetRootNameInternal(new BufferedStream(decStream, bufferSize), bigEndian);
+
+                    return GetRootNameInternal(decStream, bigEndian);
+                }
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(compression));
         }
+    }
 
 
-        /// <summary>
-        ///     Prints contents of the root tag, and any child tags, to a string.
-        ///     Indents the string using multiples of the given indentation string.
-        /// </summary>
-        /// <param name="indentString"> String to be used for indentation. </param>
-        /// <returns> A string representing contents of this tag, and all child tags (if any). </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="indentString" /> is <c>null</c>. </exception>
-        [NotNull]
-        public string ToString([NotNull] string indentString)
-        {
-            return RootTag.ToString(indentString);
-        }
+    [NotNull]
+    private static string GetRootNameInternal([NotNull] Stream stream, bool bigEndian)
+    {
+        Debug.Assert(stream is not null);
+        var firstByte = stream.ReadByte();
+        if (firstByte < 0) throw new EndOfStreamException();
+
+        if (firstByte != (int) NbtTagType.Compound)
+            throw new NbtFormatException("Given NBT stream does not start with a TAG_Compound");
+
+        var reader = new NbtBinaryReader(stream, bigEndian);
+
+        return reader.ReadString();
+    }
 
 
-        #region Constructors
-
-        // static constructor
-        static NbtFile()
-        {
-            BigEndianByDefault = true;
-        }
+    /// <summary> Prints contents of the root tag, and any child tags, to a string. </summary>
+    public override string ToString()
+    {
+        return RootTag.ToString(NbtTag.DefaultIndentString);
+    }
 
 
-        /// <summary>
-        ///     Creates an empty NbtFile.
-        ///     RootTag will be set to an empty <c>NbtCompound</c> with a blank name ("").
-        /// </summary>
-        public NbtFile()
-        {
-            BigEndian = BigEndianByDefault;
-            BufferSize = DefaultBufferSize;
-            _rootTag = new NbtCompound("");
-        }
+    /// <summary>
+    ///     Prints contents of the root tag, and any child tags, to a string.
+    ///     Indents the string using multiples of the given indentation string.
+    /// </summary>
+    /// <param name="indentString"> String to be used for indentation. </param>
+    /// <returns> A string representing contents of this tag, and all child tags (if any). </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="indentString" /> is <c>null</c>. </exception>
+    [NotNull]
+    public string ToString([NotNull] string indentString)
+    {
+        return RootTag.ToString(indentString);
+    }
 
 
-        /// <summary> Creates a new NBT file with the given root tag. </summary>
-        /// <param name="rootTag"> Compound tag to set as the root tag. May be <c>null</c>. </param>
-        /// <exception cref="ArgumentException"> If given <paramref name="rootTag" /> is unnamed. </exception>
-        public NbtFile([NotNull] NbtCompound rootTag)
-            : this()
-        {
-            if (rootTag is null) throw new ArgumentNullException(nameof(rootTag));
-            RootTag = rootTag;
-        }
+    #region Constructors
+
+    // static constructor
+    static NbtFile()
+    {
+        BigEndianByDefault = true;
+    }
 
 
-        /// <summary>
-        ///     Loads NBT data from a file using the most common settings.
-        ///     Automatically detects compression. Assumes the file to be big-endian, and uses default buffer size.
-        /// </summary>
-        /// <param name="fileName"> Name of the file from which data will be loaded. </param>
-        /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
-        /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
-        /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
-        /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
-        public NbtFile([NotNull] string fileName)
-            : this()
-        {
-            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
-            LoadFromFile(fileName, NbtCompression.AutoDetect, null);
-        }
-
-        #endregion
+    /// <summary>
+    ///     Creates an empty NbtFile.
+    ///     RootTag will be set to an empty <c>NbtCompound</c> with a blank name ("").
+    /// </summary>
+    public NbtFile()
+    {
+        BigEndian = BigEndianByDefault;
+        BufferSize = DefaultBufferSize;
+        _rootTag = new NbtCompound("");
+    }
 
 
-        #region Loading
-
-        /// <summary> Loads NBT data from a file. Existing <c>RootTag</c> will be replaced. Compression will be auto-detected. </summary>
-        /// <param name="fileName"> Name of the file from which data will be loaded. </param>
-        /// <returns> Number of bytes read from the file. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
-        /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
-        /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
-        /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
-        public long LoadFromFile([NotNull] string fileName)
-        {
-            return LoadFromFile(fileName, NbtCompression.AutoDetect, null);
-        }
+    /// <summary> Creates a new NBT file with the given root tag. </summary>
+    /// <param name="rootTag"> Compound tag to set as the root tag. May be <c>null</c>. </param>
+    /// <exception cref="ArgumentException"> If given <paramref name="rootTag" /> is unnamed. </exception>
+    public NbtFile([NotNull] NbtCompound rootTag)
+        : this()
+    {
+        if (rootTag is null) throw new ArgumentNullException(nameof(rootTag));
+        RootTag = rootTag;
+    }
 
 
-        /// <summary> Loads NBT data from a file. Existing <c>RootTag</c> will be replaced. </summary>
-        /// <param name="fileName"> Name of the file from which data will be loaded. </param>
-        /// <param name="compression"> Compression method to use for loading/saving this file. </param>
-        /// <param name="selector">
-        ///     Optional callback to select which tags to load into memory. Root may not be skipped.
-        ///     No reference is stored to this callback after loading (don't worry about implicitly captured closures). May be
-        ///     <c>null</c>.
-        /// </param>
-        /// <returns> Number of bytes read from the file. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for
-        ///     <paramref name="compression" />.
-        /// </exception>
-        /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
-        /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
-        /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
-        public long LoadFromFile([NotNull] string fileName, NbtCompression compression,
-            [CanBeNull] TagSelector selector)
-        {
-            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
+    /// <summary>
+    ///     Loads NBT data from a file using the most common settings.
+    ///     Automatically detects compression. Assumes the file to be big-endian, and uses default buffer size.
+    /// </summary>
+    /// <param name="fileName"> Name of the file from which data will be loaded. </param>
+    /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
+    /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
+    /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
+    /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
+    public NbtFile([NotNull] string fileName)
+        : this()
+    {
+        if (fileName is null) throw new ArgumentNullException(nameof(fileName));
+        LoadFromFile(fileName, NbtCompression.AutoDetect, null);
+    }
 
-            using (
-                var readFileStream = new FileStream(fileName,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.Read,
-                    FileStreamBufferSize,
-                    FileOptions.SequentialScan))
-            {
-                LoadFromStream(readFileStream, compression, selector);
-                FileName = fileName;
-                return readFileStream.Position;
-            }
-        }
+    #endregion
 
 
-        /// <summary>
-        ///     Loads NBT data from a byte array. Existing <c>RootTag</c> will be replaced. <c>FileName</c> will be set to
-        ///     null.
-        /// </summary>
-        /// <param name="buffer">
-        ///     Stream from which data will be loaded. If <paramref name="compression" /> is set to AutoDetect,
-        ///     this stream must support seeking.
-        /// </param>
-        /// <param name="index"> The index into <paramref name="buffer" /> at which the stream begins. Must not be negative. </param>
-        /// <param name="length">
-        ///     Maximum number of bytes to read from the given buffer. Must not be negative.
-        ///     An <see cref="EndOfStreamException" /> is thrown if NBT stream is longer than the given length.
-        /// </param>
-        /// <param name="compression"> Compression method to use for loading/saving this file. </param>
-        /// <param name="selector">
-        ///     Optional callback to select which tags to load into memory. Root may not be skipped.
-        ///     No reference is stored to this callback after loading (don't worry about implicitly captured closures). May be
-        ///     <c>null</c>.
-        /// </param>
-        /// <returns> Number of bytes read from the buffer. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="buffer" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for <paramref name="compression" />;
-        ///     if <paramref name="index" /> or <paramref name="length" /> is less than zero;
-        ///     if the sum of <paramref name="index" /> and <paramref name="length" /> is greater than the length of
-        ///     <paramref name="buffer" />.
-        /// </exception>
-        /// <exception cref="EndOfStreamException"> If NBT stream extends beyond the given <paramref name="length" />. </exception>
-        /// <exception cref="InvalidDataException"> If file compression could not be detected or decompressing failed. </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        public long LoadFromBuffer([NotNull] byte[] buffer, int index, int length, NbtCompression compression,
-            [CanBeNull] TagSelector selector)
-        {
-            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
+    #region Loading
 
-            using (var ms = new MemoryStream(buffer, index, length))
-            {
-                LoadFromStream(ms, compression, selector);
-                FileName = null;
-                return ms.Position;
-            }
-        }
+    /// <summary> Loads NBT data from a file. Existing <c>RootTag</c> will be replaced. Compression will be auto-detected. </summary>
+    /// <param name="fileName"> Name of the file from which data will be loaded. </param>
+    /// <returns> Number of bytes read from the file. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
+    /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
+    /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
+    /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
+    public long LoadFromFile([NotNull] string fileName)
+    {
+        return LoadFromFile(fileName, NbtCompression.AutoDetect, null);
+    }
 
 
-        /// <summary>
-        ///     Loads NBT data from a byte array. Existing <c>RootTag</c> will be replaced. <c>FileName</c> will be set to
-        ///     null.
-        /// </summary>
-        /// <param name="buffer">
-        ///     Stream from which data will be loaded. If <paramref name="compression" /> is set to AutoDetect,
-        ///     this stream must support seeking.
-        /// </param>
-        /// <param name="index"> The index into <paramref name="buffer" /> at which the stream begins. Must not be negative. </param>
-        /// <param name="length">
-        ///     Maximum number of bytes to read from the given buffer. Must not be negative.
-        ///     An <see cref="EndOfStreamException" /> is thrown if NBT stream is longer than the given length.
-        /// </param>
-        /// <param name="compression"> Compression method to use for loading/saving this file. </param>
-        /// <returns> Number of bytes read from the buffer. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="buffer" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for <paramref name="compression" />;
-        ///     if <paramref name="index" /> or <paramref name="length" /> is less than zero;
-        ///     if the sum of <paramref name="index" /> and <paramref name="length" /> is greater than the length of
-        ///     <paramref name="buffer" />.
-        /// </exception>
-        /// <exception cref="EndOfStreamException"> If NBT stream extends beyond the given <paramref name="length" />. </exception>
-        /// <exception cref="InvalidDataException"> If file compression could not be detected or decompressing failed. </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        public long LoadFromBuffer([NotNull] byte[] buffer, int index, int length, NbtCompression compression)
-        {
-            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
+    /// <summary> Loads NBT data from a file. Existing <c>RootTag</c> will be replaced. </summary>
+    /// <param name="fileName"> Name of the file from which data will be loaded. </param>
+    /// <param name="compression"> Compression method to use for loading/saving this file. </param>
+    /// <param name="selector">
+    ///     Optional callback to select which tags to load into memory. Root may not be skipped.
+    ///     No reference is stored to this callback after loading (don't worry about implicitly captured closures). May be
+    ///     <c>null</c>.
+    /// </param>
+    /// <returns> Number of bytes read from the file. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for
+    ///     <paramref name="compression" />.
+    /// </exception>
+    /// <exception cref="FileNotFoundException"> If given file was not found. </exception>
+    /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
+    /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
+    public long LoadFromFile([NotNull] string fileName, NbtCompression compression,
+        [CanBeNull] TagSelector selector)
+    {
+        if (fileName is null) throw new ArgumentNullException(nameof(fileName));
 
-            using (var ms = new MemoryStream(buffer, index, length))
-            {
-                LoadFromStream(ms, compression, null);
-                FileName = null;
-                return ms.Position;
-            }
-        }
-
-
-        /// <summary> Loads NBT data from a stream. Existing <c>RootTag</c> will be replaced </summary>
-        /// <param name="stream">
-        ///     Stream from which data will be loaded. If compression is set to AutoDetect, this stream must
-        ///     support seeking.
-        /// </param>
-        /// <param name="compression"> Compression method to use for loading/saving this file. </param>
-        /// <param name="selector">
-        ///     Optional callback to select which tags to load into memory. Root may not be skipped.
-        ///     No reference is stored to this callback after loading (don't worry about implicitly captured closures). May be
-        ///     <c>null</c>.
-        /// </param>
-        /// <returns> Number of bytes read from the stream. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="stream" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for
-        ///     <paramref name="compression" />.
-        /// </exception>
-        /// <exception cref="NotSupportedException">
-        ///     If <paramref name="compression" /> is set to AutoDetect, but the stream is not
-        ///     seekable.
-        /// </exception>
-        /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
-        /// <exception cref="InvalidDataException">
-        ///     If file compression could not be detected, decompressing failed, or given
-        ///     stream does not support reading.
-        /// </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        public long LoadFromStream([NotNull] Stream stream, NbtCompression compression,
-            [CanBeNull] TagSelector selector)
-        {
-            if (stream is null) throw new ArgumentNullException(nameof(stream));
-
-            FileName = null;
-
-            // detect compression, based on the first byte
-            if (compression == NbtCompression.AutoDetect)
-                FileCompression = DetectCompression(stream);
-            else
-                FileCompression = compression;
-
-            // prepare to count bytes read
-            long startOffset = 0;
-            if (stream.CanSeek)
-                startOffset = stream.Position;
-            else
-                stream = new ByteCountingStream(stream);
-
-            switch (FileCompression)
-            {
-                case NbtCompression.GZip:
-                    using (var decStream = new GZipStream(stream, CompressionMode.Decompress, true))
-                    {
-                        if (_bufferSize > 0)
-                            LoadFromStreamInternal(new BufferedStream(decStream, _bufferSize), selector);
-                        else
-                            LoadFromStreamInternal(decStream, selector);
-                    }
-
-                    break;
-
-                case NbtCompression.None:
-                    LoadFromStreamInternal(stream, selector);
-                    break;
-
-                case NbtCompression.ZLib:
-                    if (stream.ReadByte() != 0x78) throw new InvalidDataException(WrongZLibHeaderMessage);
-
-                    stream.ReadByte();
-                    using (var decStream = new DeflateStream(stream, CompressionMode.Decompress, true))
-                    {
-                        if (_bufferSize > 0)
-                            LoadFromStreamInternal(new BufferedStream(decStream, _bufferSize), selector);
-                        else
-                            LoadFromStreamInternal(decStream, selector);
-                    }
-
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(compression));
-            }
-
-            // report bytes read
-            if (stream.CanSeek) return stream.Position - startOffset;
-
-            return ((ByteCountingStream) stream).BytesRead;
-        }
-
-
-        /// <summary> Loads NBT data from a stream. Existing <c>RootTag</c> will be replaced </summary>
-        /// <param name="stream">
-        ///     Stream from which data will be loaded. If compression is set to AutoDetect, this stream must
-        ///     support seeking.
-        /// </param>
-        /// <param name="compression"> Compression method to use for loading/saving this file. </param>
-        /// <returns> Number of bytes read from the stream. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="stream" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for
-        ///     <paramref name="compression" />.
-        /// </exception>
-        /// <exception cref="NotSupportedException">
-        ///     If <paramref name="compression" /> is set to AutoDetect, but the stream is not
-        ///     seekable.
-        /// </exception>
-        /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
-        /// <exception cref="InvalidDataException">
-        ///     If file compression could not be detected, decompressing failed, or given
-        ///     stream does not support reading.
-        /// </exception>
-        /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        public long LoadFromStream([NotNull] Stream stream, NbtCompression compression)
-        {
-            return LoadFromStream(stream, compression, null);
-        }
-
-
-        private static NbtCompression DetectCompression([NotNull] Stream stream)
-        {
-            NbtCompression compression;
-            if (!stream.CanSeek)
-                throw new NotSupportedException("Cannot auto-detect compression on a stream that's not seekable.");
-
-            var firstByte = stream.ReadByte();
-            switch (firstByte)
-            {
-                case -1:
-                    throw new EndOfStreamException();
-
-                case (byte) NbtTagType.Compound: // 0x0A
-                    compression = NbtCompression.None;
-                    break;
-
-                case 0x1F:
-                    // GZip magic number
-                    compression = NbtCompression.GZip;
-                    break;
-
-                case 0x78:
-                    // ZLib header
-                    compression = NbtCompression.ZLib;
-                    break;
-
-                default:
-                    throw new InvalidDataException("Could not auto-detect compression format.");
-            }
-
-            stream.Seek(-1, SeekOrigin.Current);
-            return compression;
-        }
-
-
-        /// <summary>
-        ///     Write the root TAG_Compound, honouring <see cref="RootHasName"/>. With the
-        ///     flag set (default) this emits <c>[0x0A][name][body][0x00]</c> — the disk
-        ///     framing. With it cleared this emits <c>[0x0A][body][0x00]</c>, matching
-        ///     the network-NBT framing used by Java protocol 1.20.2+.
-        /// </summary>
-        private void WriteRoot(NbtBinaryWriter writer)
-        {
-            if (RootHasName)
-            {
-                _rootTag.WriteTag(writer);
-            }
-            else
-            {
-                writer.Write(NbtTagType.Compound);
-                _rootTag.WriteData(writer);
-            }
-        }
-
-
-        private void LoadFromStreamInternal([NotNull] Stream stream, [CanBeNull] TagSelector tagSelector)
-        {
-            // Make sure the first byte in this file is the tag for a TAG_Compound
-            var firstByte = stream.ReadByte();
-            if (firstByte < 0) throw new EndOfStreamException();
-
-            if (firstByte != (int) NbtTagType.Compound)
-                throw new NbtFormatException("Given NBT stream does not start with a TAG_Compound");
-
-            var reader = new NbtBinaryReader(stream, BigEndian)
-            {
-                Selector = tagSelector,
-                UseStandardUtf8 = UseStandardUtf8,
-                MaxDepth = MaxDepth,
-                MaxArrayElements = MaxArrayElements
-            };
-
-            var rootName = RootHasName ? reader.ReadString() : string.Empty;
-            var rootCompound = new NbtCompound(rootName);
-            rootCompound.ReadTag(reader);
-            RootTag = rootCompound;
-        }
-
-
-        /// <summary>
-        ///     Asynchronously loads NBT data from a file. Existing <c>RootTag</c> will be replaced.
-        ///     Compression will be auto-detected. The file is read with overlapped I/O; tag parsing itself remains CPU-bound and
-        ///     runs synchronously over the buffered file contents.
-        /// </summary>
-        public Task<long> LoadFromFileAsync([NotNull] string fileName, CancellationToken cancellationToken = default)
-        {
-            return LoadFromFileAsync(fileName, NbtCompression.AutoDetect, null, cancellationToken);
-        }
-
-
-        /// <summary>
-        ///     Asynchronously loads NBT data from a file. Existing <c>RootTag</c> will be replaced.
-        ///     The file is read with overlapped I/O; tag parsing itself remains CPU-bound and runs synchronously over the
-        ///     buffered file contents.
-        /// </summary>
-        public async Task<long> LoadFromFileAsync([NotNull] string fileName, NbtCompression compression,
-            [CanBeNull] TagSelector selector, CancellationToken cancellationToken = default)
-        {
-            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
-
-            await using var readFileStream = new FileStream(fileName,
+        using (
+            var readFileStream = new FileStream(fileName,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.Read,
                 FileStreamBufferSize,
-                FileOptions.SequentialScan | FileOptions.Asynchronous);
-            using var ms = new MemoryStream();
-            await readFileStream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
-            ms.Position = 0;
-            LoadFromStream(ms, compression, selector);
+                FileOptions.SequentialScan))
+        {
+            LoadFromStream(readFileStream, compression, selector);
             FileName = fileName;
+            return readFileStream.Position;
+        }
+    }
+
+
+    /// <summary>
+    ///     Loads NBT data from a byte array. Existing <c>RootTag</c> will be replaced. <c>FileName</c> will be set to
+    ///     null.
+    /// </summary>
+    /// <param name="buffer">
+    ///     Stream from which data will be loaded. If <paramref name="compression" /> is set to AutoDetect,
+    ///     this stream must support seeking.
+    /// </param>
+    /// <param name="index"> The index into <paramref name="buffer" /> at which the stream begins. Must not be negative. </param>
+    /// <param name="length">
+    ///     Maximum number of bytes to read from the given buffer. Must not be negative.
+    ///     An <see cref="EndOfStreamException" /> is thrown if NBT stream is longer than the given length.
+    /// </param>
+    /// <param name="compression"> Compression method to use for loading/saving this file. </param>
+    /// <param name="selector">
+    ///     Optional callback to select which tags to load into memory. Root may not be skipped.
+    ///     No reference is stored to this callback after loading (don't worry about implicitly captured closures). May be
+    ///     <c>null</c>.
+    /// </param>
+    /// <returns> Number of bytes read from the buffer. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="buffer" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for <paramref name="compression" />;
+    ///     if <paramref name="index" /> or <paramref name="length" /> is less than zero;
+    ///     if the sum of <paramref name="index" /> and <paramref name="length" /> is greater than the length of
+    ///     <paramref name="buffer" />.
+    /// </exception>
+    /// <exception cref="EndOfStreamException"> If NBT stream extends beyond the given <paramref name="length" />. </exception>
+    /// <exception cref="InvalidDataException"> If file compression could not be detected or decompressing failed. </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    public long LoadFromBuffer([NotNull] byte[] buffer, int index, int length, NbtCompression compression,
+        [CanBeNull] TagSelector selector)
+    {
+        if (buffer is null) throw new ArgumentNullException(nameof(buffer));
+
+        using (var ms = new MemoryStream(buffer, index, length))
+        {
+            LoadFromStream(ms, compression, selector);
+            FileName = null;
             return ms.Position;
         }
+    }
 
 
-        /// <summary>
-        ///     Asynchronously loads NBT data from a stream. Existing <c>RootTag</c> will be replaced.
-        ///     The stream is buffered to memory asynchronously, then parsed synchronously.
-        /// </summary>
-        public Task<long> LoadFromStreamAsync([NotNull] Stream stream, NbtCompression compression,
-            CancellationToken cancellationToken = default)
+    /// <summary>
+    ///     Loads NBT data from a byte array. Existing <c>RootTag</c> will be replaced. <c>FileName</c> will be set to
+    ///     null.
+    /// </summary>
+    /// <param name="buffer">
+    ///     Stream from which data will be loaded. If <paramref name="compression" /> is set to AutoDetect,
+    ///     this stream must support seeking.
+    /// </param>
+    /// <param name="index"> The index into <paramref name="buffer" /> at which the stream begins. Must not be negative. </param>
+    /// <param name="length">
+    ///     Maximum number of bytes to read from the given buffer. Must not be negative.
+    ///     An <see cref="EndOfStreamException" /> is thrown if NBT stream is longer than the given length.
+    /// </param>
+    /// <param name="compression"> Compression method to use for loading/saving this file. </param>
+    /// <returns> Number of bytes read from the buffer. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="buffer" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for <paramref name="compression" />;
+    ///     if <paramref name="index" /> or <paramref name="length" /> is less than zero;
+    ///     if the sum of <paramref name="index" /> and <paramref name="length" /> is greater than the length of
+    ///     <paramref name="buffer" />.
+    /// </exception>
+    /// <exception cref="EndOfStreamException"> If NBT stream extends beyond the given <paramref name="length" />. </exception>
+    /// <exception cref="InvalidDataException"> If file compression could not be detected or decompressing failed. </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    public long LoadFromBuffer([NotNull] byte[] buffer, int index, int length, NbtCompression compression)
+    {
+        if (buffer is null) throw new ArgumentNullException(nameof(buffer));
+
+        using (var ms = new MemoryStream(buffer, index, length))
         {
-            return LoadFromStreamAsync(stream, compression, null, cancellationToken);
+            LoadFromStream(ms, compression, null);
+            FileName = null;
+            return ms.Position;
+        }
+    }
+
+
+    /// <summary> Loads NBT data from a stream. Existing <c>RootTag</c> will be replaced </summary>
+    /// <param name="stream">
+    ///     Stream from which data will be loaded. If compression is set to AutoDetect, this stream must
+    ///     support seeking.
+    /// </param>
+    /// <param name="compression"> Compression method to use for loading/saving this file. </param>
+    /// <param name="selector">
+    ///     Optional callback to select which tags to load into memory. Root may not be skipped.
+    ///     No reference is stored to this callback after loading (don't worry about implicitly captured closures). May be
+    ///     <c>null</c>.
+    /// </param>
+    /// <returns> Number of bytes read from the stream. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="stream" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for
+    ///     <paramref name="compression" />.
+    /// </exception>
+    /// <exception cref="NotSupportedException">
+    ///     If <paramref name="compression" /> is set to AutoDetect, but the stream is not
+    ///     seekable.
+    /// </exception>
+    /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
+    /// <exception cref="InvalidDataException">
+    ///     If file compression could not be detected, decompressing failed, or given
+    ///     stream does not support reading.
+    /// </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    public long LoadFromStream([NotNull] Stream stream, NbtCompression compression,
+        [CanBeNull] TagSelector selector)
+    {
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+
+        FileName = null;
+
+        // detect compression, based on the first byte
+        if (compression == NbtCompression.AutoDetect)
+            FileCompression = DetectCompression(stream);
+        else
+            FileCompression = compression;
+
+        // prepare to count bytes read
+        long startOffset = 0;
+        if (stream.CanSeek)
+            startOffset = stream.Position;
+        else
+            stream = new ByteCountingStream(stream);
+
+        switch (FileCompression)
+        {
+            case NbtCompression.GZip:
+                using (var decStream = new GZipStream(stream, CompressionMode.Decompress, true))
+                {
+                    if (_bufferSize > 0)
+                        LoadFromStreamInternal(new BufferedStream(decStream, _bufferSize), selector);
+                    else
+                        LoadFromStreamInternal(decStream, selector);
+                }
+
+                break;
+
+            case NbtCompression.None:
+                LoadFromStreamInternal(stream, selector);
+                break;
+
+            case NbtCompression.ZLib:
+                if (stream.ReadByte() != 0x78) throw new InvalidDataException(WrongZLibHeaderMessage);
+
+                stream.ReadByte();
+                using (var decStream = new DeflateStream(stream, CompressionMode.Decompress, true))
+                {
+                    if (_bufferSize > 0)
+                        LoadFromStreamInternal(new BufferedStream(decStream, _bufferSize), selector);
+                    else
+                        LoadFromStreamInternal(decStream, selector);
+                }
+
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(compression));
         }
 
+        // report bytes read
+        if (stream.CanSeek) return stream.Position - startOffset;
 
-        /// <summary>
-        ///     Asynchronously loads NBT data from a stream. Existing <c>RootTag</c> will be replaced.
-        ///     The stream is buffered to memory asynchronously, then parsed synchronously.
-        /// </summary>
-        public async Task<long> LoadFromStreamAsync([NotNull] Stream stream, NbtCompression compression,
-            [CanBeNull] TagSelector selector, CancellationToken cancellationToken = default)
+        return ((ByteCountingStream) stream).BytesRead;
+    }
+
+
+    /// <summary> Loads NBT data from a stream. Existing <c>RootTag</c> will be replaced </summary>
+    /// <param name="stream">
+    ///     Stream from which data will be loaded. If compression is set to AutoDetect, this stream must
+    ///     support seeking.
+    /// </param>
+    /// <param name="compression"> Compression method to use for loading/saving this file. </param>
+    /// <returns> Number of bytes read from the stream. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="stream" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for
+    ///     <paramref name="compression" />.
+    /// </exception>
+    /// <exception cref="NotSupportedException">
+    ///     If <paramref name="compression" /> is set to AutoDetect, but the stream is not
+    ///     seekable.
+    /// </exception>
+    /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
+    /// <exception cref="InvalidDataException">
+    ///     If file compression could not be detected, decompressing failed, or given
+    ///     stream does not support reading.
+    /// </exception>
+    /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
+    public long LoadFromStream([NotNull] Stream stream, NbtCompression compression)
+    {
+        return LoadFromStream(stream, compression, null);
+    }
+
+
+    private static NbtCompression DetectCompression([NotNull] Stream stream)
+    {
+        NbtCompression compression;
+        if (!stream.CanSeek)
+            throw new NotSupportedException("Cannot auto-detect compression on a stream that's not seekable.");
+
+        var firstByte = stream.ReadByte();
+        switch (firstByte)
         {
-            if (stream is null) throw new ArgumentNullException(nameof(stream));
+            case -1:
+                throw new EndOfStreamException();
 
-            using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
-            ms.Position = 0;
-            return LoadFromStream(ms, compression, selector);
+            case (byte) NbtTagType.Compound: // 0x0A
+                compression = NbtCompression.None;
+                break;
+
+            case 0x1F:
+                // GZip magic number
+                compression = NbtCompression.GZip;
+                break;
+
+            case 0x78:
+                // ZLib header
+                compression = NbtCompression.ZLib;
+                break;
+
+            default:
+                throw new InvalidDataException("Could not auto-detect compression format.");
         }
 
-        #endregion
+        stream.Seek(-1, SeekOrigin.Current);
+        return compression;
+    }
 
 
-        #region Saving
-
-        /// <summary> Saves this NBT file to a stream. Nothing is written to stream if RootTag is <c>null</c>. </summary>
-        /// <param name="fileName"> File to write data to. May not be <c>null</c>. </param>
-        /// <param name="compression"> Compression mode to use for saving. May not be AutoDetect. </param>
-        /// <returns> Number of bytes written to the file. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentException"> If AutoDetect was given as the <paramref name="compression" /> mode. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for
-        ///     <paramref name="compression" />.
-        /// </exception>
-        /// <exception cref="InvalidDataException"> If given stream does not support writing. </exception>
-        /// <exception cref="IOException"> If an I/O error occurred while creating the file. </exception>
-        /// <exception cref="UnauthorizedAccessException"> Specified file is read-only, or a permission issue occurred. </exception>
-        /// <exception cref="NbtFormatException">
-        ///     If one of the NbtCompound tags contained unnamed tags;
-        ///     or if an NbtList tag had Unknown list type and no elements.
-        /// </exception>
-        public long SaveToFile([NotNull] string fileName, NbtCompression compression)
+    /// <summary>
+    ///     Write the root TAG_Compound, honouring <see cref="RootHasName"/>. With the
+    ///     flag set (default) this emits <c>[0x0A][name][body][0x00]</c> — the disk
+    ///     framing. With it cleared this emits <c>[0x0A][body][0x00]</c>, matching
+    ///     the network-NBT framing used by Java protocol 1.20.2+.
+    /// </summary>
+    private void WriteRoot(NbtBinaryWriter writer)
+    {
+        if (RootHasName)
         {
-            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
-
-            using (
-                var saveFile = new FileStream(fileName,
-                    FileMode.Create,
-                    FileAccess.Write,
-                    FileShare.None,
-                    FileStreamBufferSize,
-                    FileOptions.SequentialScan))
-            {
-                return SaveToStream(saveFile, compression);
-            }
+            _rootTag.WriteTag(writer);
         }
-
-
-        /// <summary> Saves this NBT file to a stream. Nothing is written to stream if RootTag is <c>null</c>. </summary>
-        /// <param name="buffer"> Buffer to write data to. May not be <c>null</c>. </param>
-        /// <param name="index"> The index into <paramref name="buffer" /> at which the stream should begin. </param>
-        /// <param name="compression"> Compression mode to use for saving. May not be AutoDetect. </param>
-        /// <returns> Number of bytes written to the buffer. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="buffer" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentException"> If AutoDetect was given as the <paramref name="compression" /> mode. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for <paramref name="compression" />;
-        ///     if <paramref name="index" /> is less than zero; or if <paramref name="index" /> is greater than the length of
-        ///     <paramref name="buffer" />.
-        /// </exception>
-        /// <exception cref="InvalidDataException"> If given stream does not support writing. </exception>
-        /// <exception cref="UnauthorizedAccessException"> Specified file is read-only, or a permission issue occurred. </exception>
-        /// <exception cref="NbtFormatException">
-        ///     If one of the NbtCompound tags contained unnamed tags;
-        ///     or if an NbtList tag had Unknown list type and no elements.
-        /// </exception>
-        public long SaveToBuffer([NotNull] byte[] buffer, int index, NbtCompression compression)
+        else
         {
-            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
-
-            using (var ms = new MemoryStream(buffer, index, buffer.Length - index))
-            {
-                return SaveToStream(ms, compression);
-            }
+            writer.Write(NbtTagType.Compound);
+            _rootTag.WriteData(writer);
         }
+    }
 
 
-        /// <summary> Saves this NBT file to a stream. Nothing is written to stream if RootTag is <c>null</c>. </summary>
-        /// <param name="compression"> Compression mode to use for saving. May not be AutoDetect. </param>
-        /// <returns> Byte array containing the serialized NBT data. </returns>
-        /// <exception cref="ArgumentException"> If AutoDetect was given as the <paramref name="compression" /> mode. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for
-        ///     <paramref name="compression" />.
-        /// </exception>
-        /// <exception cref="InvalidDataException"> If given stream does not support writing. </exception>
-        /// <exception cref="UnauthorizedAccessException"> Specified file is read-only, or a permission issue occurred. </exception>
-        /// <exception cref="NbtFormatException">
-        ///     If one of the NbtCompound tags contained unnamed tags;
-        ///     or if an NbtList tag had Unknown list type and no elements.
-        /// </exception>
-        [NotNull]
-        public byte[] SaveToBuffer(NbtCompression compression)
+    private void LoadFromStreamInternal([NotNull] Stream stream, [CanBeNull] TagSelector tagSelector)
+    {
+        // Make sure the first byte in this file is the tag for a TAG_Compound
+        var firstByte = stream.ReadByte();
+        if (firstByte < 0) throw new EndOfStreamException();
+
+        if (firstByte != (int) NbtTagType.Compound)
+            throw new NbtFormatException("Given NBT stream does not start with a TAG_Compound");
+
+        var reader = new NbtBinaryReader(stream, BigEndian)
         {
-            using (var ms = new MemoryStream())
-            {
-                SaveToStream(ms, compression);
-                return ms.ToArray();
-            }
-        }
+            Selector = tagSelector,
+            UseStandardUtf8 = UseStandardUtf8,
+            MaxDepth = MaxDepth,
+            MaxArrayElements = MaxArrayElements
+        };
+
+        var rootName = RootHasName ? reader.ReadString() : string.Empty;
+        var rootCompound = new NbtCompound(rootName);
+        rootCompound.ReadTag(reader);
+        RootTag = rootCompound;
+    }
 
 
-        /// <summary> Saves this NBT file to a stream. Nothing is written to stream if RootTag is <c>null</c>. </summary>
-        /// <param name="stream"> Stream to write data to. May not be <c>null</c>. </param>
-        /// <param name="compression"> Compression mode to use for saving. May not be AutoDetect. </param>
-        /// <returns> Number of bytes written to the stream. </returns>
-        /// <exception cref="ArgumentNullException"> <paramref name="stream" /> is <c>null</c>. </exception>
-        /// <exception cref="ArgumentException"> If AutoDetect was given as the <paramref name="compression" /> mode. </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     If an unrecognized/unsupported value was given for
-        ///     <paramref name="compression" />.
-        /// </exception>
-        /// <exception cref="InvalidDataException"> If given stream does not support writing. </exception>
-        /// <exception cref="NbtFormatException">
-        ///     If RootTag is null;
-        ///     or if RootTag is unnamed;
-        ///     or if one of the NbtCompound tags contained unnamed tags;
-        ///     or if an NbtList tag had Unknown list type and no elements.
-        /// </exception>
-        public long SaveToStream([NotNull] Stream stream, NbtCompression compression)
-        {
-            if (stream is null) throw new ArgumentNullException(nameof(stream));
-
-            switch (compression)
-            {
-                case NbtCompression.AutoDetect:
-                    throw new ArgumentException("AutoDetect is not a valid NbtCompression value for saving.");
-                case NbtCompression.ZLib:
-                case NbtCompression.GZip:
-                case NbtCompression.None:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(compression));
-            }
-
-            if (RootHasName && _rootTag.Name is null)
-                // This may trigger if root tag has been renamed
-                throw new NbtFormatException(
-                    "Cannot save NbtFile: Root tag is not named. Its name may be an empty string, but not null.");
-
-            long startOffset = 0;
-            if (stream.CanSeek)
-                startOffset = stream.Position;
-            else
-                stream = new ByteCountingStream(stream);
-
-            switch (compression)
-            {
-                case NbtCompression.ZLib:
-                    stream.WriteByte(0x78);
-                    stream.WriteByte(0x01);
-                    int checksum;
-                    using (var compressStream = new ZLibStream(stream, CompressionMode.Compress, true))
-                    {
-                        var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        WriteRoot(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
-                        bufferedStream.Flush();
-                        checksum = compressStream.Checksum;
-                    }
-
-                    var checksumBytes = BitConverter.GetBytes(checksum);
-                    if (BitConverter.IsLittleEndian)
-                        // Adler32 checksum is big-endian
-                        Array.Reverse(checksumBytes);
-
-                    stream.Write(checksumBytes, 0, checksumBytes.Length);
-                    break;
-
-                case NbtCompression.GZip:
-                    using (var compressStream = new GZipStream(stream, CompressionMode.Compress, true))
-                    {
-                        // use a buffered stream to avoid GZipping in small increments (which has a lot of overhead)
-                        var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        WriteRoot(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
-                        bufferedStream.Flush();
-                    }
-
-                    break;
-
-                case NbtCompression.None:
-                    var writer = new NbtBinaryWriter(stream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 };
-                    WriteRoot(writer);
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(compression));
-            }
-
-            if (stream.CanSeek) return stream.Position - startOffset;
-
-            return ((ByteCountingStream) stream).BytesWritten;
-        }
+    /// <summary>
+    ///     Asynchronously loads NBT data from a file. Existing <c>RootTag</c> will be replaced.
+    ///     Compression will be auto-detected. The file is read with overlapped I/O; tag parsing itself remains CPU-bound and
+    ///     runs synchronously over the buffered file contents.
+    /// </summary>
+    public Task<long> LoadFromFileAsync([NotNull] string fileName, CancellationToken cancellationToken = default)
+    {
+        return LoadFromFileAsync(fileName, NbtCompression.AutoDetect, null, cancellationToken);
+    }
 
 
-        /// <summary>
-        ///     Asynchronously saves this NBT file to disk.
-        ///     Serialization is CPU-bound and runs synchronously to an in-memory buffer; the file write itself is async.
-        /// </summary>
-        public async Task<long> SaveToFileAsync([NotNull] string fileName, NbtCompression compression,
-            CancellationToken cancellationToken = default)
-        {
-            if (fileName is null) throw new ArgumentNullException(nameof(fileName));
+    /// <summary>
+    ///     Asynchronously loads NBT data from a file. Existing <c>RootTag</c> will be replaced.
+    ///     The file is read with overlapped I/O; tag parsing itself remains CPU-bound and runs synchronously over the
+    ///     buffered file contents.
+    /// </summary>
+    public async Task<long> LoadFromFileAsync([NotNull] string fileName, NbtCompression compression,
+        [CanBeNull] TagSelector selector, CancellationToken cancellationToken = default)
+    {
+        if (fileName is null) throw new ArgumentNullException(nameof(fileName));
 
-            using var ms = new MemoryStream();
-            var bytesWritten = SaveToStream(ms, compression);
-            ms.Position = 0;
+        await using var readFileStream = new FileStream(fileName,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            FileStreamBufferSize,
+            FileOptions.SequentialScan | FileOptions.Asynchronous);
+        using var ms = new MemoryStream();
+        await readFileStream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+        ms.Position = 0;
+        LoadFromStream(ms, compression, selector);
+        FileName = fileName;
+        return ms.Position;
+    }
 
-            await using var saveFile = new FileStream(fileName,
+
+    /// <summary>
+    ///     Asynchronously loads NBT data from a stream. Existing <c>RootTag</c> will be replaced.
+    ///     The stream is buffered to memory asynchronously, then parsed synchronously.
+    /// </summary>
+    public Task<long> LoadFromStreamAsync([NotNull] Stream stream, NbtCompression compression,
+        CancellationToken cancellationToken = default)
+    {
+        return LoadFromStreamAsync(stream, compression, null, cancellationToken);
+    }
+
+
+    /// <summary>
+    ///     Asynchronously loads NBT data from a stream. Existing <c>RootTag</c> will be replaced.
+    ///     The stream is buffered to memory asynchronously, then parsed synchronously.
+    /// </summary>
+    public async Task<long> LoadFromStreamAsync([NotNull] Stream stream, NbtCompression compression,
+        [CanBeNull] TagSelector selector, CancellationToken cancellationToken = default)
+    {
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+        ms.Position = 0;
+        return LoadFromStream(ms, compression, selector);
+    }
+
+    #endregion
+
+
+    #region Saving
+
+    /// <summary> Saves this NBT file to a stream. Nothing is written to stream if RootTag is <c>null</c>. </summary>
+    /// <param name="fileName"> File to write data to. May not be <c>null</c>. </param>
+    /// <param name="compression"> Compression mode to use for saving. May not be AutoDetect. </param>
+    /// <returns> Number of bytes written to the file. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="fileName" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentException"> If AutoDetect was given as the <paramref name="compression" /> mode. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for
+    ///     <paramref name="compression" />.
+    /// </exception>
+    /// <exception cref="InvalidDataException"> If given stream does not support writing. </exception>
+    /// <exception cref="IOException"> If an I/O error occurred while creating the file. </exception>
+    /// <exception cref="UnauthorizedAccessException"> Specified file is read-only, or a permission issue occurred. </exception>
+    /// <exception cref="NbtFormatException">
+    ///     If one of the NbtCompound tags contained unnamed tags;
+    ///     or if an NbtList tag had Unknown list type and no elements.
+    /// </exception>
+    public long SaveToFile([NotNull] string fileName, NbtCompression compression)
+    {
+        if (fileName is null) throw new ArgumentNullException(nameof(fileName));
+
+        using (
+            var saveFile = new FileStream(fileName,
                 FileMode.Create,
                 FileAccess.Write,
                 FileShare.None,
                 FileStreamBufferSize,
-                FileOptions.SequentialScan | FileOptions.Asynchronous);
-            await ms.CopyToAsync(saveFile, cancellationToken).ConfigureAwait(false);
-            return bytesWritten;
-        }
-
-
-        /// <summary>
-        ///     Asynchronously saves this NBT file to a stream.
-        ///     Serialization is CPU-bound and runs synchronously to an in-memory buffer; the write to <paramref name="stream"/>
-        ///     is performed asynchronously.
-        /// </summary>
-        public async Task<long> SaveToStreamAsync([NotNull] Stream stream, NbtCompression compression,
-            CancellationToken cancellationToken = default)
+                FileOptions.SequentialScan))
         {
-            if (stream is null) throw new ArgumentNullException(nameof(stream));
+            return SaveToStream(saveFile, compression);
+        }
+    }
 
-            using var ms = new MemoryStream();
-            var bytesWritten = SaveToStream(ms, compression);
-            ms.Position = 0;
-            await ms.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-            return bytesWritten;
+
+    /// <summary> Saves this NBT file to a stream. Nothing is written to stream if RootTag is <c>null</c>. </summary>
+    /// <param name="buffer"> Buffer to write data to. May not be <c>null</c>. </param>
+    /// <param name="index"> The index into <paramref name="buffer" /> at which the stream should begin. </param>
+    /// <param name="compression"> Compression mode to use for saving. May not be AutoDetect. </param>
+    /// <returns> Number of bytes written to the buffer. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="buffer" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentException"> If AutoDetect was given as the <paramref name="compression" /> mode. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for <paramref name="compression" />;
+    ///     if <paramref name="index" /> is less than zero; or if <paramref name="index" /> is greater than the length of
+    ///     <paramref name="buffer" />.
+    /// </exception>
+    /// <exception cref="InvalidDataException"> If given stream does not support writing. </exception>
+    /// <exception cref="UnauthorizedAccessException"> Specified file is read-only, or a permission issue occurred. </exception>
+    /// <exception cref="NbtFormatException">
+    ///     If one of the NbtCompound tags contained unnamed tags;
+    ///     or if an NbtList tag had Unknown list type and no elements.
+    /// </exception>
+    public long SaveToBuffer([NotNull] byte[] buffer, int index, NbtCompression compression)
+    {
+        if (buffer is null) throw new ArgumentNullException(nameof(buffer));
+
+        using (var ms = new MemoryStream(buffer, index, buffer.Length - index))
+        {
+            return SaveToStream(ms, compression);
+        }
+    }
+
+
+    /// <summary> Saves this NBT file to a stream. Nothing is written to stream if RootTag is <c>null</c>. </summary>
+    /// <param name="compression"> Compression mode to use for saving. May not be AutoDetect. </param>
+    /// <returns> Byte array containing the serialized NBT data. </returns>
+    /// <exception cref="ArgumentException"> If AutoDetect was given as the <paramref name="compression" /> mode. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for
+    ///     <paramref name="compression" />.
+    /// </exception>
+    /// <exception cref="InvalidDataException"> If given stream does not support writing. </exception>
+    /// <exception cref="UnauthorizedAccessException"> Specified file is read-only, or a permission issue occurred. </exception>
+    /// <exception cref="NbtFormatException">
+    ///     If one of the NbtCompound tags contained unnamed tags;
+    ///     or if an NbtList tag had Unknown list type and no elements.
+    /// </exception>
+    [NotNull]
+    public byte[] SaveToBuffer(NbtCompression compression)
+    {
+        using (var ms = new MemoryStream())
+        {
+            SaveToStream(ms, compression);
+            return ms.ToArray();
+        }
+    }
+
+
+    /// <summary> Saves this NBT file to a stream. Nothing is written to stream if RootTag is <c>null</c>. </summary>
+    /// <param name="stream"> Stream to write data to. May not be <c>null</c>. </param>
+    /// <param name="compression"> Compression mode to use for saving. May not be AutoDetect. </param>
+    /// <returns> Number of bytes written to the stream. </returns>
+    /// <exception cref="ArgumentNullException"> <paramref name="stream" /> is <c>null</c>. </exception>
+    /// <exception cref="ArgumentException"> If AutoDetect was given as the <paramref name="compression" /> mode. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     If an unrecognized/unsupported value was given for
+    ///     <paramref name="compression" />.
+    /// </exception>
+    /// <exception cref="InvalidDataException"> If given stream does not support writing. </exception>
+    /// <exception cref="NbtFormatException">
+    ///     If RootTag is null;
+    ///     or if RootTag is unnamed;
+    ///     or if one of the NbtCompound tags contained unnamed tags;
+    ///     or if an NbtList tag had Unknown list type and no elements.
+    /// </exception>
+    public long SaveToStream([NotNull] Stream stream, NbtCompression compression)
+    {
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+
+        switch (compression)
+        {
+            case NbtCompression.AutoDetect:
+                throw new ArgumentException("AutoDetect is not a valid NbtCompression value for saving.");
+            case NbtCompression.ZLib:
+            case NbtCompression.GZip:
+            case NbtCompression.None:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(compression));
         }
 
-        #endregion
+        if (RootHasName && _rootTag.Name is null)
+            // This may trigger if root tag has been renamed
+            throw new NbtFormatException(
+                "Cannot save NbtFile: Root tag is not named. Its name may be an empty string, but not null.");
+
+        long startOffset = 0;
+        if (stream.CanSeek)
+            startOffset = stream.Position;
+        else
+            stream = new ByteCountingStream(stream);
+
+        switch (compression)
+        {
+            case NbtCompression.ZLib:
+                stream.WriteByte(0x78);
+                stream.WriteByte(0x01);
+                int checksum;
+                using (var compressStream = new ZLibStream(stream, CompressionMode.Compress, true))
+                {
+                    var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
+                    WriteRoot(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
+                    bufferedStream.Flush();
+                    checksum = compressStream.Checksum;
+                }
+
+                var checksumBytes = BitConverter.GetBytes(checksum);
+                if (BitConverter.IsLittleEndian)
+                    // Adler32 checksum is big-endian
+                    Array.Reverse(checksumBytes);
+
+                stream.Write(checksumBytes, 0, checksumBytes.Length);
+                break;
+
+            case NbtCompression.GZip:
+                using (var compressStream = new GZipStream(stream, CompressionMode.Compress, true))
+                {
+                    // use a buffered stream to avoid GZipping in small increments (which has a lot of overhead)
+                    var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
+                    WriteRoot(new NbtBinaryWriter(bufferedStream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 });
+                    bufferedStream.Flush();
+                }
+
+                break;
+
+            case NbtCompression.None:
+                var writer = new NbtBinaryWriter(stream, BigEndian) { UseStandardUtf8 = UseStandardUtf8 };
+                WriteRoot(writer);
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(compression));
+        }
+
+        if (stream.CanSeek) return stream.Position - startOffset;
+
+        return ((ByteCountingStream) stream).BytesWritten;
     }
+
+
+    /// <summary>
+    ///     Asynchronously saves this NBT file to disk.
+    ///     Serialization is CPU-bound and runs synchronously to an in-memory buffer; the file write itself is async.
+    /// </summary>
+    public async Task<long> SaveToFileAsync([NotNull] string fileName, NbtCompression compression,
+        CancellationToken cancellationToken = default)
+    {
+        if (fileName is null) throw new ArgumentNullException(nameof(fileName));
+
+        using var ms = new MemoryStream();
+        var bytesWritten = SaveToStream(ms, compression);
+        ms.Position = 0;
+
+        await using var saveFile = new FileStream(fileName,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            FileStreamBufferSize,
+            FileOptions.SequentialScan | FileOptions.Asynchronous);
+        await ms.CopyToAsync(saveFile, cancellationToken).ConfigureAwait(false);
+        return bytesWritten;
+    }
+
+
+    /// <summary>
+    ///     Asynchronously saves this NBT file to a stream.
+    ///     Serialization is CPU-bound and runs synchronously to an in-memory buffer; the write to <paramref name="stream"/>
+    ///     is performed asynchronously.
+    /// </summary>
+    public async Task<long> SaveToStreamAsync([NotNull] Stream stream, NbtCompression compression,
+        CancellationToken cancellationToken = default)
+    {
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+
+        using var ms = new MemoryStream();
+        var bytesWritten = SaveToStream(ms, compression);
+        ms.Position = 0;
+        await ms.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+        return bytesWritten;
+    }
+
+    #endregion
 }

@@ -1,114 +1,113 @@
 ﻿using System;
 using System.Text;
 
-namespace TrueCraft.Nbt.Tags
+namespace TrueCraft.Nbt.Tags;
+
+/// <summary> A tag containing a single signed 16-bit integer. </summary>
+public sealed class NbtShort : NbtTag
 {
-    /// <summary> A tag containing a single signed 16-bit integer. </summary>
-    public sealed class NbtShort : NbtTag
+    /// <summary> Creates an unnamed NbtShort tag with the default value of 0. </summary>
+    public NbtShort()
     {
-        /// <summary> Creates an unnamed NbtShort tag with the default value of 0. </summary>
-        public NbtShort()
-        {
-        }
+    }
 
 
-        /// <summary> Creates an unnamed NbtShort tag with the given value. </summary>
-        /// <param name="value"> Value to assign to this tag. </param>
-        public NbtShort(short value)
-            : this(null, value)
-        {
-        }
+    /// <summary> Creates an unnamed NbtShort tag with the given value. </summary>
+    /// <param name="value"> Value to assign to this tag. </param>
+    public NbtShort(short value)
+        : this(null, value)
+    {
+    }
 
 
-        /// <summary> Creates an NbtShort tag with the given name and the default value of 0. </summary>
-        /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
-        public NbtShort([CanBeNull] string tagName)
-            : this(tagName, 0)
-        {
-        }
+    /// <summary> Creates an NbtShort tag with the given name and the default value of 0. </summary>
+    /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
+    public NbtShort([CanBeNull] string tagName)
+        : this(tagName, 0)
+    {
+    }
 
 
-        /// <summary> Creates an NbtShort tag with the given name and value. </summary>
-        /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
-        /// <param name="value"> Value to assign to this tag. </param>
-        public NbtShort([CanBeNull] string tagName, short value)
-        {
-            name = tagName;
-            Value = value;
-        }
+    /// <summary> Creates an NbtShort tag with the given name and value. </summary>
+    /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
+    /// <param name="value"> Value to assign to this tag. </param>
+    public NbtShort([CanBeNull] string tagName, short value)
+    {
+        name = tagName;
+        Value = value;
+    }
 
 
-        /// <summary> Creates a copy of given NbtShort tag. </summary>
-        /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
-        /// <exception cref="ArgumentNullException"> <paramref name="other" /> is <c>null</c>. </exception>
-        public NbtShort([NotNull] NbtShort other)
-        {
-            if (other is null) throw new ArgumentNullException(nameof(other));
-            name = other.name;
-            Value = other.Value;
-        }
+    /// <summary> Creates a copy of given NbtShort tag. </summary>
+    /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
+    /// <exception cref="ArgumentNullException"> <paramref name="other" /> is <c>null</c>. </exception>
+    public NbtShort([NotNull] NbtShort other)
+    {
+        if (other is null) throw new ArgumentNullException(nameof(other));
+        name = other.name;
+        Value = other.Value;
+    }
 
-        /// <summary> Type of this tag (Short). </summary>
-        public override NbtTagType TagType => NbtTagType.Short;
+    /// <summary> Type of this tag (Short). </summary>
+    public override NbtTagType TagType => NbtTagType.Short;
 
-        /// <summary> Value/payload of this tag (a single signed 16-bit integer). </summary>
-        public short Value { get; set; }
-
-
-        /// <inheritdoc />
-        public override object Clone()
-        {
-            return new NbtShort(this);
-        }
+    /// <summary> Value/payload of this tag (a single signed 16-bit integer). </summary>
+    public short Value { get; set; }
 
 
-        internal override void PrettyPrint(StringBuilder sb, string indentString, int indentLevel)
-        {
-            for (var i = 0; i < indentLevel; i++) sb.Append(indentString);
-
-            sb.Append("TAG_Short");
-            if (!string.IsNullOrEmpty(Name)) sb.AppendFormat("(\"{0}\")", Name);
-
-            sb.Append(": ");
-            sb.Append(Value);
-        }
+    /// <inheritdoc />
+    public override object Clone()
+    {
+        return new NbtShort(this);
+    }
 
 
-        #region Reading / Writing
+    internal override void PrettyPrint(StringBuilder sb, string indentString, int indentLevel)
+    {
+        for (var i = 0; i < indentLevel; i++) sb.Append(indentString);
 
-        internal override bool ReadTag(NbtBinaryReader readStream)
-        {
-            if (readStream.Selector is not null && !readStream.Selector(this))
-            {
-                readStream.ReadInt16();
-                return false;
-            }
+        sb.Append("TAG_Short");
+        if (!string.IsNullOrEmpty(Name)) sb.AppendFormat("(\"{0}\")", Name);
 
-            Value = readStream.ReadInt16();
-            return true;
-        }
+        sb.Append(": ");
+        sb.Append(Value);
+    }
 
 
-        internal override void SkipTag(NbtBinaryReader readStream)
+    #region Reading / Writing
+
+    internal override bool ReadTag(NbtBinaryReader readStream)
+    {
+        if (readStream.Selector is not null && !readStream.Selector(this))
         {
             readStream.ReadInt16();
+            return false;
         }
 
-
-        internal override void WriteTag(NbtBinaryWriter writeStream)
-        {
-            writeStream.Write(NbtTagType.Short);
-            if (Name is null) throw new NbtFormatException("Name is null");
-            writeStream.Write(Name);
-            writeStream.Write(Value);
-        }
-
-
-        internal override void WriteData(NbtBinaryWriter writeStream)
-        {
-            writeStream.Write(Value);
-        }
-
-        #endregion
+        Value = readStream.ReadInt16();
+        return true;
     }
+
+
+    internal override void SkipTag(NbtBinaryReader readStream)
+    {
+        readStream.ReadInt16();
+    }
+
+
+    internal override void WriteTag(NbtBinaryWriter writeStream)
+    {
+        writeStream.Write(NbtTagType.Short);
+        if (Name is null) throw new NbtFormatException("Name is null");
+        writeStream.Write(Name);
+        writeStream.Write(Value);
+    }
+
+
+    internal override void WriteData(NbtBinaryWriter writeStream)
+    {
+        writeStream.Write(Value);
+    }
+
+    #endregion
 }

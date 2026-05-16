@@ -48,6 +48,32 @@ namespace Iguina.Entities
         /// </summary>
         public int ItemsCount => _items.Count;
 
+        /// <summary>
+        /// Multiplier applied to item paragraphs' text scale. Use to make a list
+        /// of items render at a different size than the inherited paragraph style.
+        /// </summary>
+        public float ItemsScale = 1f;
+
+        /// <summary>
+        /// Multiplier applied to per-item icons' texture scale (when items have
+        /// icons via SetItemLabel(value, label, icon, useTextColor) overload).
+        /// </summary>
+        public float IconsScale = 1f;
+
+        /// <summary>
+        /// Optional cap on visible items. When non-null, items beyond this index
+        /// are filtered out for display (the underlying list still keeps them; only
+        /// the rendered slice is capped).
+        /// </summary>
+        public int? MaxItems;
+
+        /// <summary>
+        /// Per-item disabled flag. When an index has a true entry here, clicking
+        /// that item does nothing (the click is ignored by DoInteractions) and the
+        /// item renders desaturated. Auto-grows as items are added.
+        /// </summary>
+        public List<bool> LockedItems = new();
+
         /// <inheritdoc/>
         internal override bool Interactable => true;
 
@@ -315,6 +341,9 @@ namespace Iguina.Entities
             var newValue = entity.UserData as string;
             if (newValue != null)
             {
+                var idx = GetIndexOfValue(newValue);
+                if (idx >= 0 && idx < LockedItems.Count && LockedItems[idx])
+                    return; // locked items absorb clicks without selection
                 if (AllowDeselect && (newValue == SelectedValue))
                 {
                     SelectedValue = null;
@@ -353,6 +382,13 @@ namespace Iguina.Entities
                     continue;
                 }
 
+                // MaxItems cap — treat overflow as if filtered out
+                if (MaxItems.HasValue && itemIndex >= MaxItems.Value)
+                {
+                    _paragraphs[i].Visible = false;
+                    continue;
+                }
+
                 // get current item and apply filter
                 var item = _items[itemIndex];
                 if (DisplayFilter?.Invoke(item) == false)
@@ -368,9 +404,14 @@ namespace Iguina.Entities
                 paragraph.UserData = item.Value;
                 paragraph.Text = item.LabelWithIcon ?? item.Value;
                 bool selected = item.Value == SelectedValue;
-                paragraph.LockedState = selected ? EntityState.Checked : null;
+                bool locked = itemIndex < LockedItems.Count && LockedItems[itemIndex];
+                paragraph.LockedState = locked ? EntityState.Disabled : (selected ? EntityState.Checked : null);
                 OverrideItemStyleByValue.TryGetValue(item.Value, out var perItemStyleValue);
                 paragraph.OverrideStyles = selected ? OverrideSelectedItemStyles : (perItemStyleValue ?? OverrideItemStyles);
+                if (ItemsScale != 1f)
+                {
+                    paragraph.OverrideStyles.TextScale = ItemsScale;
+                }
             }
         }
 
@@ -506,13 +547,16 @@ namespace Iguina.Entities
         /// <param name="iconUseTextColor">If true, icon will use the same tint color as the text.</param>
         public void SetItemLabel(string valueToSet, string label, IconTexture icon, bool iconUseTextColor)
         {
-            // set label + icon
-            var iconWidth = icon.SourceRect.Width * icon.TextureScale;
+            // set label + icon (icon.TextureScale is multiplied by ListBox.IconsScale
+            // so callers can scale all per-item icons uniformly without touching each
+            // icon's stylesheet)
+            var effectiveIconScale = icon.TextureScale * IconsScale;
+            var iconWidth = icon.SourceRect.Width * effectiveIconScale;
             var tempParagraph = new Paragraph(UISystem, ItemsStyleSheet ?? UISystem.DefaultStylesheets.Paragraphs, "", false);
             var spaceWidth = tempParagraph.MeasureText(" ").X;
             var spacesCount = (int)(Math.Ceiling(iconWidth / spaceWidth) + 1);
             var iconUseTextureColorVal = iconUseTextColor ? "y" : "n";
-            SetItemLabel(valueToSet, $"${{ICO:{icon.TextureId ?? UISystem.SystemStyleSheet.DefaultTexture}|{icon.SourceRect.X}|{icon.SourceRect.Y}|{icon.SourceRect.Width}|{icon.SourceRect.Height}|{icon.TextureScale}|{iconUseTextureColorVal}}}" + new string(' ', spacesCount) + label);
+            SetItemLabel(valueToSet, $"${{ICO:{icon.TextureId ?? UISystem.SystemStyleSheet.DefaultTexture}|{icon.SourceRect.X}|{icon.SourceRect.Y}|{icon.SourceRect.Width}|{icon.SourceRect.Height}|{effectiveIconScale}|{iconUseTextureColorVal}}}" + new string(' ', spacesCount) + label);
 
             // set just label text
             var index = GetIndexOfValue(valueToSet);

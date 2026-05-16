@@ -22,6 +22,10 @@
         "TextureId": "Textures/cursor_pointer.png",
         "SourceRect": {"X": 0, "Y": 0, "Width": 16, "Height": 16}
     },
+    "CursorIBeam": {
+        "TextureId": "Textures/cursor_ibeam.png",
+        "SourceRect": {"X": 0, "Y": 0, "Width": 16, "Height": 16}
+    },
     "LoadDefaultStylesheets": {
         "Panels": "Styles/panel.json",
         "MessageBoxPanels": "Styles/panel.json",

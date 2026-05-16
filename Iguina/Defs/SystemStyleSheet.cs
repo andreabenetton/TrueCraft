@@ -54,6 +54,12 @@ namespace Iguina.Defs
         public CursorProperties? CursorLocked { get; set; }
 
         /// <summary>
+        /// I-beam cursor (text caret). Used over text-input entities and when
+        /// host code explicitly switches to it via <c>UISystem.SetCursor(CursorType.IBeam)</c>.
+        /// </summary>
+        public CursorProperties? CursorIBeam { get; set; }
+
+        /// <summary>
         /// How much space a row spacer unit takes, in pixels.
         /// This determine what the UI system defines as a default empty "row" size.
         /// </summary>

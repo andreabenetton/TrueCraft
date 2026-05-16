@@ -551,6 +551,24 @@ namespace Iguina
 
         Entity? _previousFocusedEntity;
 
+        CursorType? _forcedCursor;
+
+        /// <summary>
+        /// Force the cursor to a specific type for the next frames, overriding
+        /// the automatic targeted-entity logic. Pass null to revert to automatic.
+        /// </summary>
+        public void SetCursor(CursorType? type) => _forcedCursor = type;
+
+        CursorProperties? ResolveCursor(CursorType type) => type switch
+        {
+            CursorType.Default => SystemStyleSheet.CursorDefault,
+            CursorType.Interactable => SystemStyleSheet.CursorInteractable,
+            CursorType.Disabled => SystemStyleSheet.CursorDisabled,
+            CursorType.Locked => SystemStyleSheet.CursorLocked,
+            CursorType.IBeam => SystemStyleSheet.CursorIBeam,
+            _ => SystemStyleSheet.CursorDefault,
+        };
+
         /// <summary>
         /// Show / hide / position the tooltip popup based on the currently targeted
         /// entity. Called once per Update at the end of the frame.
@@ -652,7 +670,12 @@ namespace Iguina
             CursorProperties? cursor = OverrideCursorProperties ?? SystemStyleSheet.CursorDefault;
             if (OverrideCursorProperties == null)
             {
-                if (TargetedEntity?.IsPointedOn(Input.GetMousePosition(), true) ?? false)
+                // explicit override via SetCursor wins over the targeted-entity logic
+                if (_forcedCursor.HasValue)
+                {
+                    cursor = ResolveCursor(_forcedCursor.Value) ?? cursor;
+                }
+                else if (TargetedEntity?.IsPointedOn(Input.GetMousePosition(), true) ?? false)
                 {
                     if (TargetedEntity.CursorStyle != null)
                     {
@@ -665,6 +688,10 @@ namespace Iguina
                     else if (TargetedEntity.IsCurrentlyLocked())
                     {
                         cursor = SystemStyleSheet.CursorLocked ?? SystemStyleSheet.CursorDefault;
+                    }
+                    else if (TargetedEntity is TextInput)
+                    {
+                        cursor = SystemStyleSheet.CursorIBeam ?? SystemStyleSheet.CursorDefault;
                     }
                     else if (TargetedEntity.Interactable)
                     {

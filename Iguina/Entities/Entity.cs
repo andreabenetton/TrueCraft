@@ -15,6 +15,14 @@ namespace Iguina.Entities
         public string? Identifier;
 
         /// <summary>
+        /// Generic user-data slot. The framework never reads or writes this; it
+        /// exists for application code that wants to associate model objects
+        /// with entities (e.g. a world record with its row in a ListBox, or a
+        /// command with the button that fires it).
+        /// </summary>
+        public object? Tag;
+
+        /// <summary>
         /// Anchor for entity position, based on its parent entity.
         /// </summary>
         public Anchor Anchor = Anchor.AutoLTR;

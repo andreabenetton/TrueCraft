@@ -54,6 +54,20 @@ namespace Iguina.Entities
         /// </summary>
         public char? MaskingCharacter = null;
 
+        /// <summary>
+        /// Value returned by <see cref="EffectiveValue"/> when <see cref="Value"/>
+        /// is empty. Use to surface a default the caller should treat as the input,
+        /// while <see cref="PlaceholderText"/> handles what the user sees on screen.
+        /// </summary>
+        public string? ValueWhenEmpty;
+
+        /// <summary>
+        /// <see cref="Value"/> if non-empty, otherwise <see cref="ValueWhenEmpty"/>
+        /// (or empty string if neither is set).
+        /// </summary>
+        public string EffectiveValue
+            => !string.IsNullOrEmpty(Value) ? Value : (ValueWhenEmpty ?? string.Empty);
+
         // current value
         string _value = string.Empty;
 

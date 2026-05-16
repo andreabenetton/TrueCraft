@@ -181,6 +181,32 @@ namespace Iguina.Entities
             Handle.IgnoreScrollOffset = true;
         }
 
+        Paragraph? _caption;
+
+        /// <summary>
+        /// Optional caption displayed above the slider track. Assigning a non-null
+        /// value attaches the paragraph as an internal child anchored above the
+        /// slider with a negative Y offset, so it floats above the track without
+        /// affecting auto-layout flow. Mirrors GeonBit's Slider.Caption.
+        /// </summary>
+        public Paragraph? Caption
+        {
+            get => _caption;
+            set
+            {
+                if (_caption == value) return;
+                if (_caption != null) _caption.RemoveSelf();
+                _caption = value;
+                if (_caption != null)
+                {
+                    _caption.Anchor = Anchor.TopCenter;
+                    _caption.Offset.Y.SetPixels(-(UISystem.Renderer.GetTextLineHeight(null, UISystem.SystemStyleSheet.RowSpaceHeight) + 2));
+                    _caption.IgnoreInteractions = true;
+                    AddChildInternal(_caption);
+                }
+            }
+        }
+
         /// <summary>
         /// Create the slider with default stylesheets.
         /// </summary>

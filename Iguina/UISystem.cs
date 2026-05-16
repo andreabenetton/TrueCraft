@@ -278,6 +278,27 @@ namespace Iguina
         }
 
         /// <summary>
+        /// Switch the active theme by reloading <c>system_style.json</c> and all
+        /// stylesheets it references. The new defaults take effect for entities
+        /// created after this call; existing entities keep the stylesheet they
+        /// were built with, so callers typically follow this with a view rebuild
+        /// (clear the root panel, re-mount the current screen).
+        /// </summary>
+        /// <param name="styleSheetFilePath">Path to the new system stylesheet file.</param>
+        public void LoadTheme(string styleSheetFilePath)
+        {
+            var content = FilesProvider.ReadAllText(styleSheetFilePath);
+            SystemStyleSheet = JsonSerializer.Deserialize<SystemStyleSheet>(content)!;
+            DefaultStylesheets = new _DefaultStylesheets();
+            if (SystemStyleSheet.LoadDefaultStylesheets != null)
+            {
+                LoadDefaultStylesheets(
+                    SystemStyleSheet.LoadDefaultStylesheets,
+                    Path.GetDirectoryName(styleSheetFilePath) ?? string.Empty);
+            }
+        }
+
+        /// <summary>
         /// Load all default stylesheets from dictionary.
         /// </summary>
         /// <param name="stylesheetsToLoad">Stylesheets to load. Key = stylesheet entity name, Value = path to load from.</param>

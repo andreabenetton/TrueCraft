@@ -18,7 +18,7 @@ namespace Iguina.Demo.MonoGame
         private const double InitialDelay = 0.45; // Initial delay before repeating input
         private const double RepeatRate = 0.045;  // Rate of repeated input
         private double[] _charsDelay = new double[255];
-        Keys[] _lastPressedKeys = new Keys[0];
+        Keys[] _lastPressedKeys = [];
 
         public void StartFrame(Microsoft.Xna.Framework.GameTime gameTime)
         {

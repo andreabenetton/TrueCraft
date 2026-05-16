@@ -20,7 +20,7 @@ namespace Iguina.Utils
         /// <param name="count">Number of columns (must be >= 1).</param>
         public static Panel[] GenerateColumns(UISystem ui, Panel parent, int count)
         {
-            if (count < 1) return new Panel[0];
+            if (count < 1) return [];
             var widthPct = 100f / count;
             var ret = new Panel[count];
             for (var i = 0; i < count; i++)

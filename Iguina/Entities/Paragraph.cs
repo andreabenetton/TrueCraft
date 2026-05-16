@@ -4,8 +4,7 @@ using Iguina.Utils;
 using System.Text.RegularExpressions;
 
 
-namespace Iguina.Entities
-{
+namespace Iguina.Entities;
     /// <summary>
     /// Entity to render text.
     /// </summary>
@@ -766,4 +765,3 @@ namespace Iguina.Entities
         /// </summary>
         WrapImmediate,
     }
-}

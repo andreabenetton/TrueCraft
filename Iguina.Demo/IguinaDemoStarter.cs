@@ -4,8 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 
 
-namespace Iguina.Demo
-{
+namespace Iguina.Demo;
     /// <summary>
     /// Initialize demo project.
     /// </summary>
@@ -875,4 +874,3 @@ In this demo, we'll use the ${FC:00FFFF}Morpheus${RESET} animation library to en
             _system.Draw();
         }
     }
-}

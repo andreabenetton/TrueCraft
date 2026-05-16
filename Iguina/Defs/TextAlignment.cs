@@ -1,24 +1,23 @@
 ﻿
-namespace Iguina.Defs
+namespace Iguina.Defs;
+
+/// <summary>
+/// Text alignment properties.
+/// </summary>
+public enum TextAlignment
 {
     /// <summary>
-    /// Text alignment properties.
+    /// Left to right alignment.
     /// </summary>
-    public enum TextAlignment
-    {
-        /// <summary>
-        /// Left to right alignment.
-        /// </summary>
-        Left,
+    Left,
 
-        /// <summary>
-        /// Right to left alignment.
-        /// </summary>
-        Right,
+    /// <summary>
+    /// Right to left alignment.
+    /// </summary>
+    Right,
 
-        /// <summary>
-        /// Center alignment.
-        /// </summary>
-        Center
-    }
+    /// <summary>
+    /// Center alignment.
+    /// </summary>
+    Center
 }

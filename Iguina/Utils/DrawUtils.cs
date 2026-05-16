@@ -2,184 +2,204 @@
 using Iguina.Drivers;
 
 
-namespace Iguina.Utils
+namespace Iguina.Utils;
+
+/// <summary>
+/// Render utilities.
+/// </summary>
+internal static class DrawUtils
 {
     /// <summary>
-    /// Render utilities.
+    /// Draw a horizontal strip texture with sides.
     /// </summary>
-    internal static class DrawUtils
+    static void DrawHorizontal(IRenderer renderer, string textureId, float textureScale, string? effectId, Rectangle leftSrc, Rectangle centerSrc, Rectangle rightSrc, float width, Point position, Color color)
     {
-        /// <summary>
-        /// Draw a horizontal strip texture with sides.
-        /// </summary>
-        static void DrawHorizontal(IRenderer renderer, string textureId, float textureScale, string? effectId, Rectangle leftSrc, Rectangle centerSrc, Rectangle rightSrc, float width, Point position, Color color)
+        // left and right dest rects
+        var leftDest = new Rectangle(position.X, position.Y, (int)(leftSrc.Width * textureScale), (int)(leftSrc.Height * textureScale));
+        var rightDest = new Rectangle(position.X + (int)(width - (rightSrc.Width * textureScale)), position.Y, (int)(rightSrc.Width * textureScale), (int)(rightSrc.Height * textureScale));
+
+        // draw center parts
+        var centerDest = new Rectangle(position.X + leftDest.Width, position.Y, (int)(centerSrc.Width * textureScale), (int)(centerSrc.Height * textureScale));
+        bool didFinish = false;
+        while (!didFinish)
         {
-            // left and right dest rects
-            var leftDest = new Rectangle(position.X, position.Y, (int)(leftSrc.Width * textureScale), (int)(leftSrc.Height * textureScale));
-            var rightDest = new Rectangle(position.X + (int)(width - (rightSrc.Width * textureScale)), position.Y, (int)(rightSrc.Width * textureScale), (int)(rightSrc.Height * textureScale));
-
-            // draw center parts
-            var centerDest = new Rectangle(position.X + leftDest.Width, position.Y, (int)(centerSrc.Width * textureScale), (int)(centerSrc.Height * textureScale));
-            bool didFinish = false;
-            while (!didFinish)
+            var cutOff = (centerDest.X + centerDest.Width) - (rightDest.X);
+            if (cutOff > 0)
             {
-                var cutOff = (centerDest.X + centerDest.Width) - (rightDest.X);
-                if (cutOff > 0)
-                {
-                    centerDest.Width -= cutOff;
-                    centerSrc.Width -= (int)((float)cutOff / textureScale);
-                    didFinish = true;
-                }
-                if (centerDest.Width > 0)
-                {
-                    renderer.DrawTexture(effectId, textureId, centerDest, centerSrc, color);
-                    centerDest.X += centerDest.Width;
-                }
+                centerDest.Width -= cutOff;
+                centerSrc.Width -= (int)((float)cutOff / textureScale);
+                didFinish = true;
             }
-
-            // draw left side
-            renderer.DrawTexture(effectId, textureId, leftDest, leftSrc, color);
-
-            // draw right side
-            renderer.DrawTexture(effectId, textureId, rightDest, rightSrc, color);
+            if (centerDest.Width > 0)
+            {
+                renderer.DrawTexture(effectId, textureId, centerDest, centerSrc, color);
+                centerDest.X += centerDest.Width;
+            }
         }
 
-        /// <summary>
-        /// Draw a vertical strip texture with sides.
-        /// </summary>
-        static void DrawVertical(IRenderer renderer, string textureId, float textureScale, string? effectId, Rectangle topSrc, Rectangle centerSrc, Rectangle bottomSrc, float height, Point position, Color color)
+        // draw left side
+        renderer.DrawTexture(effectId, textureId, leftDest, leftSrc, color);
+
+        // draw right side
+        renderer.DrawTexture(effectId, textureId, rightDest, rightSrc, color);
+    }
+
+    /// <summary>
+    /// Draw a vertical strip texture with sides.
+    /// </summary>
+    static void DrawVertical(IRenderer renderer, string textureId, float textureScale, string? effectId, Rectangle topSrc, Rectangle centerSrc, Rectangle bottomSrc, float height, Point position, Color color)
+    {
+        // top and bottom dest rects
+        var topDest = new Rectangle(position.X, position.Y, (int)(topSrc.Width * textureScale), (int)(topSrc.Height * textureScale));
+        var bottomDest = new Rectangle(position.X, position.Y + (int)(height - (bottomSrc.Height * textureScale)), (int)(bottomSrc.Width * textureScale), (int)(bottomSrc.Height * textureScale));
+
+        // draw center parts
+        var centerDest = new Rectangle(position.X, position.Y + topDest.Height, (int)(centerSrc.Width * textureScale), (int)(centerSrc.Height * textureScale));
+        bool didFinish = false;
+        while (!didFinish)
         {
-            // top and bottom dest rects
-            var topDest = new Rectangle(position.X, position.Y, (int)(topSrc.Width * textureScale), (int)(topSrc.Height * textureScale));
-            var bottomDest = new Rectangle(position.X, position.Y + (int)(height - (bottomSrc.Height * textureScale)), (int)(bottomSrc.Width * textureScale), (int)(bottomSrc.Height * textureScale));
-
-            // draw center parts
-            var centerDest = new Rectangle(position.X, position.Y + topDest.Height, (int)(centerSrc.Width * textureScale), (int)(centerSrc.Height * textureScale));
-            bool didFinish = false;
-            while (!didFinish)
+            var cutOff = (centerDest.Y + centerDest.Height) - (bottomDest.Y);
+            if (cutOff > 0)
             {
-                var cutOff = (centerDest.Y + centerDest.Height) - (bottomDest.Y);
-                if (cutOff > 0)
-                {
-                    centerDest.Height -= cutOff;
-                    centerSrc.Height -= (int)((float)cutOff / textureScale);
-                    didFinish = true;
-                }
-                if (centerDest.Height > 0)
-                {
-                    renderer.DrawTexture(effectId, textureId, centerDest, centerSrc, color);
-                    centerDest.Y += centerDest.Height;
-                }
+                centerDest.Height -= cutOff;
+                centerSrc.Height -= (int)((float)cutOff / textureScale);
+                didFinish = true;
             }
-
-            // draw top side
-            renderer.DrawTexture(effectId, textureId, topDest, topSrc, color);
-
-            // draw bottom side
-            renderer.DrawTexture(effectId, textureId, bottomDest, bottomSrc, color);
+            if (centerDest.Height > 0)
+            {
+                renderer.DrawTexture(effectId, textureId, centerDest, centerSrc, color);
+                centerDest.Y += centerDest.Height;
+            }
         }
 
-        /// <summary>
-        /// Render framed texture.
-        /// </summary>
-        public static void Draw(IRenderer renderer, string? effectId, FramedTexture texture, Rectangle dest, Color color, float textureScale, string defaultTexture)
+        // draw top side
+        renderer.DrawTexture(effectId, textureId, topDest, topSrc, color);
+
+        // draw bottom side
+        renderer.DrawTexture(effectId, textureId, bottomDest, bottomSrc, color);
+    }
+
+    /// <summary>
+    /// Render framed texture.
+    /// </summary>
+    public static void Draw(IRenderer renderer, string? effectId, FramedTexture texture, Rectangle dest, Color color, float textureScale, string defaultTexture)
+    {
+        // to avoid glitches
+        if (dest.Width <= 0 || dest.Height <= 0) { return; }
+
+        // get all source rects
+        var topLeftSrc = texture.TopLeftSourceRect;
+        var topRightSrc = texture.TopRightSourceRect;
+        var bottomLeftSrc = texture.BottomLeftSourceRect;
+        var bottomRightSrc = texture.BottomRightSourceRect;
+
+        // add offset
+        dest.X += texture.Offset.X;
+        dest.Y += texture.Offset.Y;
+
+        // calculate total scale
+        float scale = texture.TextureScale * textureScale;
+
+        // is this a horizontal strip only?
+        bool isHorizontalStrip = texture.InternalSourceRect.Height == texture.ExternalSourceRect.Height;
+        if (isHorizontalStrip)
         {
-            // to avoid glitches
-            if (dest.Width <= 0 || dest.Height <= 0) { return; }
+            DrawHorizontal(renderer, texture.TextureId ?? defaultTexture, scale, effectId, texture.LeftSourceRect, texture.InternalSourceRect, texture.RightSourceRect, dest.Width, new Point(dest.X, dest.Y), color);
+            return;
+        }
 
-            // get all source rects
-            var topLeftSrc = texture.TopLeftSourceRect;
-            var topRightSrc = texture.TopRightSourceRect;
-            var bottomLeftSrc = texture.BottomLeftSourceRect;
-            var bottomRightSrc = texture.BottomRightSourceRect;
+        // is this a vertical strip only
+        bool isVerticalStrip = texture.InternalSourceRect.Width == texture.ExternalSourceRect.Width;
+        if (isVerticalStrip)
+        {
+            DrawVertical(renderer, texture.TextureId ?? defaultTexture, scale, effectId, texture.TopSourceRect, texture.InternalSourceRect, texture.BottomSourceRect, dest.Height, new Point(dest.X, dest.Y), color);
+            return;
+        }
 
-            // add offset
-            dest.X += texture.Offset.X;
-            dest.Y += texture.Offset.Y;
+        // calculate all dest rects
+        var topLeftDest = new Rectangle(dest.X, dest.Y, (int)(topLeftSrc.Width * scale), (int)(topLeftSrc.Height * scale));
+        var topRightDest = new Rectangle(dest.Right - (int)(topRightSrc.Width * scale), dest.Y, (int)(topRightSrc.Width * scale), (int)(topRightSrc.Height * scale));
+        var bottomLeftDest = new Rectangle(dest.X, dest.Bottom - (int)(bottomLeftSrc.Height * scale), (int)(bottomLeftSrc.Width * scale), (int)(bottomLeftSrc.Height * scale));
+        var bottomRightDest = new Rectangle(dest.Right - (int)(bottomRightSrc.Width * scale), dest.Bottom - (int)(bottomRightSrc.Height * scale), (int)(bottomRightSrc.Width * scale), (int)(bottomRightSrc.Height * scale));
 
-            // calculate total scale
-            float scale = texture.TextureScale * textureScale;
+        // render center parts
+        {
+            var srcRect = texture.InternalSourceRect;
+            var destRect = new Rectangle(topLeftDest.Right, topLeftDest.Bottom, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
 
-            // is this a horizontal strip only?
-            bool isHorizontalStrip = texture.InternalSourceRect.Height == texture.ExternalSourceRect.Height;
-            if (isHorizontalStrip)
+            bool lastRow = false;
+            while (true)
             {
-                DrawHorizontal(renderer, texture.TextureId ?? defaultTexture, scale, effectId, texture.LeftSourceRect, texture.InternalSourceRect, texture.RightSourceRect, dest.Width, new Point(dest.X, dest.Y), color);
-                return;
-            }
-
-            // is this a vertical strip only
-            bool isVerticalStrip = texture.InternalSourceRect.Width == texture.ExternalSourceRect.Width;
-            if (isVerticalStrip)
-            {
-                DrawVertical(renderer, texture.TextureId ?? defaultTexture, scale, effectId, texture.TopSourceRect, texture.InternalSourceRect, texture.BottomSourceRect, dest.Height, new Point(dest.X, dest.Y), color);
-                return;
-            }
-
-            // calculate all dest rects
-            var topLeftDest = new Rectangle(dest.X, dest.Y, (int)(topLeftSrc.Width * scale), (int)(topLeftSrc.Height * scale));
-            var topRightDest = new Rectangle(dest.Right - (int)(topRightSrc.Width * scale), dest.Y, (int)(topRightSrc.Width * scale), (int)(topRightSrc.Height * scale));
-            var bottomLeftDest = new Rectangle(dest.X, dest.Bottom - (int)(bottomLeftSrc.Height * scale), (int)(bottomLeftSrc.Width * scale), (int)(bottomLeftSrc.Height * scale));
-            var bottomRightDest = new Rectangle(dest.Right - (int)(bottomRightSrc.Width * scale), dest.Bottom - (int)(bottomRightSrc.Height * scale), (int)(bottomRightSrc.Width * scale), (int)(bottomRightSrc.Height * scale));
-
-            // render center parts
-            {
-                var srcRect = texture.InternalSourceRect;
-                var destRect = new Rectangle(topLeftDest.Right, topLeftDest.Bottom, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
-
-                bool lastRow = false;
-                while (true)
+                // end of row?
+                var cutOff = destRect.Right - topRightDest.Left;
+                if (cutOff >= 0)
                 {
-                    // end of row?
-                    var cutOff = destRect.Right - topRightDest.Left;
-                    if (cutOff >= 0)
-                    {
-                        destRect.Width -= cutOff;
-                        srcRect.Width -= (int)(cutOff / (scale));
-                    }
+                    destRect.Width -= cutOff;
+                    srcRect.Width -= (int)(cutOff / (scale));
+                }
 
-                    // check if we exceed bottom
-                    var cutOffBottom = destRect.Bottom - bottomLeftDest.Top;
-                    if (cutOffBottom >= 0)
-                    {
-                        destRect.Height -= cutOffBottom;
-                        srcRect.Height -= (int)(cutOffBottom / (scale));
-                        lastRow = true;
-                    }
+                // check if we exceed bottom
+                var cutOffBottom = destRect.Bottom - bottomLeftDest.Top;
+                if (cutOffBottom >= 0)
+                {
+                    destRect.Height -= cutOffBottom;
+                    srcRect.Height -= (int)(cutOffBottom / (scale));
+                    lastRow = true;
+                }
 
-                    // edge case - last row align perfectly
-                    if (destRect.Height == 0) { break; }
+                // edge case - last row align perfectly
+                if (destRect.Height == 0) { break; }
 
-                    // draw part
-                    if (destRect.Width > 0 && destRect.Height > 0)
-                    {
-                        renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, destRect, srcRect, color);
-                    }
-                    destRect.X += destRect.Width;
-                
-                    // go row down
-                    if (cutOff >= 0)
-                    {
-                        // last row? break
-                        if (lastRow) { break; }
+                // draw part
+                if (destRect.Width > 0 && destRect.Height > 0)
+                {
+                    renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, destRect, srcRect, color);
+                }
+                destRect.X += destRect.Width;
+            
+                // go row down
+                if (cutOff >= 0)
+                {
+                    // last row? break
+                    if (lastRow) { break; }
 
-                        // reset width and go row down
-                        destRect.X = topLeftDest.Right;
-                        srcRect.Width = texture.InternalSourceRect.Width;
-                        destRect.Y += destRect.Height;
-                    }
+                    // reset width and go row down
+                    destRect.X = topLeftDest.Right;
+                    srcRect.Width = texture.InternalSourceRect.Width;
+                    destRect.Y += destRect.Height;
                 }
             }
+        }
 
-            // render frame
-            // top frame
+        // render frame
+        // top frame
+        {
+            bool keepDrawing = true;
+            var srcRect = texture.TopSourceRect;
+            var destRect = new Rectangle(topLeftDest.Right, dest.Top, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
+            while (keepDrawing)
+            {
+                var cutOff = destRect.Right - topRightDest.Left;
+                if (cutOff >= 0)
+                {
+                    destRect.Width -= cutOff;
+                    srcRect.Width -= (int)(cutOff / (scale));
+                    if (destRect.Width <= 0 || srcRect.Width <= 0) { break; }
+                    keepDrawing = false;
+                }
+                renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, destRect, srcRect, color);
+                destRect.X += destRect.Width;
+            }
+        }
+        {
+            // bottom frame
             {
                 bool keepDrawing = true;
-                var srcRect = texture.TopSourceRect;
-                var destRect = new Rectangle(topLeftDest.Right, dest.Top, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
+                var srcRect = texture.BottomSourceRect;
+                var destRect = new Rectangle(bottomLeftDest.Right, bottomLeftDest.Top, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
                 while (keepDrawing)
                 {
-                    var cutOff = destRect.Right - topRightDest.Left;
+                    var cutOff = destRect.Right - bottomRightDest.Left;
                     if (cutOff >= 0)
                     {
                         destRect.Width -= cutOff;
@@ -191,103 +211,82 @@ namespace Iguina.Utils
                     destRect.X += destRect.Width;
                 }
             }
+            // left frame
             {
-                // bottom frame
+                bool keepDrawing = true;
+                var srcRect = texture.LeftSourceRect;
+                var destRect = new Rectangle(dest.Left, topLeftDest.Bottom, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
+                while (keepDrawing)
                 {
-                    bool keepDrawing = true;
-                    var srcRect = texture.BottomSourceRect;
-                    var destRect = new Rectangle(bottomLeftDest.Right, bottomLeftDest.Top, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
-                    while (keepDrawing)
+                    var cutOff = destRect.Bottom - bottomLeftDest.Top;
+                    if (cutOff >= 0)
                     {
-                        var cutOff = destRect.Right - bottomRightDest.Left;
-                        if (cutOff >= 0)
-                        {
-                            destRect.Width -= cutOff;
-                            srcRect.Width -= (int)(cutOff / (scale));
-                            if (destRect.Width <= 0 || srcRect.Width <= 0) { break; }
-                            keepDrawing = false;
-                        }
-                        renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, destRect, srcRect, color);
-                        destRect.X += destRect.Width;
+                        destRect.Height -= cutOff;
+                        srcRect.Height -= (int)(cutOff / (scale));
+                        if (destRect.Height <= 0 || srcRect.Height <= 0) { break; }
+                        keepDrawing = false;
                     }
-                }
-                // left frame
-                {
-                    bool keepDrawing = true;
-                    var srcRect = texture.LeftSourceRect;
-                    var destRect = new Rectangle(dest.Left, topLeftDest.Bottom, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
-                    while (keepDrawing)
-                    {
-                        var cutOff = destRect.Bottom - bottomLeftDest.Top;
-                        if (cutOff >= 0)
-                        {
-                            destRect.Height -= cutOff;
-                            srcRect.Height -= (int)(cutOff / (scale));
-                            if (destRect.Height <= 0 || srcRect.Height <= 0) { break; }
-                            keepDrawing = false;
-                        }
-                        renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, destRect, srcRect, color);
-                        destRect.Y += destRect.Height;
-                    }
-                }
-                // right frame
-                {
-                    bool keepDrawing = true;
-                    var srcRect = texture.RightSourceRect;
-                    var destRect = new Rectangle(topRightDest.Left, topRightDest.Bottom, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
-                    while (keepDrawing)
-                    {
-                        var cutOff = destRect.Bottom - bottomRightDest.Top;
-                        if (cutOff >= 0)
-                        {
-                            destRect.Height -= cutOff;
-                            srcRect.Height -= (int)(cutOff / (scale));
-                            if (destRect.Height <= 0 || srcRect.Height <= 0) { break; }
-                            keepDrawing = false;
-                        }
-                        renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, destRect, srcRect, color);
-                        destRect.Y += destRect.Height;
-                    }
+                    renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, destRect, srcRect, color);
+                    destRect.Y += destRect.Height;
                 }
             }
-
-            // render corners
+            // right frame
             {
-                renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, topLeftDest, topLeftSrc, color);
-                renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, topRightDest, topRightSrc, color);
-                renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, bottomLeftDest, bottomLeftSrc, color);
-                renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, bottomRightDest, bottomRightSrc, color);
+                bool keepDrawing = true;
+                var srcRect = texture.RightSourceRect;
+                var destRect = new Rectangle(topRightDest.Left, topRightDest.Bottom, (int)(srcRect.Width * scale), (int)(srcRect.Height * scale));
+                while (keepDrawing)
+                {
+                    var cutOff = destRect.Bottom - bottomRightDest.Top;
+                    if (cutOff >= 0)
+                    {
+                        destRect.Height -= cutOff;
+                        srcRect.Height -= (int)(cutOff / (scale));
+                        if (destRect.Height <= 0 || srcRect.Height <= 0) { break; }
+                        keepDrawing = false;
+                    }
+                    renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, destRect, srcRect, color);
+                    destRect.Y += destRect.Height;
+                }
             }
         }
 
-        /// <summary>
-        /// Render stretched texture.
-        /// </summary>
-        public static void Draw(IRenderer renderer, string? effectId, StretchedTexture texture, Rectangle dest, Color color, string defaultTexture)
+        // render corners
         {
-            if (texture.ExtraSize.HasValue)
-            {
-                dest.X -= texture.ExtraSize.Value.Left;
-                dest.Width += texture.ExtraSize.Value.Left + texture.ExtraSize.Value.Right;
-                dest.Y -= texture.ExtraSize.Value.Top;
-                dest.Height += texture.ExtraSize.Value.Top + texture.ExtraSize.Value.Bottom;
-            }
-
-            // to avoid glitches
-            if (dest.Width <= 0 || dest.Height <= 0) { return; }
-
-            renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, dest, texture.SourceRect, color);
+            renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, topLeftDest, topLeftSrc, color);
+            renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, topRightDest, topRightSrc, color);
+            renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, bottomLeftDest, bottomLeftSrc, color);
+            renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, bottomRightDest, bottomRightSrc, color);
         }
+    }
 
-        /// <summary>
-        /// Render icon texture.
-        /// </summary>
-        public static void Draw(IRenderer renderer, string? effectId, IconTexture texture, Rectangle dest, Color color, string defaultTexture)
+    /// <summary>
+    /// Render stretched texture.
+    /// </summary>
+    public static void Draw(IRenderer renderer, string? effectId, StretchedTexture texture, Rectangle dest, Color color, string defaultTexture)
+    {
+        if (texture.ExtraSize.HasValue)
         {
-            // to avoid glitches
-            if (dest.Width <= 0 || dest.Height <= 0) { return; }
-
-            renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, dest, texture.SourceRect, color);
+            dest.X -= texture.ExtraSize.Value.Left;
+            dest.Width += texture.ExtraSize.Value.Left + texture.ExtraSize.Value.Right;
+            dest.Y -= texture.ExtraSize.Value.Top;
+            dest.Height += texture.ExtraSize.Value.Top + texture.ExtraSize.Value.Bottom;
         }
+
+        // to avoid glitches
+        if (dest.Width <= 0 || dest.Height <= 0) { return; }
+
+        renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, dest, texture.SourceRect, color);
+    }
+
+    /// <summary>
+    /// Render icon texture.
+    /// </summary>
+    public static void Draw(IRenderer renderer, string? effectId, IconTexture texture, Rectangle dest, Color color, string defaultTexture)
+    {
+        // to avoid glitches
+        if (dest.Width <= 0 || dest.Height <= 0) { return; }
+
+        renderer.DrawTexture(effectId, texture.TextureId ?? defaultTexture, dest, texture.SourceRect, color);
     }
 }

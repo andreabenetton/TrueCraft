@@ -3,79 +3,78 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 
-namespace Iguina.Demo.MonoGame
+namespace Iguina.Demo.MonoGame;
+
+public class Game1 : Game
 {
-    public class Game1 : Game
+    private GraphicsDeviceManager _graphics = null!;
+    private SpriteBatch _spriteBatch = null!;
+    MonoGameRenderer _renderer = null!;
+    MonoGameInput _input = null!;
+    IguinaDemoStarter _demo = null!;
+
+    public Game1()
     {
-        private GraphicsDeviceManager _graphics = null!;
-        private SpriteBatch _spriteBatch = null!;
-        MonoGameRenderer _renderer = null!;
-        MonoGameInput _input = null!;
-        IguinaDemoStarter _demo = null!;
+        _graphics = new GraphicsDeviceManager(this);
+        Content.RootDirectory = "Content";
+        IsMouseVisible = true;
+        Window.Title = "Iguina Demo - MonoGame";
+    }
 
-        public Game1()
+    protected override void Initialize()
+    {
+        base.Initialize();
+    }
+
+    protected override void LoadContent()
+    {
+        _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+        // start demo project and provide our renderer and input provider.
+        var uiThemeFolder = "../../../../Iguina.Demo/Assets/DefaultTheme";
+
+        // create demo
+        _demo = new IguinaDemoStarter();
+        _renderer = new MonoGameRenderer(Content, GraphicsDevice, _spriteBatch, uiThemeFolder);
+        _input = new MonoGameInput();
+        _demo.Start(_renderer, _input, uiThemeFolder);
+
+        // set maximized
         {
-            _graphics = new GraphicsDeviceManager(this);
-            Content.RootDirectory = "Content";
-            IsMouseVisible = true;
-            Window.Title = "Iguina Demo - MonoGame";
+            int _ScreenWidth = GraphicsDevice.Adapter.CurrentDisplayMode.Width;
+            int _ScreenHeight = GraphicsDevice.Adapter.CurrentDisplayMode.Height;
+            _graphics.PreferredBackBufferWidth = (int)_ScreenWidth;
+            _graphics.PreferredBackBufferHeight = (int)_ScreenHeight;
+            IsMouseVisible = false;
+            Window.AllowUserResizing = true;
+            _graphics.IsFullScreen = false;
+            _graphics.ApplyChanges();
+            Window.AllowUserResizing = true;
+            Window.IsBorderless = false;
+            Window.Position = new Point(0, 0);
         }
+    }
 
-        protected override void Initialize()
-        {
-            base.Initialize();
-        }
+    protected override void Update(GameTime gameTime)
+    {
+        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            Exit();
 
-        protected override void LoadContent()
-        {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+        _input.StartFrame(gameTime);
+        _demo.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+        _input.EndFrame();
 
-            // start demo project and provide our renderer and input provider.
-            var uiThemeFolder = "../../../../Iguina.Demo/Assets/DefaultTheme";
+        base.Update(gameTime);
+    }
 
-            // create demo
-            _demo = new IguinaDemoStarter();
-            _renderer = new MonoGameRenderer(Content, GraphicsDevice, _spriteBatch, uiThemeFolder);
-            _input = new MonoGameInput();
-            _demo.Start(_renderer, _input, uiThemeFolder);
+    protected override void Draw(GameTime gameTime)
+    {
+        GraphicsDevice.Clear(Color.CornflowerBlue);
+        
+        _renderer.StartFrame();
+        _demo.Draw();
+        _renderer.EndFrame();
 
-            // set maximized
-            {
-                int _ScreenWidth = GraphicsDevice.Adapter.CurrentDisplayMode.Width;
-                int _ScreenHeight = GraphicsDevice.Adapter.CurrentDisplayMode.Height;
-                _graphics.PreferredBackBufferWidth = (int)_ScreenWidth;
-                _graphics.PreferredBackBufferHeight = (int)_ScreenHeight;
-                IsMouseVisible = false;
-                Window.AllowUserResizing = true;
-                _graphics.IsFullScreen = false;
-                _graphics.ApplyChanges();
-                Window.AllowUserResizing = true;
-                Window.IsBorderless = false;
-                Window.Position = new Point(0, 0);
-            }
-        }
-
-        protected override void Update(GameTime gameTime)
-        {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
-
-            _input.StartFrame(gameTime);
-            _demo.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-            _input.EndFrame();
-
-            base.Update(gameTime);
-        }
-
-        protected override void Draw(GameTime gameTime)
-        {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
-            
-            _renderer.StartFrame();
-            _demo.Draw();
-            _renderer.EndFrame();
-
-            base.Draw(gameTime);
-        }
+        base.Draw(gameTime);
     }
 }

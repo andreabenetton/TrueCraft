@@ -130,6 +130,12 @@ namespace Iguina.Entities
         public bool Visible = true;
 
         /// <summary>
+        /// Tooltip text shown by the UI system after the mouse hovers this entity
+        /// for <see cref="UISystem.TooltipDelay"/> seconds. Null disables tooltip.
+        /// </summary>
+        public string? TooltipText;
+
+        /// <summary>
         /// Sound id played via <see cref="UISystem.PlaySound"/> when this entity is
         /// clicked (left mouse released). Null disables click audio.
         /// </summary>

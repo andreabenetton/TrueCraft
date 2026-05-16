@@ -54,6 +54,19 @@ namespace Iguina
         public Action<string>? PlaySound;
 
         /// <summary>
+        /// Seconds the mouse must hover an entity with non-null
+        /// <see cref="Entities.Entity.TooltipText"/> before the tooltip popup
+        /// appears. GeonBit's default behaviour.
+        /// </summary>
+        public float TooltipDelay = 0.5f;
+
+        // Tooltip popup state — created lazily, reparented under Root.
+        Entities.Panel? _tooltipPanel;
+        Entities.Paragraph? _tooltipParagraph;
+        Entities.Entity? _tooltipForEntity;
+        float _tooltipHoverTime;
+
+        /// <summary>
         /// If true, will auto-focus entities the user interacts with.
         /// If false, entities will never be focused nor respond to keyboard interactions, unless you explicitly set the focused entity via code.
         /// </summary>
@@ -520,6 +533,54 @@ namespace Iguina
                 }
                 return true;
             });
+
+            // dispatch tooltip state
+            UpdateTooltip(deltaTime, cp);
+        }
+
+        /// <summary>
+        /// Show / hide / position the tooltip popup based on the currently targeted
+        /// entity. Called once per Update at the end of the frame.
+        /// </summary>
+        void UpdateTooltip(float deltaTime, Point mousePosition)
+        {
+            var target = TargetedEntity;
+            var candidate = (target != null && !string.IsNullOrEmpty(target.TooltipText)) ? target : null;
+
+            if (candidate != _tooltipForEntity)
+            {
+                _tooltipForEntity = candidate;
+                _tooltipHoverTime = 0f;
+                if (_tooltipPanel != null) _tooltipPanel.Visible = false;
+            }
+
+            if (candidate == null) return;
+
+            _tooltipHoverTime += deltaTime;
+            if (_tooltipHoverTime < TooltipDelay) return;
+
+            // lazily build the popup
+            if (_tooltipPanel == null)
+            {
+                _tooltipPanel = new Entities.Panel(this, DefaultStylesheets.MessageBoxPanels ?? DefaultStylesheets.Panels)
+                {
+                    Anchor = Defs.Anchor.TopLeft,
+                    Identifier = "Tooltip-Panel",
+                };
+                _tooltipPanel.Size.X.SetPixels(220);
+                _tooltipPanel.AutoHeight = true;
+                _tooltipPanel.IgnoreInteractions = true;
+                _tooltipParagraph = new Entities.Paragraph(this, candidate.TooltipText ?? string.Empty);
+                _tooltipPanel.AddChild(_tooltipParagraph);
+                Root.AddChild(_tooltipPanel);
+            }
+
+            // keep tooltip on top (z-order in Iguina is child-list order)
+            _tooltipPanel.BringToFront();
+            _tooltipParagraph!.Text = candidate.TooltipText ?? string.Empty;
+            _tooltipPanel.Offset.X.SetPixels(mousePosition.X + 16);
+            _tooltipPanel.Offset.Y.SetPixels(mousePosition.Y + 16);
+            _tooltipPanel.Visible = true;
         }
 
         // last frame input state

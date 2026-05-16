@@ -25,25 +25,45 @@
     "ops": []
   },
   "Serilog": {
-    "Using": [ "Serilog.Sinks.Async", "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
+    "Using": [
+      "Serilog.Sinks.Async",
+      "Serilog.Sinks.Console",
+      "Serilog.Sinks.File",
+      "Serilog.Enrichers.Environment",
+      "Serilog.Enrichers.Process",
+      "Serilog.Exceptions"
+    ],
     "MinimumLevel": "Information",
     "WriteTo": [
       {
         "Name": "Async",
         "Args": {
           "configure": [
-            { "Name": "Console" },
+            {
+              "Name": "Console",
+              "Args": {
+                "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}"
+              }
+            },
             {
               "Name": "File",
               "Args": {
                 "path": "logs/TrueCraft..log",
-                "rollingInterval": "Day"
+                "rollingInterval": "Day",
+                "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [Thread {ThreadId}] {SourceContext}: {Message:lj} {Properties:j}{NewLine}{Exception}"
               }
             }
           ]
         }
       }
     ],
-    "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ]
+    "Enrich": [
+      "FromLogContext",
+      "WithMachineName",
+      "WithThreadId",
+      "WithProcessId",
+      "WithEnvironmentName",
+      "WithExceptionDetails"
+    ]
   }
 }

@@ -8,7 +8,9 @@ using System.Net.Sockets;
 using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TrueCraft.API.Server;
+using TrueCraft.Options;
 
 namespace TrueCraft
 {
@@ -29,14 +31,17 @@ namespace TrueCraft
 
         private ConcurrentDictionary<IPEndPoint, QueryUser> UserList;
 
-        public QueryProtocol(IMultiplayerServer server)
+        private readonly NodeOptions _node;
+
+        public QueryProtocol(IMultiplayerServer server, IOptions<NodeOptions> nodeOpts)
         {
             Rnd = new Random();
             Server = server;
+            _node = nodeOpts.Value;
         }
         public void Start()
         {
-            Port = Program.NodeConfiguration.QueryPort;
+            Port = _node.QueryPort;
             Udp = new UdpClient(Port);
             UserList = new ConcurrentDictionary<IPEndPoint, QueryUser>();
             Timer = new Timer(ResetUserList, null, 0, 30000);
@@ -219,7 +224,7 @@ namespace TrueCraft
         {
             var stats = new Dictionary<string, string>
             {
-                {"hostname", Program.NodeConfiguration.MOTD},
+                {"hostname", _node.MOTD},
                 {"gametype", "SMP"},
                 {"game_id", "TRUECRAFT"},
                 {"version", "1.0"},
@@ -227,8 +232,8 @@ namespace TrueCraft
                 {"map", Server.Worlds.First().Name},
                 {"numplayers", Server.Clients.Count.ToString()},
                 {"maxplayers", "64"},
-                {"hostport", Program.NodeConfiguration.ServerPort.ToString()},
-                {"hostip", Program.NodeConfiguration.ServerAddress}
+                {"hostport", _node.ServerPort.ToString()},
+                {"hostip", _node.ServerAddress}
             };
             return stats;
         }

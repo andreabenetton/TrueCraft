@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
 using System.Net;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TrueCraft.API;
@@ -17,20 +15,9 @@ namespace TrueCraft.Launcher.Singleplayer
         public SingleplayerServer(World world)
         {
             World = world;
-            // Set NodeConfiguration before resolving MultiplayerServer so any handler
-            // that reads Program.NodeConfiguration during server init sees the
-            // singleplayer overrides.
-            var inMemoryConfig = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
-                {
-                    ["Configuration:Singleplayer"] = "true",
-                    ["Configuration:query-enabled"] = "false",
-                })
-                .Build();
-            TrueCraft.Program.NodeConfiguration = new NodeConfiguration(inMemoryConfig)
-            {
-                MOTD = null,
-            };
+            // The launcher's DI container has Singleplayer=true / query-enabled=false
+            // baked into NodeOptions via Configure(...) in TrueCraft.Launcher.Program,
+            // so resolving the MultiplayerServer here picks up those overrides.
             Server = App.Services.GetRequiredService<MultiplayerServer>();
             world.BlockRepository = Server.BlockRepository;
             Server.AddWorld(world);

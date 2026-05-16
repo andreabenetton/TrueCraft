@@ -4,8 +4,11 @@ using System.Threading.Tasks;
 using TrueCraft.API.Server;
 using TrueCraft.API.Networking;
 using TrueCraft.Core.Networking.Packets;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using TrueCraft.API;
 using TrueCraft.Core.Entities;
+using TrueCraft.Options;
 
 namespace TrueCraft.Handlers
 {
@@ -76,9 +79,10 @@ namespace TrueCraft.Handlers
                 server.Scheduler.ScheduleEvent("remote.keepalive", remoteClient, TimeSpan.FromSeconds(10), remoteClient.SendKeepAlive);
                 server.Scheduler.ScheduleEvent("remote.chunks", remoteClient, TimeSpan.FromSeconds(1), remoteClient.ExpandChunkRadius);
 
-                if (!string.IsNullOrEmpty(Program.NodeConfiguration.MOTD))
-                    remoteClient.SendMessage(Program.NodeConfiguration.MOTD);
-                if (!Program.NodeConfiguration.Singleplayer)
+                var node = App.Services.GetRequiredService<IOptions<NodeOptions>>().Value;
+                if (!string.IsNullOrEmpty(node.MOTD))
+                    remoteClient.SendMessage(node.MOTD);
+                if (!node.Singleplayer)
                     server.SendMessage(ChatColor.Yellow + "{0} joined the server.", remoteClient.Username);
             }
         }

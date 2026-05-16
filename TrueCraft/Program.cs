@@ -1,34 +1,33 @@
-﻿using System.Net;
-using System.Threading;
+using System;
+using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TrueCraft.API.Logic;
-using TrueCraft.Core.Logic;
-using TrueCraft.Core.World;
-using TrueCraft.Core.TerrainGen;
-using TrueCraft.API.Server;
-using System.IO;
-using TrueCraft.Commands;
-using TrueCraft.API.World;
-using System;
+using Microsoft.Extensions.Options;
 using TrueCraft.API;
+using TrueCraft.API.Logic;
+using TrueCraft.API.Server;
+using TrueCraft.API.World;
+using TrueCraft.Commands;
+using TrueCraft.Core.Logic;
 using TrueCraft.Core.Profiling;
+using TrueCraft.Core.TerrainGen;
+using TrueCraft.Core.World;
 using TrueCraft.Options;
 
 namespace TrueCraft
 {
     public class Program
     {
-        public static NodeConfiguration NodeConfiguration;
-
         // Resolved per-use so the property is safe to read before/after App.Services init
         // (Program's static field initializers run before Main, before App.Services is set).
         private static ILogger Log => App.LoggerFor<Program>();
         private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
         private static MultiplayerServer Server => App.Services.GetRequiredService<MultiplayerServer>();
         private static CommandManager CommandManager => App.Services.GetRequiredService<CommandManager>();
+        private static NodeOptions Node => App.Services.GetRequiredService<IOptions<NodeOptions>>().Value;
 
         // Signaled by Ctrl-C / SIGINT to release the awaitable shutdown hold in Main.
         private static readonly TaskCompletionSource ShutdownSignal =
@@ -36,21 +35,23 @@ namespace TrueCraft
 
         public static async Task Main(string[] args)
         {
-            NodeConfiguration = new NodeConfiguration();
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("nodesettings.json", optional: false, reloadOnChange: false)
+                .Build();
 
             var services = new ServiceCollection();
-            services.AddSerilogLogging(NodeConfiguration.Configuration);
-            services.AddSingleton(NodeConfiguration);
-            services.AddSingleton<IConfiguration>(NodeConfiguration.Configuration);
+            services.AddSerilogLogging(configuration);
+            services.AddSingleton<IConfiguration>(configuration);
 
             services.AddOptions<NodeOptions>()
-                .Bind(NodeConfiguration.Configuration.GetSection(NodeOptions.SectionName));
+                .Bind(configuration.GetSection(NodeOptions.SectionName));
             services.AddOptions<DebugOptions>()
-                .Bind(NodeConfiguration.Configuration.GetSection(DebugOptions.SectionName));
+                .Bind(configuration.GetSection(DebugOptions.SectionName));
             services.AddOptions<ProfilerOptions>()
-                .Bind(NodeConfiguration.Configuration.GetSection(ProfilerOptions.SectionName));
+                .Bind(configuration.GetSection(ProfilerOptions.SectionName));
             services.AddOptions<AccessOptions>()
-                .Bind(NodeConfiguration.Configuration.GetSection(AccessOptions.SectionName));
+                .Bind(configuration.GetSection(AccessOptions.SectionName));
 
             services.AddSingleton<Profiler>();
             services.AddSingleton<IBlockRepository>(_ =>
@@ -75,25 +76,21 @@ namespace TrueCraft
             services.AddSingleton<CommandManager>();
             App.Services = services.BuildServiceProvider();
 
-            var buckets = NodeConfiguration.Debug?.Profiler?.Buckets?.Split(',');
+            var debug = App.Services.GetRequiredService<IOptions<DebugOptions>>().Value;
+            var profilerOpts = App.Services.GetRequiredService<IOptions<ProfilerOptions>>().Value;
+
+            var buckets = profilerOpts.Buckets?.Split(',');
             if (buckets != null)
             {
                 foreach (var bucket in buckets)
-                {
                     Profiler.EnableBucket(bucket.Trim());
-                }
             }
 
-            if (NodeConfiguration.Debug.DeleteWorldOnStartup)
-            {
-                if (Directory.Exists("world"))
-                    Directory.Delete("world", true);
-            }
-            if (NodeConfiguration.Debug.DeletePlayersOnStartup)
-            {
-                if (Directory.Exists("players"))
-                    Directory.Delete("players", true);
-            }
+            if (debug.DeleteWorldOnStartup && Directory.Exists("world"))
+                Directory.Delete("world", true);
+            if (debug.DeletePlayersOnStartup && Directory.Exists("players"))
+                Directory.Delete("players", true);
+
             IWorld world;
             try
             {
@@ -113,7 +110,7 @@ namespace TrueCraft
                         world.GetChunk(new Coordinates2D(x, z));
                     int progress = (int)(((x + 5) / 10.0) * 100);
                     if (progress % 10 == 0)
-                                Log.LogInformation("{Progress}% complete", progress + 10);
+                        Log.LogInformation("{Progress}% complete", progress + 10);
                 }
                 Log.LogInformation("Simulating the world for a moment...");
                 for (int x = -5; x < 5; x++)
@@ -137,7 +134,7 @@ namespace TrueCraft
                     }
                     int progress = (int)(((x + 5) / 10.0) * 100);
                     if (progress % 10 == 0)
-                                Log.LogInformation("{Progress}% complete", progress + 10);
+                        Log.LogInformation("{Progress}% complete", progress + 10);
                 }
                 Log.LogInformation("Lighting the world (this will take a moment)...");
                 foreach (var lighter in Server.WorldLighters)
@@ -147,10 +144,10 @@ namespace TrueCraft
             }
             await world.SaveAsync();
             Server.ChatMessageReceived += HandleChatMessageReceived;
-            Server.Start(new IPEndPoint(IPAddress.Parse(NodeConfiguration.ServerAddress), NodeConfiguration.ServerPort));
+            Server.Start(new IPEndPoint(IPAddress.Parse(Node.ServerAddress), Node.ServerPort));
             Console.CancelKeyPress += HandleCancelKeyPress;
             Server.Scheduler.ScheduleEvent("world.save", null,
-                TimeSpan.FromSeconds(NodeConfiguration.WorldSaveInterval),
+                TimeSpan.FromSeconds(Node.WorldSaveInterval),
                 (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
 
             // Park here until SIGINT (HandleCancelKeyPress) signals shutdown. Replaces the previous
@@ -172,7 +169,7 @@ namespace TrueCraft
                 Log.LogError(ex, "World save failed");
             }
             server.Scheduler.ScheduleEvent("world.save", null,
-                TimeSpan.FromSeconds(NodeConfiguration.WorldSaveInterval),
+                TimeSpan.FromSeconds(Node.WorldSaveInterval),
                 (Func<IMultiplayerServer, Task>)SaveWorldsAsync);
         }
 

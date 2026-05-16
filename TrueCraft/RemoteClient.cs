@@ -1,7 +1,9 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TrueCraft.API.Networking;
+using TrueCraft.Options;
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.Sockets;
@@ -36,10 +38,12 @@ namespace TrueCraft
         // chat-broadcast method already occupies "Log" in this class.
         private readonly ILogger<RemoteClient> Logger;
         private static Profiler Profiler => App.Services.GetRequiredService<Profiler>();
+        private readonly NodeOptions _node;
 
-        public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection, ILogger<RemoteClient> logger)
+        public RemoteClient(IMultiplayerServer server, IPacketReader packetReader, PacketHandler[] packetHandlers, Socket connection, ILogger<RemoteClient> logger, IOptions<NodeOptions> nodeOpts)
         {
             Logger = logger;
+            _node = nodeOpts.Value;
             LoadedChunks = new HashSet<Coordinates2D>();
             Server = server;
             Inventory = new InventoryWindow(server.CraftingRepository);
@@ -204,7 +208,7 @@ namespace TrueCraft
         public async Task<bool> LoadAsync(CancellationToken cancellationToken = default)
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "players", Username + ".nbt");
-            if (Program.NodeConfiguration.Singleplayer)
+            if (_node.Singleplayer)
                 path = Path.Combine(((World)World).BaseDirectory, "player.nbt");
             if (!File.Exists(path))
                 return false;
@@ -228,7 +232,7 @@ namespace TrueCraft
         public async Task SaveAsync(CancellationToken cancellationToken = default)
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "players", Username + ".nbt");
-            if (Program.NodeConfiguration.Singleplayer)
+            if (_node.Singleplayer)
                 path = Path.Combine(((World)World).BaseDirectory, "player.nbt");
             if (!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path));

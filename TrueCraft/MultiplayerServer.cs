@@ -11,7 +11,9 @@ using System.Linq;
 using TrueCraft.API.World;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TrueCraft.Core.Networking.Packets;
+using TrueCraft.Options;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.Core.Logic;
@@ -91,17 +93,13 @@ namespace TrueCraft
 
         internal bool ShuttingDown { get; private set; }
         
-        // Parameterless ctor delegates to the DI-style ctor by resolving repositories
-        // from App.Services. Keeps existing `new MultiplayerServer()` call sites working.
-        public MultiplayerServer() : this(
-            App.Services.GetRequiredService<IBlockRepository>(),
-            App.Services.GetRequiredService<IItemRepository>(),
-            App.Services.GetRequiredService<ICraftingRepository>())
-        {
-        }
+        private readonly NodeOptions _node;
 
-        public MultiplayerServer(IBlockRepository blockRepository, IItemRepository itemRepository, ICraftingRepository craftingRepository)
+        public MultiplayerServer(IBlockRepository blockRepository, IItemRepository itemRepository,
+            ICraftingRepository craftingRepository, IOptions<NodeOptions> nodeOpts,
+            IOptions<AccessOptions> accessOpts)
         {
+            _node = nodeOpts.Value;
             var reader = new PacketReader();
             PacketReader = reader;
             Clients = new List<IRemoteClient>();
@@ -116,12 +114,12 @@ namespace TrueCraft
             CraftingRepository = craftingRepository;
             PendingBlockUpdates = new Queue<BlockUpdate>();
             EnableClientLogging = false;
-            QueryProtocol = new TrueCraft.QueryProtocol(this);
+            QueryProtocol = ActivatorUtilities.CreateInstance<QueryProtocol>(App.Services, this);
             WorldLighters = new List<WorldLighting>();
             ChunksToSchedule = new ConcurrentBag<Tuple<IWorld, IChunk>>();
             Time = new Stopwatch();
 
-            AccessConfiguration = new AccessConfiguration();
+            AccessConfiguration = accessOpts.Value;
 
             reader.RegisterCorePackets();
             Handlers.PacketHandlers.RegisterHandlers(this);
@@ -135,8 +133,8 @@ namespace TrueCraft
         public void Start(IPEndPoint endPoint)
         {
             Scheduler.DisabledEvents.Clear();
-            if (Program.NodeConfiguration.DisabledEvents != null)
-                Program.NodeConfiguration.DisabledEvents.ToList().ForEach(
+            if (_node.DisabledEvents != null)
+                _node.DisabledEvents.ToList().ForEach(
                     ev => Scheduler.DisabledEvents.Add(ev));
             ShuttingDown = false;
             Time.Reset();
@@ -152,7 +150,7 @@ namespace TrueCraft
             EnvironmentCts = new CancellationTokenSource();
             EnvironmentTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(MillisecondsPerTick));
             EnvironmentLoopTask = Task.Run(() => RunEnvironmentLoopAsync(EnvironmentCts.Token));
-            if(Program.NodeConfiguration.Query)
+            if(_node.Query)
                 QueryProtocol.Start();
         }
 
@@ -171,7 +169,7 @@ namespace TrueCraft
             {
                 // expected on shutdown
             }
-            if(Program.NodeConfiguration.Query)
+            if(_node.Query)
                 QueryProtocol.Stop();
             // Stop the tick loop before saving worlds: the loop must not be running concurrently with disposal.
             try
@@ -207,9 +205,9 @@ namespace TrueCraft
 
         void HandleChunkLoaded(object sender, ChunkLoadedEventArgs e)
         {
-            if (Program.NodeConfiguration.EnableEventLoading)
+            if (_node.EnableEventLoading)
                 ChunksToSchedule.Add(new Tuple<IWorld, IChunk>(sender as IWorld, e.Chunk));
-            if (Program.NodeConfiguration.EnableLighting)
+            if (_node.EnableLighting)
             {
                 var lighter = WorldLighters.SingleOrDefault(l => l.World == sender);
                 lighter.InitialLighting(e.Chunk, false);
@@ -233,7 +231,7 @@ namespace TrueCraft
                 }
                 PendingBlockUpdates.Enqueue(new BlockUpdate { Coordinates = e.Position, World = sender as IWorld });
                 ProcessBlockUpdates();
-                if (Program.NodeConfiguration.EnableLighting)
+                if (_node.EnableLighting)
                 {
                     var lighter = WorldLighters.SingleOrDefault(l => l.World == sender);
                     if (lighter != null)
@@ -252,7 +250,7 @@ namespace TrueCraft
 
         void HandleChunkGenerated(object sender, ChunkLoadedEventArgs e)
         {
-            if (Program.NodeConfiguration.EnableLighting)
+            if (_node.EnableLighting)
             {
                 var lighter = new WorldLighting(sender as IWorld, BlockRepository);
                 lighter.InitialLighting(e.Chunk, false);
@@ -474,7 +472,7 @@ namespace TrueCraft
             }
             Profiler.Done();
 
-            if (Program.NodeConfiguration.EnableLighting)
+            if (_node.EnableLighting)
             {
                 Profiler.Start("environment.lighting");
                 foreach (var lighter in WorldLighters)
@@ -489,7 +487,7 @@ namespace TrueCraft
                 Profiler.Done();
             }
 
-            if (Program.NodeConfiguration.EnableEventLoading)
+            if (_node.EnableEventLoading)
             {
                 Profiler.Start("environment.chunks");
                 Tuple<IWorld, IChunk> t;

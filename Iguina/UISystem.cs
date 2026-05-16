@@ -45,6 +45,15 @@ namespace Iguina
         public bool ShowCursor = true;
 
         /// <summary>
+        /// Optional audio hook. Iguina invokes this with a sound id whenever an
+        /// entity with a non-null <see cref="Entities.Entity.ClickSoundId"/> is
+        /// clicked, or a non-null <see cref="Entities.Entity.HoverSoundId"/> is
+        /// hovered. The host application decides how to map ids to playback
+        /// (e.g. a Dictionary&lt;string, SoundEffect&gt; in MonoGame).
+        /// </summary>
+        public Action<string>? PlaySound;
+
+        /// <summary>
         /// If true, will auto-focus entities the user interacts with.
         /// If false, entities will never be focused nor respond to keyboard interactions, unless you explicitly set the focused entity via code.
         /// </summary>

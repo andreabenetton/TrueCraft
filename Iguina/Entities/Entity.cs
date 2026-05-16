@@ -130,6 +130,22 @@ namespace Iguina.Entities
         public bool Visible = true;
 
         /// <summary>
+        /// Sound id played via <see cref="UISystem.PlaySound"/> when this entity is
+        /// clicked (left mouse released). Null disables click audio.
+        /// </summary>
+        public string? ClickSoundId;
+
+        /// <summary>
+        /// Sound id played via <see cref="UISystem.PlaySound"/> once when the mouse
+        /// enters this entity's bounds. Null disables hover audio.
+        /// </summary>
+        public string? HoverSoundId;
+
+        // hover-transition tracking so OnMouseEnter / OnMouseLeave fire exactly once
+        // per transition.
+        bool _wasTargetedLastFrame;
+
+        /// <summary>
         /// Get if this entity has a scrollbar.
         /// </summary>
         protected virtual bool HaveScrollbars => false;
@@ -1451,6 +1467,7 @@ namespace Iguina.Entities
                 {
                     Events.OnLeftMouseReleased?.Invoke(this);
                     UISystem.Events.OnLeftMouseReleased?.Invoke(this);
+                    if (ClickSoundId != null) UISystem.PlaySound?.Invoke(ClickSoundId);
                 }
                 if (inputState.RightMouseDown)
                 {
@@ -1821,6 +1838,24 @@ namespace Iguina.Entities
                 _timeToRemainInteractedState -= dt;
             }
 
+            // hover-transition events (fire once per enter / leave)
+            var isTargetedNow = IsTargeted;
+            if (isTargetedNow != _wasTargetedLastFrame)
+            {
+                if (isTargetedNow)
+                {
+                    Events.OnMouseEnter?.Invoke(this);
+                    UISystem.Events.OnMouseEnter?.Invoke(this);
+                    if (HoverSoundId != null) UISystem.PlaySound?.Invoke(HoverSoundId);
+                }
+                else
+                {
+                    Events.OnMouseLeave?.Invoke(this);
+                    UISystem.Events.OnMouseLeave?.Invoke(this);
+                }
+                _wasTargetedLastFrame = isTargetedNow;
+            }
+
             // pre update event
             Events.BeforeUpdate?.Invoke(this);
             UISystem.Events.BeforeUpdate?.Invoke(this);
@@ -2115,5 +2150,17 @@ namespace Iguina.Entities
         /// Called every frame while mouse hovers the entity (even if mouse don't move).
         /// </summary>
         public EntityEvent? WhileMouseHover;
+
+        /// <summary>
+        /// Called once when the mouse enters this entity's bounds (transition from
+        /// not-targeted to targeted).
+        /// </summary>
+        public EntityEvent? OnMouseEnter;
+
+        /// <summary>
+        /// Called once when the mouse leaves this entity's bounds (transition from
+        /// targeted to not-targeted).
+        /// </summary>
+        public EntityEvent? OnMouseLeave;
     }
 }

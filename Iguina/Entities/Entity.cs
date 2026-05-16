@@ -1161,7 +1161,7 @@ namespace Iguina.Entities
                 var framedTexture = UISystem.SystemStyleSheet.FocusedEntityOverlay;
                 if (framedTexture != null)
                 {
-                    DrawUtils.Draw(UISystem.Renderer, null, framedTexture, BoundingRectForFocusOverlay, Color.White, UISystem.SystemStyleSheet.TextureScale, UISystem.SystemStyleSheet.DefaultTexture);
+                    DrawUtils.Draw(UISystem.Renderer, null, framedTexture, BoundingRectForFocusOverlay, Color.White, UISystem.TexturesScale, UISystem.SystemStyleSheet.DefaultTexture);
                 }
             }
 
@@ -1387,8 +1387,8 @@ namespace Iguina.Entities
                     if (sicon != null)
                     {
                         var dest = new Rectangle(boundingRect.X, boundingRect.Y, 
-                            (int)(sicon.SourceRect.Width * sicon.TextureScale * UISystem.SystemStyleSheet.TextureScale), 
-                            (int)(sicon.SourceRect.Height * sicon.TextureScale * UISystem.SystemStyleSheet.TextureScale));
+                            (int)(sicon.SourceRect.Width * sicon.TextureScale * UISystem.TexturesScale), 
+                            (int)(sicon.SourceRect.Height * sicon.TextureScale * UISystem.TexturesScale));
                         if (sicon.CenterHorizontally)
                         {
                             dest.X += boundingRect.Width / 2 - dest.Width / 2;
@@ -1406,7 +1406,7 @@ namespace Iguina.Entities
                     var ftexture = StyleSheet.GetProperty<FramedTexture>("FillTextureFramed", state, null, OverrideStyles);
                     if (ftexture != null)
                     {
-                        DrawUtils.Draw(UISystem.Renderer, effectId, ftexture, boundingRect, color, UISystem.SystemStyleSheet.TextureScale, UISystem.SystemStyleSheet.DefaultTexture);
+                        DrawUtils.Draw(UISystem.Renderer, effectId, ftexture, boundingRect, color, UISystem.TexturesScale, UISystem.SystemStyleSheet.DefaultTexture);
                     }
                 }
 

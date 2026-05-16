@@ -154,15 +154,38 @@ namespace Iguina
         public bool DebugRenderEntities = false;
 
         /// <summary>
+        /// Alias for <see cref="DebugRenderEntities"/> matching GeonBit.UI's API name.
+        /// </summary>
+        public bool DebugDraw
+        {
+            get => DebugRenderEntities;
+            set => DebugRenderEntities = value;
+        }
+
+        /// <summary>
+        /// Uniform multiplier applied on top of <see cref="SystemStyleSheet.TextScale"/>
+        /// and <see cref="SystemStyleSheet.TextureScale"/> at render time. One knob
+        /// for callers that want to scale the whole UI without editing the theme JSON.
+        /// </summary>
+        public float GlobalScale = 1f;
+
+        /// <summary>
         /// Entity events you can register to.
         /// These events will trigger for any entity in the system.
         /// </summary>
         public EntityEvents Events;
 
         /// <summary>
-        /// Scale all the texts in this UI system.
+        /// Effective text scale (stylesheet TextScale × GlobalScale).
         /// </summary>
-        public float TextsScale => SystemStyleSheet.TextScale;
+        public float TextsScale => SystemStyleSheet.TextScale * GlobalScale;
+
+        /// <summary>
+        /// Effective texture scale (stylesheet TextureScale × GlobalScale).
+        /// Used by entity render paths in preference to reading
+        /// <see cref="SystemStyleSheet.TextureScale"/> directly.
+        /// </summary>
+        public float TexturesScale => SystemStyleSheet.TextureScale * GlobalScale;
 
         /// <summary>
         /// Root entity.
@@ -709,7 +732,7 @@ namespace Iguina
             // render cursor
             if (ShowCursor && cursor != null)
             {
-                var scale = cursor.Scale * SystemStyleSheet.CursorScale * SystemStyleSheet.TextureScale;
+                var scale = cursor.Scale * SystemStyleSheet.CursorScale * TexturesScale;
                 var destRect = cursor.SourceRect;
                 destRect.X = Input.GetMousePosition().X + (int)(cursor.Offset.X * scale);
                 destRect.Y = Input.GetMousePosition().Y + (int)(cursor.Offset.Y * scale);

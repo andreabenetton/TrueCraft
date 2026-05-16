@@ -1507,6 +1507,15 @@ namespace Iguina.Entities
                 }
             }
 
+            // WhileMouseDown fires every frame the left button is held while
+            // hovering this entity (distinct from OnLeftMouseDown, which fires
+            // only on the press transition).
+            if (inputState.LeftMouseDown)
+            {
+                Events.WhileMouseDown?.Invoke(this);
+                UISystem.Events.WhileMouseDown?.Invoke(this);
+            }
+
             // drag entity
             if (IsDraggable)
             {
@@ -1539,6 +1548,9 @@ namespace Iguina.Entities
                         {
                             _dragOffsetFromParent = null;
                         }
+                        // WhileDragging fires every frame an entity is being dragged
+                        Events.WhileDragging?.Invoke(this);
+                        UISystem.Events.WhileDragging?.Invoke(this);
                     }
                     // start dragging
                     else if (inputState.LeftMousePressedNow)
@@ -1549,11 +1561,18 @@ namespace Iguina.Entities
                         {
                             BringToFront();
                         }
+                        Events.OnStartDrag?.Invoke(this);
+                        UISystem.Events.OnStartDrag?.Invoke(this);
                     }
                 }
                 // stop dragging
                 else
                 {
+                    if (_dragHandlePosition.HasValue)
+                    {
+                        Events.OnStopDrag?.Invoke(this);
+                        UISystem.Events.OnStopDrag?.Invoke(this);
+                    }
                     _dragHandlePosition = null;
                 }
             }
@@ -2193,5 +2212,27 @@ namespace Iguina.Entities
         /// targeted to not-targeted).
         /// </summary>
         public EntityEvent? OnMouseLeave;
+
+        /// <summary>
+        /// Called every frame the left mouse button is held while hovering this
+        /// entity. Distinct from <see cref="OnLeftMouseDown"/>, which fires only
+        /// on the press transition.
+        /// </summary>
+        public EntityEvent? WhileMouseDown;
+
+        /// <summary>
+        /// Called once when a drag begins on this entity (mouse press + drag-eligible).
+        /// </summary>
+        public EntityEvent? OnStartDrag;
+
+        /// <summary>
+        /// Called once when a drag ends on this entity (mouse release after a drag).
+        /// </summary>
+        public EntityEvent? OnStopDrag;
+
+        /// <summary>
+        /// Called every frame this entity is actively being dragged.
+        /// </summary>
+        public EntityEvent? WhileDragging;
     }
 }

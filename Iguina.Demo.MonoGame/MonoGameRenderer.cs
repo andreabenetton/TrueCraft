@@ -1,8 +1,10 @@
-﻿using Iguina.Defs;
+﻿using FontStashSharp;
+using Iguina.Defs;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 
 
@@ -20,7 +22,7 @@ namespace Iguina.Demo.MonoGame
         string _assetsRoot;
         Texture2D _whiteTexture;
 
-        Dictionary<string, SpriteFont> _fonts = new();
+        FontSystem _fontSystem;
         Dictionary<string, Texture2D> _textures = new();
         Dictionary<string, Texture2D> _grayscaleClones = new();
 
@@ -48,22 +50,29 @@ namespace Iguina.Demo.MonoGame
             // create white texture
             _whiteTexture = new Texture2D(_device, 1, 1);
             _whiteTexture.SetData(new[] { Color.White });
+
+            // Load the default font (Open Sans Regular) embedded in this assembly.
+            // FontStashSharp rasterizes TTF on demand at the requested pixel size,
+            // so we don't need MGCB's spritefont pipeline.
+            _fontSystem = new FontSystem();
+            using (var s = typeof(MonoGameRenderer).Assembly.GetManifestResourceStream("default_font.ttf"))
+            {
+                if (s == null) throw new InvalidOperationException("Embedded default_font.ttf missing");
+                using var ms = new MemoryStream();
+                s.CopyTo(ms);
+                _fontSystem.AddFont(ms.ToArray());
+            }
         }
 
         /// <summary>
-        /// Load / get font.
+        /// Get a <see cref="DynamicSpriteFont"/> at the requested pixel size from the
+        /// embedded default font. <paramref name="fontName"/> is accepted for source
+        /// compatibility with stylesheets that name a font identifier; the renderer
+        /// currently ships a single font and ignores the name.
         /// </summary>
-        SpriteFont GetFont(string? fontName)
+        DynamicSpriteFont GetFont(string? fontName, int fontSize)
         {
-            var fontNameOrDefault = fontName ?? "default_font";
-            if (_fonts.TryGetValue(fontNameOrDefault, out var font)) 
-            { 
-                return font; 
-            }
-
-            var ret = _content.Load<SpriteFont>(fontNameOrDefault);
-            _fonts[fontNameOrDefault] = ret;
-            return ret;
+            return _fontSystem.GetFont(fontSize * GlobalTextScale);
         }
 
         /// <summary>
@@ -230,21 +239,19 @@ namespace Iguina.Demo.MonoGame
         /// <inheritdoc/>
         public Point MeasureText(string text, string? fontId, int fontSize, float spacing)
         {
-            var spriteFont = GetFont(fontId);
-            float scale = (fontSize / 24f) * GlobalTextScale; // 24 is the default font sprite size. you need to adjust this to your own sprite font.
-            spriteFont.Spacing = spacing - 1f;
-            return MeasureStringNew(spriteFont, text, scale);
+            var font = GetFont(fontId, fontSize);
+            var size = font.MeasureString(text, characterSpacing: spacing - 1f);
+            return new Point((int)Math.Ceiling(size.X), (int)Math.Ceiling(size.Y));
         }
 
         /// <inheritdoc/>
         public int GetTextLineHeight(string? fontId, int fontSize)
         {
-            return (int)MeasureText("WI", fontId, fontSize, 1f).Y;
+            return GetFont(fontId, fontSize).LineHeight;
         }
 
         /// <inheritdoc/>
 
-        [Obsolete("Note: currently we render outline in a primitive way. To improve performance and remove some visual artifact during transitions, its best to implement a shader that draw text with outline properly.")]
         public void DrawText(string? effectIdentifier, string text, string? fontId, int fontSize, Point position, Color fillColor, Color outlineColor, int outlineWidth, float spacing)
         {
             // "disabled" effect short-circuits to desaturated fill/outline colors + null shader.
@@ -259,37 +266,40 @@ namespace Iguina.Demo.MonoGame
                 SetEffect(effectIdentifier);
             }
 
-            var spriteFont = GetFont(fontId);
-            spriteFont.Spacing = spacing - 1f;
-            float scale = (fontSize / 24f) * GlobalTextScale; // 24 is the default font sprite size. you need to adjust this to your own sprite font.
+            var font = GetFont(fontId, fontSize);
+            var characterSpacing = spacing - 1f;
 
-            // draw outline
+            // draw outline via 8-direction offset rendering. Naive but matches the
+            // SpriteFont-era output exactly; FontStashSharp has no built-in stroked
+            // text mode.
             if ((outlineColor.A > 0) && (outlineWidth > 0))
             {
-                // because we draw outline in a primitive way, we want it to fade a lot faster than fill color
+                // outline fades faster than fill, replicating the prior behavior
                 if (outlineColor.A < 255)
                 {
                     float alphaFactor = (float)(outlineColor.A / 255f);
                     outlineColor.A = (byte)((float)fillColor.A * Math.Pow(alphaFactor, 7));
                 }
 
-                // draw outline
                 var outline = ToMgColor(outlineColor);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X - outlineWidth, position.Y), outline, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X, position.Y - outlineWidth), outline, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X + outlineWidth, position.Y), outline, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X, position.Y + outlineWidth), outline, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X - outlineWidth, position.Y - outlineWidth), outline, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X - outlineWidth, position.Y + outlineWidth), outline, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X + outlineWidth, position.Y - outlineWidth), outline, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X + outlineWidth, position.Y + outlineWidth), outline, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
+                for (int dx = -outlineWidth; dx <= outlineWidth; dx += outlineWidth)
+                {
+                    for (int dy = -outlineWidth; dy <= outlineWidth; dy += outlineWidth)
+                    {
+                        if (dx == 0 && dy == 0) continue;
+                        font.DrawText(_spriteBatch, text,
+                            new Microsoft.Xna.Framework.Vector2(position.X + dx, position.Y + dy),
+                            outline,
+                            characterSpacing: characterSpacing);
+                    }
+                }
             }
 
             // draw fill
-            {
-                var colorMg = ToMgColor(fillColor);
-                _spriteBatch.DrawString(spriteFont, text, new Microsoft.Xna.Framework.Vector2(position.X, position.Y), colorMg, 0f, new Microsoft.Xna.Framework.Vector2(0, 0), scale, SpriteEffects.None, 0f);
-            }
+            font.DrawText(_spriteBatch, text,
+                new Microsoft.Xna.Framework.Vector2(position.X, position.Y),
+                ToMgColor(fillColor),
+                characterSpacing: characterSpacing);
         }
 
         /// <inheritdoc/>
@@ -398,69 +408,5 @@ namespace Iguina.Demo.MonoGame
             return ret;
         }
 
-        /// <summary>
-        /// MonoGame measure string sucks and return wrong result.
-        /// So I copied the code that render string and changed it to measure instead.
-        /// </summary>
-        Point MeasureStringNew(SpriteFont spriteFont, string text, float scale)
-        {
-            var matrix = Microsoft.Xna.Framework.Matrix.Identity;
-            {
-                matrix.M11 = scale;
-                matrix.M22 = scale;
-                matrix.M41 = 0;
-                matrix.M42 = 0;
-            }
-
-            // fix a bug in measuring just a single space
-            if (text.Length == 1) 
-            {
-                var singleRet = spriteFont.MeasureString(text);
-                return new Point((int)Math.Ceiling(singleRet.X * scale), (int)Math.Ceiling(singleRet.Y * scale));
-            }
-
-            bool flag3 = true;
-            var zero2 = Microsoft.Xna.Framework.Vector2.Zero;
-            Point ret = new Point();
-            {
-                foreach (char c in text)
-                {
-                    switch (c)
-                    {
-                        case '\n':
-                            zero2.X = 0f;
-                            zero2.Y += spriteFont.LineSpacing;
-                            flag3 = true;
-                            continue;
-                        case '\r':
-                            continue;
-                    }
-
-                    var glyph = spriteFont.GetGlyphs()[c];
-                    if (flag3)
-                    {
-                        zero2.X = Math.Max(glyph.LeftSideBearing, 0f);
-                        flag3 = false;
-                    }
-                    else
-                    {
-                        zero2.X += spriteFont.Spacing + glyph.LeftSideBearing;
-                    }
-
-                    Microsoft.Xna.Framework.Vector2 position2 = zero2;
-
-                    position2.X += glyph.Cropping.X;
-                    position2.Y += glyph.Cropping.Y;
-                    Microsoft.Xna.Framework.Vector2.Transform(ref position2, ref matrix, out position2);
-                    ret.X = (int)Math.Max((float)(position2.X + (float)glyph.BoundsInTexture.Width * scale), (float)(ret.X));
-                    ret.Y = (int)Math.Max((float)(position2.Y + (float)spriteFont.LineSpacing * scale), (float)(ret.Y));
-
-                    zero2.X += glyph.Width + glyph.RightSideBearing;
-                }
-            }
-
-            //ret.Y += spriteFont.LineSpacing / 2;
-            return ret;
-        }
     }
 }

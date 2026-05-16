@@ -24,9 +24,15 @@
   <ItemGroup>
     <EmbeddedResource Include="Icon.ico" />
     <EmbeddedResource Include="Icon.bmp" />
+    <!-- Default font bundled with the renderer so callers don't need to ship one.
+         Open Sans Regular (Apache License 2.0). -->
+    <EmbeddedResource Include="Content\default_font.ttf">
+      <LogicalName>default_font.ttf</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.4.1" />
+    <PackageReference Include="FontStashSharp.MonoGame" Version="1.5.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Iguina.Demo\Iguina.Demo.csproj" />

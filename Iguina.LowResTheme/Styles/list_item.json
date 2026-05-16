@@ -2,8 +2,8 @@
     "InheritFrom": "paragraph_base_style.json",
     "Default": {
         "TextAlignment": "Left",
-        "Padding": {"Left": 6, "Right": 6, "Top": 3, "Bottom": 3},
-        "DefaultWidth": {"Value": 100, "Unit": "Percents"}
+        "DefaultTextAnchor": "CenterLeft",
+        "Padding": {"Left": 6, "Right": 6, "Top": 3, "Bottom": 3}
     },
     "Targeted": {
         "BackgroundColor": {"R": 90, "G": 70, "B": 40, "A": 220}

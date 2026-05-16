@@ -1,6 +1,7 @@
 using System;
 using Iguina.Defs;
 using Iguina.Entities;
+using Iguina.Utils;
 using TrueCraft.Core.World;
 using TrueCraft.Launcher.Singleplayer;
 
@@ -36,6 +37,8 @@ public sealed class NewWorldView : ILauncherView
 
         parent.AddChild(new Paragraph(_game.UI, "Name"));
         _name = new TextInput(_game.UI) { PlaceholderText = "World name" };
+        _name.Validators.Add(TextInputValidators.EnglishCharactersOnly(allowSpaces: true));
+        _name.Validators.Add(TextInputValidators.OnlySingleSpaces());
         parent.AddChild(_name);
 
         parent.AddChild(new Paragraph(_game.UI, "Seed (optional)"));

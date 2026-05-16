@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Iguina.Defs;
 using Iguina.Entities;
+using Iguina.Utils;
 using TrueCraft.Core;
 
 namespace TrueCraft.Launcher.Views;
@@ -42,6 +43,9 @@ public sealed class LoginView : ILauncherView
         {
             Value = UserSettings.Local?.Username ?? string.Empty,
         };
+        // Match Mojang conventions: ASCII letters/digits + space, no double spaces.
+        _usernameInput.Validators.Add(TextInputValidators.EnglishCharactersOnly(allowSpaces: true));
+        _usernameInput.Validators.Add(TextInputValidators.OnlySingleSpaces());
         parent.AddChild(_usernameInput);
 
         parent.AddChild(new Paragraph(_game.UI, "Password"));

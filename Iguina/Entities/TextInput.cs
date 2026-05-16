@@ -1,4 +1,7 @@
-﻿using Iguina.Defs;
+﻿using System;
+using System.Collections.Generic;
+using Iguina.Defs;
+using Iguina.Utils;
 
 
 namespace Iguina.Entities
@@ -94,6 +97,15 @@ namespace Iguina.Entities
         /// Limit text input max length, in characters count.
         /// </summary>
         public int? MaxLength;
+
+        /// <summary>
+        /// Per-keystroke text validators. Each validator is called in order with the
+        /// hypothetical post-insert string (mutable) and the previous value. A validator
+        /// may transform the candidate text or return false to reject the insertion
+        /// atomically. Multi-character pastes are validated one character at a time
+        /// because <see cref="InsertCharacters(string)"/> recurses for multi-char input.
+        /// </summary>
+        public List<TextValidator> Validators { get; } = new();
 
         /// <summary>
         /// Text editor caret offset.
@@ -285,18 +297,24 @@ namespace Iguina.Entities
                 return 0;
             }
 
-            // add value
-            if (CaretOffset == Value.Length)
+            // build the candidate post-insert value
+            var candidate = (CaretOffset == Value.Length)
+                ? Value + characters
+                : Value.Insert(CaretOffset, characters);
+
+            // run validators — each may transform candidate or reject the insertion
+            if (Validators.Count > 0)
             {
-                Value += characters;
-            }
-            else
-            {
-                Value = Value.Insert(CaretOffset, characters);
+                var oldValue = Value;
+                foreach (var validator in Validators)
+                {
+                    if (!validator(ref candidate, oldValue)) return 0;
+                }
             }
 
-            // update caret
-            CaretOffset++;
+            // apply value + caret advance (clamped, in case a validator changed length)
+            Value = candidate;
+            CaretOffset = Math.Min(CaretOffset + 1, candidate.Length);
             return 1;
         }
 

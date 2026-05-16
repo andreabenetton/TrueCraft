@@ -26,5 +26,18 @@ namespace Iguina.Animations
             var visible = Math.Min(_fullText.Length, (int)(ElapsedTime * _charactersPerSecond));
             p.Text = _fullText.Substring(0, visible);
         }
+
+        /// <summary>
+        /// Rewind to the start: clears ElapsedTime, un-flags IsDone, and blanks
+        /// the target Paragraph's text so the next Tick re-reveals from the
+        /// beginning. Lets callers replay the typewriter effect without
+        /// allocating a new animator.
+        /// </summary>
+        public void Reset(Paragraph? target = null)
+        {
+            ElapsedTime = 0f;
+            IsDone = false;
+            if (target != null) target.Text = string.Empty;
+        }
     }
 }

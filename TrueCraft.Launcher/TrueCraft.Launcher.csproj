@@ -23,7 +23,6 @@
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.4.1" />
     <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.4.1" PrivateAssets="all" />
     <PackageReference Include="dotnet-mgcb" Version="3.8.4.1" ExcludeAssets="all" GeneratePathProperty="true" PrivateAssets="all" />
-    <PackageReference Include="GeonBit.UI" Version="4.3.0.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />

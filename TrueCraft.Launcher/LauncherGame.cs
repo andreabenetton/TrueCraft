@@ -1,22 +1,23 @@
 using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Net.Http;
 using System.Threading;
-using GeonBit.UI;
-using GeonBit.UI.Entities;
+using Iguina;
+using Iguina.Defs;
+using Iguina.Demo.MonoGame;
+using Iguina.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using TrueCraft.Core;
-using TrueCraft.Launcher.Entities;
-using TrueCraft.Launcher.Panels;
 using TrueCraft.Launcher.Views;
 
 namespace TrueCraft.Launcher;
 
 /// <summary>
-///     MonoGame host for the launcher UI. Replaces the old Xwt
-///     <c>LauncherWindow</c> + <c>Application.Run()</c> loop.
+///     MonoGame host for the launcher UI. Hosts an Iguina <see cref="UISystem"/>
+///     for the GUI; replaces the prior GeonBit.UI-based shell.
 /// </summary>
 public sealed class LauncherGame : Game
 {
@@ -28,8 +29,15 @@ public sealed class LauncherGame : Game
     private readonly GraphicsDeviceManager _graphics;
     private readonly ConcurrentQueue<Action> _mainThreadActions = new();
     private SpriteBatch _spriteBatch;
+    private MonoGameRenderer _renderer;
+    private MonoGameInput _input;
+    private UISystem _ui;
     private ILauncherView _currentView;
     private Song _song;
+
+    // Iguina theme: ships at bin/Debug/IguinaTheme/ via the Iguina.Demo theme assets
+    // linked in TrueCraft.Launcher.csproj.
+    private const string ThemeFolder = "IguinaTheme";
 
     public LauncherGame()
     {
@@ -49,6 +57,7 @@ public sealed class LauncherGame : Game
     public TrueCraftUser User { get; } = new TrueCraftUser();
     public Panel WelcomePanel { get; private set; }
     public Panel InteractionPanel { get; private set; }
+    public UISystem UI => _ui;
 
     public SpriteBatch Sprites => _spriteBatch;
     public int ScreenWidth => _graphics.PreferredBackBufferWidth;
@@ -59,37 +68,28 @@ public sealed class LauncherGame : Game
 
     /// <summary>
     ///     Marshal an action onto the main (game) thread. Background tasks call this
-    ///     from <c>Task.Run</c> continuations to safely mutate GeonBit.UI state.
+    ///     from <c>Task.Run</c> continuations to safely mutate UI state.
     /// </summary>
     public void Invoke(Action action) => _mainThreadActions.Enqueue(action);
 
     public void ShowView(ILauncherView view)
     {
         _currentView?.Dispose();
-        if (InteractionPanel is not null)
-        {
-            while (InteractionPanel.Children.Count > 0)
-                InteractionPanel.RemoveChild(InteractionPanel.Children[0]);
-        }
+        InteractionPanel?.ClearChildren();
         _currentView = view;
         view.Mount(InteractionPanel);
-        // The view just constructed MenuButtons; load their themed skin sprites.
-        MenuButton.LoadButtonsTexture();
-    }
-
-    protected override void Initialize()
-    {
-        UserInterface.Initialize(Content, BuiltinThemes.lowres);
-        UserInterface.Active.UseRenderTarget = true;
-        base.Initialize();
     }
 
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        MenuButton.Initialize(this);
+
+        var assetsPath = Path.Combine(AppContext.BaseDirectory, ThemeFolder);
+        _renderer = new MonoGameRenderer(Content, GraphicsDevice, _spriteBatch, assetsPath);
+        _input = new MonoGameInput();
+        _ui = new UISystem(Path.Combine(assetsPath, "system_style.json"), _renderer, _input);
+
         BuildShell();
-        BackgroundManagingPanel.LoadPanelsBackgroundTexture();
         ShowView(new LoginView(this));
         StartSessionKeepAlive();
 
@@ -110,13 +110,18 @@ public sealed class LauncherGame : Game
     private void BuildShell()
     {
         // Two-column shell: welcome panel on the left, interaction panel on the right.
-        // Both are BackgroundManagingPanels so the tiled options_background renders behind them.
-        WelcomePanel = new BackgroundManagingPanel(this, new Vector2(450, 540), PanelSkin.Default,
-            Anchor.CenterLeft, new Vector2(20, 0));
-        InteractionPanel = new BackgroundManagingPanel(this, new Vector2(500, 540), PanelSkin.Default,
-            Anchor.CenterRight, new Vector2(20, 0));
-        UserInterface.Active.AddEntity(WelcomePanel);
-        UserInterface.Active.AddEntity(InteractionPanel);
+        WelcomePanel = new Panel(_ui) { Anchor = Anchor.CenterLeft };
+        WelcomePanel.Size.X.SetPixels(450);
+        WelcomePanel.Size.Y.SetPixels(540);
+        WelcomePanel.Offset.X.SetPixels(20);
+        _ui.Root.AddChild(WelcomePanel);
+
+        InteractionPanel = new Panel(_ui) { Anchor = Anchor.CenterRight };
+        InteractionPanel.Size.X.SetPixels(500);
+        InteractionPanel.Size.Y.SetPixels(540);
+        InteractionPanel.Offset.X.SetPixels(20);
+        _ui.Root.AddChild(InteractionPanel);
+
         new WelcomeView(this).Mount(WelcomePanel);
     }
 
@@ -124,19 +129,25 @@ public sealed class LauncherGame : Game
     {
         while (_mainThreadActions.TryDequeue(out var action))
             action();
-        UserInterface.Active.Update(gameTime);
+
+        if (_ui is not null)
+        {
+            _input.StartFrame(gameTime);
+            _ui.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+            _input.EndFrame();
+        }
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        // Render the UI to its internal target, clear the backbuffer, tile the panel
-        // backgrounds onto the screen, blit the UI on top, draw cursor.
-        UserInterface.Active.Draw(_spriteBatch);
-        GraphicsDevice.Clear(new Color(20, 20, 30));
-        BackgroundManagingPanel.DrawPanelsBackground();
-        UserInterface.Active.DrawMainRenderTarget(_spriteBatch);
-        UserInterface.Active.DrawCursor(_spriteBatch);
+        GraphicsDevice.Clear(new Microsoft.Xna.Framework.Color(20, 20, 30));
+        if (_ui is not null)
+        {
+            _renderer.StartFrame();
+            _ui.Draw();
+            _renderer.EndFrame();
+        }
         base.Draw(gameTime);
     }
 

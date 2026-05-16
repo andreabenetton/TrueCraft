@@ -22,6 +22,15 @@ namespace Iguina.Demo.MonoGame
 
         Dictionary<string, SpriteFont> _fonts = new();
         Dictionary<string, Texture2D> _textures = new();
+        Dictionary<string, Texture2D> _grayscaleClones = new();
+
+        /// <summary>
+        /// String the renderer treats as "draw this entity in grayscale" instead of
+        /// loading a shader. Iguina stylesheets set <c>"EffectIdentifier": "disabled"</c>
+        /// on disabled entities; we replicate the visual on the CPU so the build
+        /// has no shader-compiler dependency.
+        /// </summary>
+        const string DisabledEffectId = "disabled";
 
         public float GlobalTextScale = 0.75f;
 
@@ -103,12 +112,49 @@ namespace Iguina.Demo.MonoGame
         }
 
         /// <summary>
-        /// Load / get effect from id.
+        /// Load / get effect from id. The <see cref="DisabledEffectId"/> sentinel
+        /// resolves to no shader — disabled visuals are applied on the CPU via
+        /// <see cref="GetGrayscaleClone"/> and <see cref="Desaturate"/>.
         /// </summary>
         Effect? GetEffect(string? effectId)
         {
-            if (effectId == null) { return null; }
+            if (effectId == null || effectId == DisabledEffectId) { return null; }
             return _content.Load<Effect>(effectId);
+        }
+
+        /// <summary>
+        /// Lazily build and cache a grayscale clone of a texture using the
+        /// Rec.601 luma formula. Used to render entities in the disabled state
+        /// without a GPU shader.
+        /// </summary>
+        Texture2D GetGrayscaleClone(string textureId)
+        {
+            if (_grayscaleClones.TryGetValue(textureId, out var cached)) return cached;
+            var source = GetTexture(textureId);
+            var pixels = new Microsoft.Xna.Framework.Color[source.Width * source.Height];
+            source.GetData(pixels);
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                var p = pixels[i];
+                var luma = (byte)((p.R * 299 + p.G * 587 + p.B * 114) / 1000);
+                pixels[i] = new Microsoft.Xna.Framework.Color(luma, luma, luma, p.A);
+            }
+            var gray = new Texture2D(_device, source.Width, source.Height);
+            gray.SetData(pixels);
+            _grayscaleClones[textureId] = gray;
+            return gray;
+        }
+
+        /// <summary>
+        /// Desaturate a color via Rec.601 luma — used to render text in the
+        /// disabled state without a GPU shader. (SpriteBatch multiplies the
+        /// tint across all glyph pixels, so a grayscale tint is equivalent
+        /// to per-pixel desaturation when the source glyph atlas is white.)
+        /// </summary>
+        static Color Desaturate(Color c)
+        {
+            var luma = (byte)((c.R * 299 + c.G * 587 + c.B * 114) / 1000);
+            return new Color(luma, luma, luma, c.A);
         }
 
         /// <summary>
@@ -170,8 +216,10 @@ namespace Iguina.Demo.MonoGame
         /// <inheritdoc/>
         public void DrawTexture(string? effectIdentifier, string textureId, Rectangle destRect, Rectangle sourceRect, Color color)
         {
-            SetEffect(effectIdentifier);
-            var texture = GetTexture(textureId);
+            // "disabled" effect short-circuits to a cached grayscale clone + null shader.
+            var disabled = effectIdentifier == DisabledEffectId;
+            SetEffect(disabled ? null : effectIdentifier);
+            var texture = disabled ? GetGrayscaleClone(textureId) : GetTexture(textureId);
             var colorMg = ToMgColor(color);
             _spriteBatch.Draw(texture,
                 new Microsoft.Xna.Framework.Rectangle(destRect.X, destRect.Y, destRect.Width, destRect.Height),
@@ -199,7 +247,17 @@ namespace Iguina.Demo.MonoGame
         [Obsolete("Note: currently we render outline in a primitive way. To improve performance and remove some visual artifact during transitions, its best to implement a shader that draw text with outline properly.")]
         public void DrawText(string? effectIdentifier, string text, string? fontId, int fontSize, Point position, Color fillColor, Color outlineColor, int outlineWidth, float spacing)
         {
-            SetEffect(effectIdentifier);
+            // "disabled" effect short-circuits to desaturated fill/outline colors + null shader.
+            if (effectIdentifier == DisabledEffectId)
+            {
+                SetEffect(null);
+                fillColor = Desaturate(fillColor);
+                outlineColor = Desaturate(outlineColor);
+            }
+            else
+            {
+                SetEffect(effectIdentifier);
+            }
 
             var spriteFont = GetFont(fontId);
             spriteFont.Spacing = spacing - 1f;

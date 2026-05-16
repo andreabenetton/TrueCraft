@@ -5,114 +5,182 @@ using Iguina.Defs;
 namespace Iguina.Entities
 {
     /// <summary>
-    /// Single entry in a <see cref="MenuBar"/> dropdown. Clicking it closes the
-    /// parent dropdown and invokes <see cref="Action"/>.
+    /// Entry in a <see cref="MenuBar"/>. A leaf has an <see cref="Action"/>; a
+    /// parent has <see cref="SubItems"/> and opens a cascade dropdown when
+    /// clicked. Mixing is fine — a parent can still carry an Action (invoked
+    /// alongside opening the submenu) though that's unusual.
     /// </summary>
     public class MenuItem
     {
         public string Label { get; }
         public Action? Action { get; }
+        public IList<MenuItem>? SubItems { get; }
         public bool Enabled { get; set; } = true;
 
+        /// <summary>Leaf item with an action.</summary>
         public MenuItem(string label, Action? action = null)
         {
             Label = label;
             Action = action;
         }
+
+        /// <summary>Parent item that opens a cascade submenu.</summary>
+        public MenuItem(string label, IEnumerable<MenuItem> subItems)
+        {
+            Label = label;
+            SubItems = new List<MenuItem>(subItems);
+        }
     }
 
     /// <summary>
-    /// Horizontal menu bar with one-level dropdowns. Each top-level entry is a
-    /// button that opens a dropdown panel beneath it; clicking a sub-item closes
-    /// the dropdown and runs the item's action; clicking outside any dropdown
-    /// also closes it. A minimal port of GeonBit.UI's MenuBar — covers the
-    /// common "File / Edit / Help" pattern; deeper nesting is intentionally not
-    /// supported (callers can compose with <see cref="DropDown"/> for that).
+    /// Horizontal menu bar with arbitrary-depth cascade dropdowns. Each top-level
+    /// entry is a button that opens a dropdown beneath it; clicking a parent
+    /// item inside any dropdown opens a side-positioned cascade to its right;
+    /// clicking a leaf item runs the item's action and closes the entire chain.
+    /// Clicking anywhere outside the open chain also closes the chain.
+    ///
+    /// A port of GeonBit.UI's MenuBar covering the common menu-stack patterns:
+    /// File → New → World/Project, etc. Open-on-hover (vs the click-to-open
+    /// model used here) is intentionally not implemented — predictability beats
+    /// MacOS menu-bar mimicry.
     /// </summary>
     public class MenuBar : Panel
     {
-        Panel? _openDropdown;
-        readonly List<(Button button, Panel dropdown)> _topLevel = new();
+        // The currently-open chain of dropdown panels, from outermost (a
+        // top-level dropdown) to innermost (deepest cascade). Empty when closed.
+        readonly List<Panel> _openChain = new();
+
+        // Maps each open dropdown to the button that anchors it (so outside-click
+        // can leave the chain alone if the click landed on one of those buttons).
+        readonly Dictionary<Panel, Button> _anchorButton = new();
 
         public MenuBar(UISystem system) : base(system, system.DefaultStylesheets.Panels)
         {
             Size.X.SetPercents(100f);
             AutoHeight = true;
-
-            // close any open dropdown when the user clicks anywhere not on it
             system.Events.OnLeftMousePressed += MaybeCloseOnOutsideClick;
         }
 
-        /// <summary>Add a top-level menu and its dropdown contents.</summary>
+        /// <summary>Add a top-level menu (label + dropdown contents).</summary>
         public void AddItem(string label, IEnumerable<MenuItem> items)
+            => AddItem(new MenuItem(label, items));
+
+        /// <summary>Add a top-level menu from a MenuItem with SubItems.</summary>
+        public void AddItem(MenuItem rootItem)
         {
-            var topButton = new Button(UISystem, label) { Anchor = Anchor.AutoInlineLTR };
+            if (rootItem.SubItems == null)
+                throw new ArgumentException("Top-level MenuBar item must have SubItems", nameof(rootItem));
+
+            var topButton = new Button(UISystem, rootItem.Label) { Anchor = Anchor.AutoInlineLTR };
+            var dropdown = BuildDropdown(rootItem.SubItems, level: 0);
+            _anchorButton[dropdown] = topButton;
+
+            topButton.Events.OnClick = _ =>
+            {
+                var alreadyOpen = _openChain.Count > 0 && _openChain[0] == dropdown;
+                CloseChainFromLevel(0);
+                if (!alreadyOpen)
+                {
+                    dropdown.Offset.X.SetPixels(topButton.LastBoundingRect.X);
+                    dropdown.Offset.Y.SetPixels(topButton.LastBoundingRect.Bottom);
+                    OpenAtLevel(dropdown, 0);
+                }
+            };
+
+            AddChild(topButton);
+            UISystem.Root.AddChild(dropdown);
+        }
+
+        Panel BuildDropdown(IList<MenuItem> items, int level)
+        {
             var dropdown = new Panel(UISystem, UISystem.DefaultStylesheets.Panels)
             {
                 Anchor = Anchor.TopLeft,
                 Visible = false,
-                Identifier = "MenuBar-Dropdown",
+                Identifier = $"MenuBar-Dropdown-L{level}",
             };
             dropdown.Size.X.SetPixels(220);
             dropdown.AutoHeight = true;
 
             foreach (var item in items)
             {
-                var entryButton = new Button(UISystem, item.Label)
+                // Label suffix '▶' makes cascade parents visually distinct from leaves.
+                var displayLabel = item.SubItems != null ? item.Label + "  ▶" : item.Label;
+                var entryButton = new Button(UISystem, displayLabel)
                 {
                     Anchor = Anchor.AutoLTR,
                     Enabled = item.Enabled,
                 };
-                entryButton.Events.OnClick = _ =>
+
+                if (item.SubItems == null)
                 {
-                    item.Action?.Invoke();
-                    CloseOpenDropdown();
-                };
+                    // Leaf: run action + close entire chain
+                    entryButton.Events.OnClick = _ =>
+                    {
+                        item.Action?.Invoke();
+                        CloseChainFromLevel(0);
+                    };
+                }
+                else
+                {
+                    // Parent: open cascade to the right of this button
+                    var childLevel = level + 1;
+                    var childDropdown = BuildDropdown(item.SubItems, childLevel);
+                    _anchorButton[childDropdown] = entryButton;
+                    UISystem.Root.AddChild(childDropdown);
+
+                    entryButton.Events.OnClick = _ =>
+                    {
+                        item.Action?.Invoke();
+                        var alreadyOpen = _openChain.Count > childLevel && _openChain[childLevel] == childDropdown;
+                        CloseChainFromLevel(childLevel);
+                        if (!alreadyOpen)
+                        {
+                            childDropdown.Offset.X.SetPixels(entryButton.LastBoundingRect.Right);
+                            childDropdown.Offset.Y.SetPixels(entryButton.LastBoundingRect.Y);
+                            OpenAtLevel(childDropdown, childLevel);
+                        }
+                    };
+                }
+
                 dropdown.AddChild(entryButton);
             }
-
-            topButton.Events.OnClick = _ =>
-            {
-                var willOpen = _openDropdown != dropdown;
-                CloseOpenDropdown();
-                if (willOpen)
-                {
-                    dropdown.Offset.X.SetPixels(topButton.LastBoundingRect.X);
-                    dropdown.Offset.Y.SetPixels(topButton.LastBoundingRect.Bottom);
-                    dropdown.Visible = true;
-                    dropdown.BringToFront();
-                    _openDropdown = dropdown;
-                }
-            };
-
-            AddChild(topButton);
-            UISystem.Root.AddChild(dropdown);
-            _topLevel.Add((topButton, dropdown));
+            return dropdown;
         }
 
-        void CloseOpenDropdown()
+        void OpenAtLevel(Panel dropdown, int level)
         {
-            if (_openDropdown == null) return;
-            _openDropdown.Visible = false;
-            _openDropdown = null;
+            while (_openChain.Count > level) _openChain.RemoveAt(_openChain.Count - 1);
+            dropdown.Visible = true;
+            dropdown.BringToFront();
+            _openChain.Add(dropdown);
+        }
+
+        void CloseChainFromLevel(int level)
+        {
+            while (_openChain.Count > level)
+            {
+                _openChain[_openChain.Count - 1].Visible = false;
+                _openChain.RemoveAt(_openChain.Count - 1);
+            }
         }
 
         void MaybeCloseOnOutsideClick(Entity clicked)
         {
-            if (_openDropdown == null) return;
-            // walk up from the clicked entity; if we hit the open dropdown we
-            // were clicked inside, leave it alone
+            if (_openChain.Count == 0) return;
+
+            // If the click landed inside any open dropdown in the chain, leave it.
             for (var e = clicked; e != null; e = e.Parent)
             {
-                if (e == _openDropdown) return;
+                if (_openChain.Contains((e as Panel)!)) return;
             }
-            // also leave alone if the click was on one of our top-level buttons —
-            // that button will handle the toggle in its own OnClick
-            foreach (var (button, _) in _topLevel)
+            // Anchor buttons (top-level and cascade-parent buttons) handle their
+            // own toggle/open behaviour — don't close out from under them.
+            foreach (var anchor in _anchorButton.Values)
             {
-                if (clicked == button) return;
+                if (clicked == anchor) return;
             }
-            CloseOpenDropdown();
+            CloseChainFromLevel(0);
         }
     }
 }

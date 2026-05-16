@@ -8,8 +8,8 @@ using Iguina.Defs;
 using Iguina.Demo.MonoGame;
 using Iguina.Entities;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Media;
 using TrueCraft.Core;
 using TrueCraft.Launcher.Views;
 
@@ -33,7 +33,8 @@ public sealed class LauncherGame : Game
     private MonoGameInput _input;
     private UISystem _ui;
     private ILauncherView _currentView;
-    private Song _song;
+    private SoundEffect _song;
+    private SoundEffectInstance _songInstance;
 
     // Iguina theme: ships at bin/Debug/IguinaTheme/ via the Iguina.Demo theme assets
     // linked in TrueCraft.Launcher.csproj.
@@ -99,17 +100,30 @@ public sealed class LauncherGame : Game
         ShowView(new LoginView(this));
         StartSessionKeepAlive();
 
-        // Background music. Content pipeline asset; runtime depends on Beginning_2.xnb
-        // which is part of the deferred MGCB .xnb gap.
+        // Background music. NVorbis decodes the OGG to 16-bit PCM, wrapped in a
+        // SoundEffect played as a looping SoundEffectInstance. No content pipeline
+        // dependency — the .ogg is copied to output by the Content\** glob.
         try
         {
-            _song = Content.Load<Song>("Beginning_2");
-            MediaPlayer.IsRepeating = true;
-            MediaPlayer.Play(_song);
+            var path = Path.Combine(AppContext.BaseDirectory, Content.RootDirectory, "Beginning_2.ogg");
+            using var reader = new NVorbis.VorbisReader(path);
+            var samples = new float[reader.TotalSamples * reader.Channels];
+            reader.ReadSamples(samples, 0, samples.Length);
+            var pcm = new byte[samples.Length * 2];
+            for (var i = 0; i < samples.Length; i++)
+            {
+                var s = (short)(Math.Clamp(samples[i], -1f, 1f) * short.MaxValue);
+                pcm[i * 2] = (byte)(s & 0xff);
+                pcm[i * 2 + 1] = (byte)((s >> 8) & 0xff);
+            }
+            _song = new SoundEffect(pcm, reader.SampleRate, (AudioChannels)reader.Channels);
+            _songInstance = _song.CreateInstance();
+            _songInstance.IsLooped = true;
+            _songInstance.Play();
         }
         catch
         {
-            // No .xnb yet — silent until the content pipeline gap is closed.
+            // Music failure is non-fatal — launcher continues silently.
         }
     }
 
@@ -162,6 +176,9 @@ public sealed class LauncherGame : Game
         if (disposing)
         {
             _currentView?.Dispose();
+            _songInstance?.Stop();
+            _songInstance?.Dispose();
+            _song?.Dispose();
         }
         base.Dispose(disposing);
     }

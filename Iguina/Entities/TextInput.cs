@@ -245,7 +245,7 @@ namespace Iguina.Entities
             // set text to value or mask
             else
             {
-                if (MaskingCharacter == null)
+                if (MaskingCharacter is null)
                 {
                     _valueParagraph.Text = Value;
                 }
@@ -435,7 +435,7 @@ namespace Iguina.Entities
             base.DoInteractions(inputState);
 
             // check if need to adjust scrollbar to make sure caret is visible
-            if (_needToMakeSureCaretIsVisible && (VerticalScrollbar != null))
+            if (_needToMakeSureCaretIsVisible && (VerticalScrollbar is not null))
             {
                 _needToMakeSureCaretIsVisible = false;
                 UpdateCachedCaretValues();
@@ -494,7 +494,7 @@ namespace Iguina.Entities
                 bool didType = false;
 
                 // get text input
-                if (inputState.TextInput != null)
+                if (inputState.TextInput is not null)
                 {
                     foreach (var unicode in inputState.TextInput)
                     {
@@ -504,7 +504,7 @@ namespace Iguina.Entities
                 }
 
                 // apply special input commands
-                if (inputState.TextInputCommands != null)
+                if (inputState.TextInputCommands is not null)
                 {
                     if (Value.Length > 0)
                     {
@@ -611,7 +611,7 @@ namespace Iguina.Entities
                 }
 
                 // if typed, make sure caret is visible
-                if (didType && (VerticalScrollbar != null))
+                if (didType && (VerticalScrollbar is not null))
                 {
                     _needToMakeSureCaretIsVisible = true;
                 }

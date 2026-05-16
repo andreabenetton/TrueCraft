@@ -26,7 +26,7 @@ namespace Iguina.Entities
                         Parent?.IterateChildren((Entity entity) =>
                         {
                             var siblingAsCheckable = entity as CheckedEntity;
-                            if ((siblingAsCheckable != null) && (siblingAsCheckable != this) && (siblingAsCheckable.ExclusiveSelection))
+                            if ((siblingAsCheckable is not null) && (siblingAsCheckable != this) && (siblingAsCheckable.ExclusiveSelection))
                             {
                                 siblingAsCheckable.Checked = false;
                             }

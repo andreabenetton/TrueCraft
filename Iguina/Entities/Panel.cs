@@ -19,7 +19,7 @@ namespace Iguina.Entities
         public Slider? VerticalScrollbar { get; private set; }
 
         /// <inheritdoc/>
-        protected override bool HaveScrollbars => VerticalScrollbar != null;
+        protected override bool HaveScrollbars => VerticalScrollbar is not null;
 
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Iguina.Entities
         /// <inheritdoc/>
         internal override void PerformMouseWheelScroll(int val)
         {
-            if ((VerticalScrollbar != null) && (VerticalScrollbar.Visible))
+            if ((VerticalScrollbar is not null) && (VerticalScrollbar.Visible))
             {
                 VerticalScrollbar.PerformMouseWheelScroll(val);
             }
@@ -72,7 +72,7 @@ namespace Iguina.Entities
             base.Update(dt);
 
             // update scrollbar
-            if ((VerticalScrollbar != null) && IsCurrentlyVisible())
+            if ((VerticalScrollbar is not null) && IsCurrentlyVisible())
             {
                 // scrollbar max value
                 if (_autoSetScrollbarMax)
@@ -97,7 +97,7 @@ namespace Iguina.Entities
         /// </summary>
         protected override void PostDrawingChild(DrawMethodResult? drawResult)
         {
-            if (_autoSetScrollbarMax &&  (VerticalScrollbar != null) && (drawResult != null))
+            if (_autoSetScrollbarMax &&  (VerticalScrollbar is not null) && (drawResult is not null))
             {
                 _maxHeightForScrollbar = Math.Max(_maxHeightForScrollbar, drawResult.Value.BoundingRect.Bottom - LastInternalBoundingRect.Top - LastInternalBoundingRect.Height);
             }
@@ -123,7 +123,7 @@ namespace Iguina.Entities
         /// <inheritdoc/>
         protected override Point GetScrollOffset()
         {
-            if (VerticalScrollbar != null)
+            if (VerticalScrollbar is not null)
             {
                 return new Point(0, (int)_scrollbarOffset);
             }
@@ -133,7 +133,7 @@ namespace Iguina.Entities
         /// <inheritdoc/>
         protected override Sides GetScrollExtraPadding()
         {
-            if (VerticalScrollbar != null && VerticalScrollbar.Visible)
+            if (VerticalScrollbar is not null && VerticalScrollbar.Visible)
             {
                 if (VerticalScrollbar.Anchor == Anchor.TopLeft || VerticalScrollbar.Anchor == Anchor.CenterLeft || VerticalScrollbar.Anchor == Anchor.BottomLeft)
                 {
@@ -187,7 +187,7 @@ namespace Iguina.Entities
         /// </summary>
         public void RemoveVerticalScrollbar()
         {
-            if (VerticalScrollbar != null)
+            if (VerticalScrollbar is not null)
             {
                 RemoveChildInternal(VerticalScrollbar);
                 VerticalScrollbar = null;
@@ -200,7 +200,7 @@ namespace Iguina.Entities
             base.DoInteractions(inputState);
 
             // if got scrollbar, apply wheel to it
-            if ((inputState.MouseWheelChange != 0) && (VerticalScrollbar != null))
+            if ((inputState.MouseWheelChange != 0) && (VerticalScrollbar is not null))
             {
                 VerticalScrollbar.PerformMouseWheelScroll(inputState.MouseWheelChange);
             }

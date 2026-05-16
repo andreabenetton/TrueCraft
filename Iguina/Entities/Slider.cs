@@ -195,9 +195,9 @@ namespace Iguina.Entities
             set
             {
                 if (_caption == value) return;
-                if (_caption != null) _caption.RemoveSelf();
+                if (_caption is not null) _caption.RemoveSelf();
                 _caption = value;
-                if (_caption != null)
+                if (_caption is not null)
                 {
                     _caption.Anchor = Anchor.TopCenter;
                     _caption.Offset.Y.SetPixels(-(UISystem.Renderer.GetTextLineHeight(null, UISystem.SystemStyleSheet.RowSpaceHeight) + 2));

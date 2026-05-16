@@ -292,7 +292,7 @@ namespace Iguina.Entities
         /// <summary>
         /// If true, this entity will get priority for interactions.
         /// </summary>
-        internal virtual bool TopMostInteractions => (Parent != null) && Parent.TopMostInteractions;
+        internal virtual bool TopMostInteractions => (Parent is not null) && Parent.TopMostInteractions;
 
         /// <summary>
         /// Last drawn internal bounding rect.
@@ -343,14 +343,14 @@ namespace Iguina.Entities
             get
             {
                 // special: locked state
-                if (LockedState != null)
+                if (LockedState is not null)
                 {
                     _stateCached = LockedState.Value;
                     return _stateCached.Value;
                 }
 
                 // special: copy state from another entity
-                if (CopyStateFrom != null)
+                if (CopyStateFrom is not null)
                 {
                     _stateCached = CopyStateFrom.State;
                     return _stateCached.Value;
@@ -483,7 +483,7 @@ namespace Iguina.Entities
         /// </summary>
         protected void CalculateDefaultAnchorAndSize()
         {
-            if (StyleSheet != null)
+            if (StyleSheet is not null)
             {
                 // set default size
                 Size = GetDefaultEntityTypeSize();
@@ -536,7 +536,7 @@ namespace Iguina.Entities
                 _lockedState = true;
             }
             // check if parent is locked
-            else if (Parent != null && Parent.IsCurrentlyLocked())
+            else if (Parent is not null && Parent.IsCurrentlyLocked())
             {
                 _lockedState = true;
             }
@@ -564,7 +564,7 @@ namespace Iguina.Entities
                 _disabledState = true;
             }
             // check if parent is disabled
-            else if (Parent != null && Parent.IsCurrentlyDisabled())
+            else if (Parent is not null && Parent.IsCurrentlyDisabled())
             {
                 _disabledState = true;
             }
@@ -593,12 +593,12 @@ namespace Iguina.Entities
                 _visibilityState = false;
             }
             // check if parent is not visible
-            else if (Parent != null && !Parent.IsCurrentlyVisible())
+            else if (Parent is not null && !Parent.IsCurrentlyVisible())
             {
                 _visibilityState = false;
             }
             // not in UI tree?
-            else if (Parent == null && (UISystem.Root != this))
+            else if (Parent is null && (UISystem.Root != this))
             {
                 _visibilityState = false;
             }
@@ -640,7 +640,7 @@ namespace Iguina.Entities
         /// <exception cref="Exception">Thrown if child already have a parent.</exception>
         protected void AddChildInternal(Entity child, bool topMost = false)
         {
-            if (child.Parent != null) { throw new Exception("Internal Entity to add as child already have a parent entity! Remove it first."); }
+            if (child.Parent is not null) { throw new Exception("Internal Entity to add as child already have a parent entity! Remove it first."); }
             if (child.UISystem != UISystem) { throw new Exception("Internal Entity to add belongs to a different UI system!"); }
             if (topMost)
             {
@@ -678,7 +678,7 @@ namespace Iguina.Entities
         /// <exception cref="Exception">Thrown if child already have a parent.</exception>
         public T AddChild<T>(T child, int? index = null) where T : Entity
         {
-            if (child.Parent != null) { throw new Exception("Entity to add as child already have a parent entity! Remove it first."); }
+            if (child.Parent is not null) { throw new Exception("Entity to add as child already have a parent entity! Remove it first."); }
             if (child.UISystem != UISystem) { throw new Exception("Entity to add belongs to a different UI system!"); }
 
             // validate thread id
@@ -755,7 +755,7 @@ namespace Iguina.Entities
         public void BringToFront()
         {
             var parent = Parent;
-            if ((parent != null) && (parent._children[parent._children.Count - 1] != this))
+            if ((parent is not null) && (parent._children[parent._children.Count - 1] != this))
             {
                 RemoveSelf();
                 parent.AddChild(this);
@@ -768,7 +768,7 @@ namespace Iguina.Entities
         public void PushToBack()
         {
             var parent = Parent;
-            if ((parent != null) && (parent._children[0] != this))
+            if ((parent is not null) && (parent._children[0] != this))
             {
                 RemoveSelf();
                 parent.AddChild(this, 0);
@@ -1122,7 +1122,7 @@ namespace Iguina.Entities
             // special - clear dryrun fake scissor
             if (dryRun)
             {
-                if (beforeDrawScissorRegion != null)
+                if (beforeDrawScissorRegion is not null)
                 {
                     UISystem.Renderer.SetScissorRegion(beforeDrawScissorRegion.Value);
                 }
@@ -1159,7 +1159,7 @@ namespace Iguina.Entities
             if (IsFocused)
             {
                 var framedTexture = UISystem.SystemStyleSheet.FocusedEntityOverlay;
-                if (framedTexture != null)
+                if (framedTexture is not null)
                 {
                     DrawUtils.Draw(UISystem.Renderer, null, framedTexture, BoundingRectForFocusOverlay, Color.White, UISystem.TexturesScale, UISystem.SystemStyleSheet.DefaultTexture);
                 }
@@ -1338,7 +1338,7 @@ namespace Iguina.Entities
                     var backColor = StyleSheet.GetProperty("BackgroundColor", state, new Color(0, 0, 0, 0), OverrideStyles)!;
 
                     // animate colors
-                    if (ColorAnimator != null)
+                    if (ColorAnimator is not null)
                     {
                         color = ColorAnimator(this, color);
                     }
@@ -1377,14 +1377,14 @@ namespace Iguina.Entities
 
                     // draw stretch texture
                     var stexture = StyleSheet.GetProperty<StretchedTexture>("FillTextureStretched", state, null, OverrideStyles);
-                    if (stexture != null)
+                    if (stexture is not null)
                     {
                         DrawUtils.Draw(UISystem.Renderer, effectId, stexture, boundingRect, color, UISystem.SystemStyleSheet.DefaultTexture);
                     }
 
                     // draw icon texture
                     var sicon = StyleSheet.GetProperty<IconTexture>("Icon", state, null, OverrideStyles);
-                    if (sicon != null)
+                    if (sicon is not null)
                     {
                         var dest = new Rectangle(boundingRect.X, boundingRect.Y, 
                             (int)(sicon.SourceRect.Width * sicon.TextureScale * UISystem.TexturesScale), 
@@ -1404,7 +1404,7 @@ namespace Iguina.Entities
 
                     // draw framed texture
                     var ftexture = StyleSheet.GetProperty<FramedTexture>("FillTextureFramed", state, null, OverrideStyles);
-                    if (ftexture != null)
+                    if (ftexture is not null)
                     {
                         DrawUtils.Draw(UISystem.Renderer, effectId, ftexture, boundingRect, color, UISystem.TexturesScale, UISystem.SystemStyleSheet.DefaultTexture);
                     }
@@ -1488,7 +1488,7 @@ namespace Iguina.Entities
                 {
                     Events.OnLeftMouseReleased?.Invoke(this);
                     UISystem.Events.OnLeftMouseReleased?.Invoke(this);
-                    if (ClickSoundId != null) UISystem.PlaySound?.Invoke(ClickSoundId);
+                    if (ClickSoundId is not null) UISystem.PlaySound?.Invoke(ClickSoundId);
                 }
                 if (inputState.RightMouseDown)
                 {
@@ -1530,7 +1530,7 @@ namespace Iguina.Entities
                         // confine dragging
                         if ((DraggableMode == DraggableMode.DraggableConfinedToParent) || (DraggableMode == DraggableMode.DraggableConfinedToScreen))
                         {
-                            var boundingRect = ((DraggableMode == DraggableMode.DraggableConfinedToParent) && (Parent != null)) ? Parent!.LastInternalBoundingRect : inputState.ScreenBounds;
+                            var boundingRect = ((DraggableMode == DraggableMode.DraggableConfinedToParent) && (Parent is not null)) ? Parent!.LastInternalBoundingRect : inputState.ScreenBounds;
                             var pos = _draggedPosition.Value;
                             if (pos.X < boundingRect.Left) { pos.X = boundingRect.Left; }
                             if (pos.Y < boundingRect.Top) { pos.Y = boundingRect.Top; }
@@ -1540,7 +1540,7 @@ namespace Iguina.Entities
                         }
 
                         // set offset from parent, so that if parent moves we move with it
-                        if ((Parent != null) && (DraggableMode != DraggableMode.Draggable))
+                        if ((Parent is not null) && (DraggableMode != DraggableMode.Draggable))
                         {
                             _dragOffsetFromParent = new Point(_draggedPosition.Value.X - Parent.LastInternalBoundingRect.X, _draggedPosition.Value.Y - Parent.LastInternalBoundingRect.Y);
                         }
@@ -1614,7 +1614,7 @@ namespace Iguina.Entities
         internal Entity? GetEntityBefore()
         {
             // no parent? null
-            if (Parent == null) { return null; }
+            if (Parent is null) { return null; }
 
             // get self index and if first entity return null
             var selfIndex = Parent._children.IndexOf(this);
@@ -1653,7 +1653,7 @@ namespace Iguina.Entities
             if (IsAutoAnchor)
             {
                 var olderSibling = GetEntityBefore();
-                if ((olderSibling != null) && !olderSibling.WasDraggedToPosition)
+                if ((olderSibling is not null) && !olderSibling.WasDraggedToPosition)
                 {
                     var parentMargin = olderSibling.GetMarginAfter();
                     margin.X += parentMargin.X;
@@ -1667,7 +1667,7 @@ namespace Iguina.Entities
             boundingRect.Height = rectSize.Y;
 
             // if entity wasn't dragged, calculate entity position based on anchors and offset
-            if (_draggedPosition == null)
+            if (_draggedPosition is null)
             {
                 // calculate bounding boxes based on on anchor
                 Vector2 offsetFactor = new Vector2(1, 1);
@@ -1848,7 +1848,7 @@ namespace Iguina.Entities
             {
                 boundingRect.X = _draggedPosition.Value.X;
                 boundingRect.Y = _draggedPosition.Value.Y;
-                if (_dragOffsetFromParent.HasValue && (Parent != null))
+                if (_dragOffsetFromParent.HasValue && (Parent is not null))
                 {
                     var distanceX = boundingRect.X - Parent.LastInternalBoundingRect.X;
                     var distanceY = boundingRect.Y - Parent.LastInternalBoundingRect.Y;
@@ -1886,7 +1886,7 @@ namespace Iguina.Entities
                 {
                     Events.OnMouseEnter?.Invoke(this);
                     UISystem.Events.OnMouseEnter?.Invoke(this);
-                    if (HoverSoundId != null) UISystem.PlaySound?.Invoke(HoverSoundId);
+                    if (HoverSoundId is not null) UISystem.PlaySound?.Invoke(HoverSoundId);
                 }
                 else
                 {

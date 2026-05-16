@@ -538,7 +538,7 @@ namespace Iguina.Entities
                 var spacing = StyleSheet.GetProperty<float>("TextSpacing", state, 1f, OverrideStyles);
 
                 // check if need to build processed text
-                if ((_cachedProcessedText == null) ||
+                if ((_cachedProcessedText is null) ||
                     (_cachedTextWidth != TextMaxWidth) ||
                     (_cachedTextFontSize != fontSize) ||
                     (_cachedTextFontId != font))
@@ -571,7 +571,7 @@ namespace Iguina.Entities
                     var outlineWidth = StyleSheet.GetProperty<int>("TextOutlineWidth", state, 1, OverrideStyles);
 
                     // animate colors
-                    if (ColorAnimator != null)
+                    if (ColorAnimator is not null)
                     {
                         fillColor = ColorAnimator(this, fillColor);
                     }
@@ -626,10 +626,10 @@ namespace Iguina.Entities
                         }
 
                         // draw line without style commands
-                        if (styleCommands == null || styleCommands.Count == 0)
+                        if (styleCommands is null || styleCommands.Count == 0)
                         {
                             string lineToDraw = line.Line;
-                            if (_beforeDrawingLineNoStyleCommands != null)
+                            if (_beforeDrawingLineNoStyleCommands is not null)
                             {
                                 lineToDraw = _beforeDrawingLineNoStyleCommands(line.Line, lineIndex, lineStartIndex) ?? string.Empty;
                             }
@@ -638,7 +638,7 @@ namespace Iguina.Entities
                                 var lineFill = currTextStyle.FillColor ?? fillColor;
                                 var lineOutline = currTextStyle.OutlineColor ?? outlineColor;
                                 var lineOutlineWidth = currTextStyle.OutlineWidth ?? outlineWidth;
-                                if (PerGlyphOffsetY != null)
+                                if (PerGlyphOffsetY is not null)
                                 {
                                     DrawLinePerGlyph(lineToDraw, position, font, fontSize, lineFill, lineOutline, lineOutlineWidth, spacing, effectId, lineStartIndex);
                                 }
@@ -673,7 +673,7 @@ namespace Iguina.Entities
                                 var segmentPosition = new Point(position.X + offsetX, position.Y);
 
                                 // draw style command icon
-                                if (newStyleCommand.Icon != null)
+                                if (newStyleCommand.Icon is not null)
                                 {
                                     var dest = new Rectangle(segmentPosition.X, segmentPosition.Y + _lineHeight / 2, 
                                         (int)(newStyleCommand.Icon.SourceRect.Width * newStyleCommand.Icon.TextureScale * UISystem.TextsScale), 

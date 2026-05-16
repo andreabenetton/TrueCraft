@@ -73,7 +73,7 @@ namespace Iguina.Entities
             AddChildInternal(_selectedValuePanel);
 
             // create dropdown icon
-            if (arrowIconStylesheet != null)
+            if (arrowIconStylesheet is not null)
             {
                 _icon = new Entity(UISystem, arrowIconStylesheet);
                 _icon.CopyStateFrom = this;
@@ -95,7 +95,7 @@ namespace Iguina.Entities
         /// <param name="show">Should we show or hide the dropdown arrow icon.</param>
         public void ShowArrowIcon(bool show)
         {
-            if (_icon != null)
+            if (_icon is not null)
             {
                 _icon.Visible = show;
             }
@@ -201,7 +201,7 @@ namespace Iguina.Entities
             {
                 // move the scrollbar under the selected value box
                 {
-                    if (VerticalScrollbar != null)
+                    if (VerticalScrollbar is not null)
                     {
                         var extra = GetExtraSize();
                         var scrollbarOffset = (int)((GetClosedStateHeight() - extra.Bottom) * 0.85f);
@@ -307,10 +307,10 @@ namespace Iguina.Entities
         {
             // update selected value text
             _selectedValueParagraph.Text = OverrideSelectedText ?? SelectedTextWithIcon ?? SelectedValue ?? DefaultSelectedText ?? string.Empty;
-            _selectedValueParagraph.UseEmptyValueTextColor = (SelectedValue == null);
+            _selectedValueParagraph.UseEmptyValueTextColor = (SelectedValue is null);
 
             // set icon state
-            if (_icon != null)
+            if (_icon is not null)
             {
                 _icon.LockedState = IsOpened ? EntityState.Interacted : null;
             }

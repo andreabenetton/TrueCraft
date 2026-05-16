@@ -269,7 +269,7 @@ namespace Iguina.Defs
             if (!_cachedProperties.TryGetValue(propertyName, out var propertyInfo))
             {
                 propertyInfo = typeof(StyleSheetState).GetProperty(propertyName);
-                if (propertyInfo == null) { throw new Exception($"Stylesheet property '{propertyName}' is not defined!"); }
+                if (propertyInfo is null) { throw new Exception($"Stylesheet property '{propertyName}' is not defined!"); }
                 _cachedProperties[propertyName] = propertyInfo;
             }
 
@@ -280,7 +280,7 @@ namespace Iguina.Defs
             try
             {
                 object? value = propertyInfo.GetValue(stylesheet);
-                if (value != null) { ret = (T?)value; valueFound = true; }
+                if (value is not null) { ret = (T?)value; valueFound = true; }
             }
             catch (InvalidCastException e)
             {
@@ -288,10 +288,10 @@ namespace Iguina.Defs
             }
 
             // check if we got override style
-            if (overrideProperties != null)
+            if (overrideProperties is not null)
             {
                 object? value = propertyInfo.GetValue(overrideProperties);
-                if (value != null) 
+                if (value is not null) 
                 { 
                     ret = (T?)value;
                     return ret;
@@ -299,38 +299,38 @@ namespace Iguina.Defs
             }
 
             // special: if state is disabled checked and not defined, revert to disabled state before trying default
-            if (!valueFound && (state == EntityState.DisabledChecked) && (Disabled != null)) 
+            if (!valueFound && (state == EntityState.DisabledChecked) && (Disabled is not null)) 
             {
                 object? value = propertyInfo.GetValue(Disabled);
-                if (value != null) { ret = (T?)value; valueFound = true; }
+                if (value is not null) { ret = (T?)value; valueFound = true; }
             }
 
             // special: if state is targeted checked and not defined, revert to checked state before trying default
-            if (!valueFound && (state == EntityState.TargetedChecked) && (Checked != null)) 
+            if (!valueFound && (state == EntityState.TargetedChecked) && (Checked is not null)) 
             {
                 object? value = propertyInfo.GetValue(Checked);
-                if (value != null) { ret = (T?)value; valueFound = true; }
+                if (value is not null) { ret = (T?)value; valueFound = true; }
             }
 
             // special: if state is targeted checked and not defined not even in checked, revert to interacted state before trying default
-            if (!valueFound && (state == EntityState.TargetedChecked) && (Interacted != null))
+            if (!valueFound && (state == EntityState.TargetedChecked) && (Interacted is not null))
             {
                 object? value = propertyInfo.GetValue(Interacted);
-                if (value != null) { ret = (T?)value; valueFound = true; }
+                if (value is not null) { ret = (T?)value; valueFound = true; }
             }
 
             // special: if state is checked and not defined, revert to interacted state before trying default
-            if (!valueFound && (state == EntityState.Checked) && (Interacted != null))
+            if (!valueFound && (state == EntityState.Checked) && (Interacted is not null))
             {
                 object? value = propertyInfo.GetValue(Interacted);
-                if (value != null) { ret = (T?)value; valueFound = true; }
+                if (value is not null) { ret = (T?)value; valueFound = true; }
             }
 
             // if not set and not default, try to get from default
-            if (!valueFound && (stylesheet != Default) && (Default != null)) 
+            if (!valueFound && (stylesheet != Default) && (Default is not null)) 
             { 
                 object? value = propertyInfo.GetValue(Default);
-                if (value != null) { ret = (T?)value; valueFound = true; }
+                if (value is not null) { ret = (T?)value; valueFound = true; }
             }
 
             // return value or default
@@ -357,7 +357,7 @@ namespace Iguina.Defs
         {
             filesReader = filesReader ?? new DefaultFilesProvider();
             var ret = LoadFromJsonMemory(filesReader.ReadAllText(filename));
-            if (ret.InheritFrom != null)
+            if (ret.InheritFrom is not null)
             {
                 var folder = Path.GetDirectoryName(filename)!;
                 var parent = LoadFromJsonFile(Path.Combine(folder, ret.InheritFrom), filesReader);
@@ -386,13 +386,13 @@ namespace Iguina.Defs
         public static StyleSheetState? InheritStylesheetState(StyleSheetState? parent, StyleSheetState? derived)
         {
             // if both are null, return null
-            if ((parent == null) && (derived == null))
+            if ((parent is null) && (derived is null))
             {
                 return null;
             }
 
             // if one of them is null, return the other
-            if ((parent == null) || (derived == null))
+            if ((parent is null) || (derived is null))
             {
                 return derived ?? parent;
             }
@@ -405,7 +405,7 @@ namespace Iguina.Defs
                 if (property.CanRead && property.CanWrite)
                 {
                     object? value = property.GetValue(derived) ?? property.GetValue(parent);
-                    if (value != null)
+                    if (value is not null)
                     {
                         property.SetValue(ret, value);
                     }

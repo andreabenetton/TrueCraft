@@ -168,7 +168,7 @@ namespace Iguina.Entities
         public string? MinusButtonText
         {
             get => _minusButton?.Paragraph?.Text ?? null;
-            set { if (_minusButton != null) { _minusButton.Paragraph.Text = value ?? string.Empty; } }
+            set { if (_minusButton is not null) { _minusButton.Paragraph.Text = value ?? string.Empty; } }
         }
 
         /// <summary>
@@ -177,7 +177,7 @@ namespace Iguina.Entities
         public string? PlusButtonText
         {
             get => _plusButton?.Paragraph?.Text ?? null;
-            set { if (_plusButton != null) { _plusButton.Paragraph.Text = value ?? string.Empty; } }
+            set { if (_plusButton is not null) { _plusButton.Paragraph.Text = value ?? string.Empty; } }
         }
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace Iguina.Entities
         /// <inheritdoc/>
         protected override int GetInputMaxWidth()
         {
-            return base.GetInputMaxWidth() - (_plusButton != null ? _plusButton.LastBoundingRect.Width : 0);
+            return base.GetInputMaxWidth() - (_plusButton is not null ? _plusButton.LastBoundingRect.Width : 0);
         }
         
         /// <summary>
@@ -300,7 +300,7 @@ namespace Iguina.Entities
             }
             
             // special case: if the only input is - it might be the beginning of a negative number, so we allow it
-            if ((MinValue == null || MinValue.Value < 0) && (value.Length == 1 && value[0] == NegativeSign))
+            if ((MinValue is null || MinValue.Value < 0) && (value.Length == 1 && value[0] == NegativeSign))
             {
                 baseValue = value;
                 newValue = null;

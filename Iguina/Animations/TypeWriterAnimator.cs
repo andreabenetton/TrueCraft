@@ -37,7 +37,7 @@ namespace Iguina.Animations
         {
             ElapsedTime = 0f;
             IsDone = false;
-            if (target != null) target.Text = string.Empty;
+            if (target is not null) target.Text = string.Empty;
         }
     }
 }

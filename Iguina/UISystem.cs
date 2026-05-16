@@ -134,7 +134,7 @@ namespace Iguina
         /// Get 'TargetEntity' but only if its an interactable entity.
         /// If its not, will return null instead.
         /// </summary>
-        public Entity? InteractableTargetedEntity => (TargetedEntity != null && TargetedEntity.Interactable && !TargetedEntity.IgnoreInteractions) ? TargetedEntity : null;
+        public Entity? InteractableTargetedEntity => (TargetedEntity is not null && TargetedEntity.Interactable && !TargetedEntity.IgnoreInteractions) ? TargetedEntity : null;
 
         /// <summary>
         /// Currently focused entity, and the entity that will receive keyboard interactions.
@@ -244,7 +244,7 @@ namespace Iguina
                 throw new Exception("Failed to read or deserialize UI system stylesheet!", e);
             }
 
-            if (SystemStyleSheet.LoadDefaultStylesheets != null)
+            if (SystemStyleSheet.LoadDefaultStylesheets is not null)
             {
                 LoadDefaultStylesheets(SystemStyleSheet.LoadDefaultStylesheets, Path.GetDirectoryName(styleSheetFilePath) ?? string.Empty);
             }
@@ -264,7 +264,7 @@ namespace Iguina
             : this(renderer, input)
         {
             SystemStyleSheet = styleSheet;
-            if (SystemStyleSheet.LoadDefaultStylesheets != null)
+            if (SystemStyleSheet.LoadDefaultStylesheets is not null)
             {
                 LoadDefaultStylesheets(SystemStyleSheet.LoadDefaultStylesheets, stylesheetsFolder ?? string.Empty);
             }
@@ -364,7 +364,7 @@ namespace Iguina
             var content = FilesProvider.ReadAllText(styleSheetFilePath);
             SystemStyleSheet = JsonSerializer.Deserialize<SystemStyleSheet>(content)!;
             DefaultStylesheets = new _DefaultStylesheets();
-            if (SystemStyleSheet.LoadDefaultStylesheets != null)
+            if (SystemStyleSheet.LoadDefaultStylesheets is not null)
             {
                 LoadDefaultStylesheets(
                     SystemStyleSheet.LoadDefaultStylesheets,
@@ -385,7 +385,7 @@ namespace Iguina
                 var path = pair.Value;
 
                 var field = DefaultStylesheets.GetType().GetField(entityStyleName);
-                if (field == null)
+                if (field is null)
                 {
                     throw new FormatException($"Error loading stylesheet for entity style id '{entityStyleName}': entity key not found under 'DefaultStylesheets'.");
                 }
@@ -440,12 +440,12 @@ namespace Iguina
             Root._DoUpdate(deltaTime);
 
             // check if should lock target entity
-            bool keepTargetEntity = (TargetedEntity != null) ? 
+            bool keepTargetEntity = (TargetedEntity is not null) ? 
                 (TargetedEntity.LockTargetedEntityOnSelf && TargetedEntity.IsCurrentlyVisible() && !TargetedEntity.IsCurrentlyLocked() && !TargetedEntity.IsCurrentlyDisabled()) 
                 : false;
 
             // also lock target if mouse is held down and target entity is set to lock focus while mouse is down
-            if (Input.IsMouseButtonDown(MouseButton.Left) && (TargetedEntity != null) && TargetedEntity.LockFocusWhileMouseDown)
+            if (Input.IsMouseButtonDown(MouseButton.Left) && (TargetedEntity is not null) && TargetedEntity.LockFocusWhileMouseDown)
             {
                 keepTargetEntity = true;
             }
@@ -526,10 +526,10 @@ namespace Iguina
 
             // do interactions with targeted entity
             // unless its locked or disabled
-            if (TargetedEntity != null)
+            if (TargetedEntity is not null)
             {
                 // pass interactions forward if needed to
-                if (TargetedEntity.TransferInteractionsTo != null)
+                if (TargetedEntity.TransferInteractionsTo is not null)
                 {
                     TargetedEntity = TargetedEntity.TransferInteractionsTo;
                 }
@@ -560,9 +560,9 @@ namespace Iguina
             }
             
             // pass focus to other entity if needed, and also if focused entity is disabled / locked / invisible, remove focused
-            if (FocusedEntity != null)
+            if (FocusedEntity is not null)
             {
-                while (FocusedEntity.PassFocusTo != null)
+                while (FocusedEntity.PassFocusTo is not null)
                 {
                     FocusedEntity = FocusedEntity.PassFocusTo;
                 }
@@ -628,22 +628,22 @@ namespace Iguina
         void UpdateTooltip(float deltaTime, Point mousePosition)
         {
             var target = TargetedEntity;
-            var candidate = (target != null && !string.IsNullOrEmpty(target.TooltipText)) ? target : null;
+            var candidate = (target is not null && !string.IsNullOrEmpty(target.TooltipText)) ? target : null;
 
             if (candidate != _tooltipForEntity)
             {
                 _tooltipForEntity = candidate;
                 _tooltipHoverTime = 0f;
-                if (_tooltipPanel != null) _tooltipPanel.Visible = false;
+                if (_tooltipPanel is not null) _tooltipPanel.Visible = false;
             }
 
-            if (candidate == null) return;
+            if (candidate is null) return;
 
             _tooltipHoverTime += deltaTime;
             if (_tooltipHoverTime < TooltipDelay) return;
 
             // lazily build the popup
-            if (_tooltipPanel == null)
+            if (_tooltipPanel is null)
             {
                 _tooltipPanel = new Entities.Panel(this, DefaultStylesheets.MessageBoxPanels ?? DefaultStylesheets.Panels)
                 {
@@ -720,7 +720,7 @@ namespace Iguina
 
             // get which cursor to render
             CursorProperties? cursor = OverrideCursorProperties ?? SystemStyleSheet.CursorDefault;
-            if (OverrideCursorProperties == null)
+            if (OverrideCursorProperties is null)
             {
                 // explicit override via SetCursor wins over the targeted-entity logic
                 if (_forcedCursor.HasValue)
@@ -729,7 +729,7 @@ namespace Iguina
                 }
                 else if (TargetedEntity?.IsPointedOn(Input.GetMousePosition(), true) ?? false)
                 {
-                    if (TargetedEntity.CursorStyle != null)
+                    if (TargetedEntity.CursorStyle is not null)
                     {
                         cursor = TargetedEntity.CursorStyle;
                     }
@@ -759,7 +759,7 @@ namespace Iguina
             }
 
             // render cursor
-            if (ShowCursor && cursor != null)
+            if (ShowCursor && cursor is not null)
             {
                 var scale = cursor.Scale * SystemStyleSheet.CursorScale * TexturesScale;
                 var destRect = cursor.SourceRect;

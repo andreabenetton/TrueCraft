@@ -68,7 +68,7 @@ namespace Iguina.Entities
         /// <summary>Add a top-level menu from a MenuItem with SubItems.</summary>
         public void AddItem(MenuItem rootItem)
         {
-            if (rootItem.SubItems == null)
+            if (rootItem.SubItems is null)
                 throw new ArgumentException("Top-level MenuBar item must have SubItems", nameof(rootItem));
 
             var topButton = new Button(UISystem, rootItem.Label) { Anchor = Anchor.AutoInlineLTR };
@@ -105,14 +105,14 @@ namespace Iguina.Entities
             foreach (var item in items)
             {
                 // Label suffix '▶' makes cascade parents visually distinct from leaves.
-                var displayLabel = item.SubItems != null ? item.Label + "  ▶" : item.Label;
+                var displayLabel = item.SubItems is not null ? item.Label + "  ▶" : item.Label;
                 var entryButton = new Button(UISystem, displayLabel)
                 {
                     Anchor = Anchor.AutoLTR,
                     Enabled = item.Enabled,
                 };
 
-                if (item.SubItems == null)
+                if (item.SubItems is null)
                 {
                     // Leaf: run action + close entire chain
                     entryButton.Events.OnClick = _ =>
@@ -170,7 +170,7 @@ namespace Iguina.Entities
             if (_openChain.Count == 0) return;
 
             // If the click landed inside any open dropdown in the chain, leave it.
-            for (var e = clicked; e != null; e = e.Parent)
+            for (var e = clicked; e is not null; e = e.Parent)
             {
                 if (_openChain.Contains((e as Panel)!)) return;
             }

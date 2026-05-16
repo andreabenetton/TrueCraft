@@ -369,7 +369,7 @@ namespace Iguina.Utils
                         // add folder
                         var folderName = Path.GetFileName(folder);
                         filesList.AddItem(folder, folderName);
-                        if (icon != null)
+                        if (icon is not null)
                         {
                             filesList.SetItemLabel(folder, folderName, icon!, false);
                         }
@@ -393,7 +393,7 @@ namespace Iguina.Utils
                         // add folder
                         var fileName = Path.GetFileName(file);
                         filesList.AddItem(file, fileName);
-                        if (icon != null)
+                        if (icon is not null)
                         {
                             filesList.SetItemLabel(file, fileName, icon!, false);
                         }

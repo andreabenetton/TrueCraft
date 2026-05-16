@@ -98,7 +98,7 @@ namespace Iguina.Entities
         /// </summary>
         public int SelectedIndex
         {
-            get => (SelectedValue != null) ? _items.FindIndex(x => x.Value == SelectedValue) : -1;
+            get => (SelectedValue is not null) ? _items.FindIndex(x => x.Value == SelectedValue) : -1;
             set
             {
                 if (value == -1)
@@ -124,7 +124,7 @@ namespace Iguina.Entities
             {
                 if (value != _selectedValue)
                 {
-                    if (value != null && !_items.Any(x => x.Value == value))
+                    if (value is not null && !_items.Any(x => x.Value == value))
                     {
                         throw new KeyNotFoundException("Value to set was not found in list!");
                     }
@@ -143,7 +143,7 @@ namespace Iguina.Entities
         {
             get
             {
-                if (SelectedValue == null) { return null; }
+                if (SelectedValue is null) { return null; }
                 return _items[SelectedIndex].LabelTextOnly ?? SelectedValue;
             }
         }
@@ -155,7 +155,7 @@ namespace Iguina.Entities
         {
             get
             {
-                if (SelectedValue == null) { return null; }
+                if (SelectedValue is null) { return null; }
                 return _items[SelectedIndex].LabelWithIcon ?? SelectedValue;
             }
         }
@@ -322,7 +322,7 @@ namespace Iguina.Entities
             int scrollOffset = 0;
 
             // show / hide scrollbar
-            if (VerticalScrollbar != null)
+            if (VerticalScrollbar is not null)
             {
                 VerticalScrollbar.Visible = ShowListScrollbar;
                 VerticalScrollbar.MaxValue = (_items.Count - _paragraphs.Count) + 1;
@@ -339,7 +339,7 @@ namespace Iguina.Entities
         protected virtual void OnItemClicked(Entity entity)
         {
             var newValue = entity.UserData as string;
-            if (newValue != null)
+            if (newValue is not null)
             {
                 var idx = GetIndexOfValue(newValue);
                 if (idx >= 0 && idx < LockedItems.Count && LockedItems[idx])
@@ -439,7 +439,7 @@ namespace Iguina.Entities
         /// </summary>
         public void ScrollToSelected()
         {
-            if (VerticalScrollbar != null)
+            if (VerticalScrollbar is not null)
             {
                 VerticalScrollbar.ValueSafe = SelectedIndex - _paragraphs.Count / 2;
             }
@@ -457,7 +457,7 @@ namespace Iguina.Entities
                 if (SelectedIndex <= 0)
                 {
                     SelectedIndex = ItemsCount - 1;
-                    if (VerticalScrollbar != null)
+                    if (VerticalScrollbar is not null)
                     {
                         VerticalScrollbar.ValueSafe = VerticalScrollbar.MaxValue;
                     }
@@ -465,7 +465,7 @@ namespace Iguina.Entities
                 else
                 {
                     SelectedIndex--;
-                    if (VerticalScrollbar != null && (VerticalScrollbar.Value > SelectedIndex))
+                    if (VerticalScrollbar is not null && (VerticalScrollbar.Value > SelectedIndex))
                     {
                         VerticalScrollbar.ValueSafe = SelectedIndex;
                     }
@@ -478,7 +478,7 @@ namespace Iguina.Entities
                 if ((SelectedIndex == ItemsCount - 1) || (SelectedIndex == -1))
                 {
                     SelectedIndex = 0;
-                    if (VerticalScrollbar != null)
+                    if (VerticalScrollbar is not null)
                     {
                         VerticalScrollbar.ValueSafe = 0;
                     }
@@ -486,7 +486,7 @@ namespace Iguina.Entities
                 else
                 {
                     SelectedIndex++;
-                    if (VerticalScrollbar != null && (VerticalScrollbar.Value < SelectedIndex - _paragraphs.Count + 1))
+                    if (VerticalScrollbar is not null && (VerticalScrollbar.Value < SelectedIndex - _paragraphs.Count + 1))
                     {
                         VerticalScrollbar.ValueSafe = SelectedIndex - _paragraphs.Count + 1;
                     }

@@ -105,7 +105,7 @@ namespace Iguina.Utils
                 case FormFieldType.DropDown:
                 {
                     var dd = new DropDown(ui);
-                    if (field.DropDownChoices != null)
+                    if (field.DropDownChoices is not null)
                     {
                         foreach (var c in field.DropDownChoices) dd.AddItem(c);
                     }
@@ -137,7 +137,7 @@ namespace Iguina.Utils
                 case FormFieldType.RadioButtons:
                 {
                     var radios = new List<RadioButton>();
-                    if (field.DropDownChoices != null)
+                    if (field.DropDownChoices is not null)
                     {
                         foreach (var choice in field.DropDownChoices)
                         {

@@ -201,7 +201,7 @@ namespace Iguina.Demo.MonoGame
         /// </summary>
         Effect? GetEffect(string? effectId)
         {
-            if (effectId == null || effectId == DisabledEffectId) { return null; }
+            if (effectId is null || effectId == DisabledEffectId) { return null; }
             return _content.Load<Effect>(effectId);
         }
 
@@ -413,7 +413,7 @@ namespace Iguina.Demo.MonoGame
         void BeginBatch()
         {
             var effect = GetEffect(_currEffectId);
-            if (_currScissorRegion != null)
+            if (_currScissorRegion is not null)
             {
                 _device.ScissorRectangle = new Microsoft.Xna.Framework.Rectangle(_currScissorRegion.Value.X, _currScissorRegion.Value.Y, _currScissorRegion.Value.Width, _currScissorRegion.Value.Height);
             }

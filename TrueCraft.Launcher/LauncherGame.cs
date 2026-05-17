@@ -12,6 +12,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using TrueCraft.Core;
+using TrueCraft.Launcher.Sessions;
 using TrueCraft.Launcher.Views;
 
 namespace TrueCraft.Launcher;
@@ -54,9 +55,11 @@ public sealed class LauncherGame : Game
         IsMouseVisible = true;
         Window.Title = "TrueCraft Launcher";
         Window.AllowUserResizing = false;
+        Sessions = new GameSessionRegistry(this);
     }
 
     public TrueCraftUser User { get; } = new TrueCraftUser();
+    public GameSessionRegistry Sessions { get; }
     public Panel WelcomePanel { get; private set; }
     public Panel InteractionPanel { get; private set; }
     public UISystem UI => _ui;
@@ -221,6 +224,15 @@ public sealed class LauncherGame : Game
     {
         if (disposing)
         {
+            // Paranoia net for unexpected launcher exit: tear down any
+            // sessions still alive so their worlds save and the embedded
+            // servers stop listening. Normal user-driven exit goes through
+            // ActiveGamesView's Stop buttons and the registry is already
+            // empty by the time we get here.
+            foreach (var session in Sessions.All)
+            {
+                try { session.Stop(); } catch { }
+            }
             _currentView?.Dispose();
             _songInstance?.Stop();
             _songInstance?.Dispose();

@@ -71,7 +71,12 @@ public static class Program
             return repo;
         });
         services.AddSingleton<TrueCraft.Handlers.LoginHandlers>();
-        services.AddSingleton<MultiplayerServer>();
+        // Transient so each concurrent singleplayer session gets its own
+        // MultiplayerServer instance with its own port + world list.
+        // The launcher's only ctor-level consumer is SingleplayerServer;
+        // LoginHandlers receives the server as a method argument from the
+        // server's own packet pipeline, not via DI.
+        services.AddTransient<MultiplayerServer>();
         App.Services = services.BuildServiceProvider();
 
         Log.LogInformation("TrueCraft.Launcher starting");

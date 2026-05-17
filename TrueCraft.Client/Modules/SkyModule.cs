@@ -31,7 +31,7 @@ public class SkyModule : IGraphicalModule
         CelestialPlaneEffect = new AlphaTestEffect(Game.GraphicsDevice)
         {
             AlphaFunction = CompareFunction.Greater,
-            ReferenceAlpha = 0
+            ReferenceAlpha = 128
         };
 
         SkyPlaneEffect = new BasicEffect(Game.GraphicsDevice);
@@ -175,7 +175,12 @@ public class SkyModule : IGraphicalModule
         // Sun
         Game.GraphicsDevice.SetVertexBuffer(CelestialPlane);
         var backup = Game.GraphicsDevice.BlendState;
-        Game.GraphicsDevice.BlendState = BlendState.Additive;
+        // Premultiplied alpha-blend: the celestial-plane PNGs have
+        // alpha=0 corners with RGB=0, so AlphaBlend collapses the
+        // src contribution to zero on those pixels and leaves the
+        // sky underneath untouched — no black quad even if the
+        // alpha test misses for any reason.
+        Game.GraphicsDevice.BlendState = BlendState.AlphaBlend;
         Game.GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
         CelestialPlaneEffect.Texture = Game.TextureMapper.GetTexture("terrain/sun.png");
         CelestialPlaneEffect.World = skyDomeWorld;

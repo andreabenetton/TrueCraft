@@ -106,7 +106,13 @@ public class SkyModule : IGraphicalModule
     {
         get
         {
+            // Brightness term has to be clamped to [0,1] here just
+            // like BrightnessModifier does — the bare `cos*2+0.5`
+            // peaks at 2.5, which drives every channel past 1.0 and
+            // makes the noon sky pure white instead of blue.
             var y = (float) Math.Cos(CelestialAngle * MathHelper.TwoPi) * 2 + 0.5f;
+            if (y < 0) y = 0;
+            if (y > 1) y = 1;
             return new Color(0.7529412f * y * 0.94f + 0.06f,
                 0.8470588f * y * 0.94f + 0.06f, 1.0f * y * 0.91f + 0.09f);
         }

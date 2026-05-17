@@ -31,7 +31,11 @@ public class Game1 : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
         // start demo project and provide our renderer and input provider.
-        var uiThemeFolder = "../../../../Iguina.Demo/Assets/DefaultTheme";
+        // Allow overriding the theme via IGUINA_THEME_DIR so the same demo
+        // binary can be pointed at any Iguina-format theme (e.g. the
+        // sibling Iguina.LowResTheme) without recompiling.
+        var uiThemeFolder = System.Environment.GetEnvironmentVariable("IGUINA_THEME_DIR")
+            ?? "../../../../Iguina.Demo/Assets/DefaultTheme";
 
         // create demo
         _demo = new IguinaDemoStarter();

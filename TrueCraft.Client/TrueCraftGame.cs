@@ -174,6 +174,14 @@ public class TrueCraftGame : Game
         GamePadComponent.ButtonDown += OnGamePadButtonDown;
         GamePadComponent.ButtonUp += OnGamePadButtonUp;
 
+        // Window.ClientSizeChanged only fires when the OS reports a
+        // resize, not on initial show. Without this seed call,
+        // ScaleFactor stays at its default 0f and every HUD/inventory
+        // SpriteBatch.Draw(..., scale: ScaleFactor*2, …) draws at scale
+        // zero — i.e. invisible, while the dim overlay (no scale) still
+        // covers the screen.
+        Window_ClientSizeChanged(null, EventArgs.Empty);
+
         ThreadID = Thread.CurrentThread.ManagedThreadId;
     }
 

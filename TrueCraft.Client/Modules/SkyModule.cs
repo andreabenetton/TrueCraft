@@ -39,7 +39,12 @@ public class SkyModule : IGraphicalModule
         SkyPlaneEffect.FogEnabled = true;
         SkyPlaneEffect.FogStart = 0;
         SkyPlaneEffect.FogEnd = 64 * 0.8f;
-        SkyPlaneEffect.LightingEnabled = true;
+        // LightingEnabled must stay OFF: the SkyPlane vertex buffer is
+        // VertexPositionColor (no normal), but BasicEffect's lit pixel
+        // shader normalizes the normal — with missing normals it produces
+        // NaN/black for the pre-fog color. The atmospheric tint is supplied
+        // via DiffuseColor in Draw instead.
+        SkyPlaneEffect.LightingEnabled = false;
         var plane = new[]
         {
             new VertexPositionColor(new Vector3(-64, 0, -64), Color.White),
@@ -165,7 +170,7 @@ public class SkyModule : IGraphicalModule
         // Sky
         SkyPlaneEffect.FogColor = atmosphere.ToVector3();
         SkyPlaneEffect.World = skyDomeWorld;
-        SkyPlaneEffect.AmbientLightColor = skyVec;
+        SkyPlaneEffect.DiffuseColor = skyVec;
         foreach (var pass in SkyPlaneEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
@@ -205,7 +210,7 @@ public class SkyModule : IGraphicalModule
         // Void
         Game.GraphicsDevice.SetVertexBuffer(SkyPlane);
         SkyPlaneEffect.World = VoidPlaneMatrix;
-        SkyPlaneEffect.AmbientLightColor = skyVec * VoidTintScale + VoidTintBias;
+        SkyPlaneEffect.DiffuseColor = skyVec * VoidTintScale + VoidTintBias;
         foreach (var pass in SkyPlaneEffect.CurrentTechnique.Passes)
         {
             pass.Apply();

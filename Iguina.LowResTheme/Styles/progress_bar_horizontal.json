@@ -1,17 +1,15 @@
 {
+    "DefaultWidth": {"Value": 100, "Units": "PercentOfParent"},
+    "DefaultHeight": {"Value": 32, "Units": "Pixels"},
     "Default": {
         "FillTextureFramed": {
             "TextureId": "Textures/progressbar.png",
             "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 34, "Height": 14},
             "FrameWidth": {"X": 11, "Y": 0}
         },
-        "DefaultHeight": {"Value": 32, "Unit": "Pixels"},
-        "DefaultWidth": {"Value": 100, "Unit": "Percents"},
         "Padding": {"Left": 14, "Right": 14, "Top": 0, "Bottom": 0}
     },
     "Disabled": {
         "EffectIdentifier": "disabled"
     }
 }
-
-

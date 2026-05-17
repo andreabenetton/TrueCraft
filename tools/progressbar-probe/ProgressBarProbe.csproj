@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <RootNamespace>ProgressBarProbe</RootNamespace>
+    <AssemblyName>ProgressBarProbe</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Iguina\Iguina.csproj" />
+    <ProjectReference Include="..\..\Iguina.Demo.MonoGame\Iguina.Demo.MonoGame.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Drop the Iguina.LowResTheme assets next to the probe binary under
+         'IguinaTheme/' so UISystem can find system_style.json. -->
+    <None Include="..\..\Iguina.LowResTheme\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>IguinaTheme\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
+</Project>

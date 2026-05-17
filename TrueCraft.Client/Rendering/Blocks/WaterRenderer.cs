@@ -29,7 +29,7 @@ public class WaterRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         Span<int> lighting = stackalloc int[6];
         for (var i = 0; i < 6; i++)
@@ -39,7 +39,7 @@ public class WaterRenderer : BlockRenderer
         var overhead = new Vector3(0.5f, 0.5f, 0.5f);
         var start = vertices.Count;
         CreateUniformCubeInto(overhead, Texture, faces, Color.Blue, lighting, vertices, indices);
-        var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var span = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = 0; i < span.Length; i++)
         {
             if (span[i].Position.Y > 0) span[i].Position.Y *= 14f / 16f;

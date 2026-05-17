@@ -56,7 +56,7 @@ public class CraftingTableRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         Span<int> lighting = stackalloc int[6];
         for (var i = 0; i < 6; i++)

@@ -59,12 +59,18 @@ public class ChunkRenderer : Renderer<ReadOnlyChunk>
         var state = _threadRenderState ??= new RenderState();
         ProcessChunk(World, item, state);
 
-        // ToArray() snapshots the live portion of each list into a new
-        // array, so it's safe to keep mutating `state` after this point
-        // (next call to TryRender on the same worker thread will
-        // Clear() and reuse it). G8 will remove these ToArray copies.
-        result = new ChunkMesh(item, Game, state.Verticies.ToArray(),
-            state.OpaqueIndicies.ToArray(), state.TransparentIndicies.ToArray());
+        // Detach() hands the current pool-rented array to ChunkMesh and
+        // immediately re-rents a fresh array for the next chunk on this
+        // worker. ChunkMesh returns the arrays to ArrayPool when it is
+        // disposed (when the chunk unloads). No per-chunk allocations
+        // from this hand-off path.
+        var (vertArr, vertCount) = state.Verticies.Detach();
+        var (opaqueArr, opaqueCount) = state.OpaqueIndicies.Detach();
+        var (transparentArr, transparentCount) = state.TransparentIndicies.Detach();
+        result = new ChunkMesh(item, Game,
+            vertArr, vertCount,
+            opaqueArr, opaqueCount,
+            transparentArr, transparentCount);
 
         return result is not null;
     }
@@ -265,11 +271,11 @@ public class ChunkRenderer : Renderer<ReadOnlyChunk>
         public readonly Dictionary<Coordinates3D, VisibleFaces> DrawableCoordinates
             = new Dictionary<Coordinates3D, VisibleFaces>();
 
-        public readonly List<int> OpaqueIndicies = new List<int>();
-        public readonly List<int> TransparentIndicies = new List<int>();
+        public readonly Buffer<int> OpaqueIndicies = new Buffer<int>(8192);
+        public readonly Buffer<int> TransparentIndicies = new Buffer<int>(2048);
 
-        public readonly List<VertexPositionNormalColorTexture> Verticies
-            = new List<VertexPositionNormalColorTexture>();
+        public readonly Buffer<VertexPositionNormalColorTexture> Verticies
+            = new Buffer<VertexPositionNormalColorTexture>(16384);
     }
 }
 

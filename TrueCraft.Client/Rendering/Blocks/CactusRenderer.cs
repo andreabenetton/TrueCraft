@@ -40,7 +40,7 @@ public class CactusRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         // This is similar to how wheat is rendered.
         //
@@ -55,7 +55,7 @@ public class CactusRenderer : BlockRenderer
             var faceStart = vertices.Count;
             var side = (CubeFace) _side;
             EmitQuadInto(side, center, Texture, 0, Color.White, vertices, indices);
-            var span = CollectionsMarshal.AsSpan(vertices).Slice(faceStart);
+            var span = vertices.Array.AsSpan(faceStart, vertices.Count - faceStart);
             if (side == CubeFace.NegativeX || side == CubeFace.PositiveX)
                 for (var i = 0; i < span.Length; i++)
                 {
@@ -75,7 +75,7 @@ public class CactusRenderer : BlockRenderer
         {
             var faceStart = vertices.Count;
             EmitQuadInto(CubeFace.PositiveY, center, TopTexture, 0, Color.White, vertices, indices);
-            var span = CollectionsMarshal.AsSpan(vertices).Slice(faceStart);
+            var span = vertices.Array.AsSpan(faceStart, vertices.Count - faceStart);
             for (var i = 0; i < span.Length; i++)
             {
                 span[i].Position.Z *= 14f / 16f;
@@ -84,7 +84,7 @@ public class CactusRenderer : BlockRenderer
         }
 
         // Final pass: subtract center and shift Y down by one texel.
-        var all = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var all = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = 0; i < all.Length; i++)
         {
             all[i].Position.Y -= 1 / 16f;

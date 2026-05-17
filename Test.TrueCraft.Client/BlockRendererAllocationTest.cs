@@ -41,10 +41,10 @@ public class BlockRendererAllocationTest
             Coordinates = new Coordinates3D(0, 64, 0),
         };
 
-        // Pre-grow both lists so list-resize allocations don't pollute the measurement.
+        // Pre-grow both buffers so capacity-resize allocations don't pollute the measurement.
         // A full chunk's worth of geometry is well under 1M vertices.
-        var vertices = new List<VertexPositionNormalColorTexture>(Iterations * 24 + 64);
-        var indices = new List<int>(Iterations * 36 + 64);
+        var vertices = new Buffer<VertexPositionNormalColorTexture>(Iterations * 24 + 64);
+        var indices = new Buffer<int>(Iterations * 36 + 64);
 
         // Warm up.
         for (var i = 0; i < 10; i++)

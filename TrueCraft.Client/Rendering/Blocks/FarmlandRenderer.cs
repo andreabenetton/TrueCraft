@@ -93,7 +93,7 @@ public class FarmlandRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         var texture = DryTexture;
         if (descriptor.Metadata == (byte) FarmlandBlock.MoistureLevel.Moist)
@@ -106,7 +106,7 @@ public class FarmlandRenderer : BlockRenderer
         var overhead = new Vector3(0.5f, 0.5f, 0.5f);
         var start = vertices.Count;
         CreateUniformCubeInto(overhead, texture, faces, Color.White, lighting, vertices, indices);
-        var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var span = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = 0; i < span.Length; i++)
         {
             if (span[i].Position.Y > 0) span[i].Position.Y *= 15f / 16f;

@@ -102,15 +102,15 @@ public class BlockRenderer
         Renderers[id] = renderer;
     }
 
-    // ----- New list-appending entry points (hot path used by ChunkRenderer) -----
+    // ----- Hot-path entry points (used by ChunkRenderer) -----
 
     /// <summary>
     ///     Renders the given block by appending its geometry directly into the supplied
-    ///     accumulator lists. No per-block heap allocations.
+    ///     accumulator buffers. No per-block heap allocations.
     /// </summary>
     public static void RenderBlockInto(IBlockProvider provider, BlockDescriptor descriptor,
         VisibleFaces faces, Vector3 offset,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         var textureMap = provider.GetTextureMap(descriptor.Metadata) ?? new Tuple<int, int>(0, 0);
         Renderers[descriptor.ID].RenderInto(descriptor, offset, faces, textureMap, vertices, indices);
@@ -128,7 +128,7 @@ public class BlockRenderer
     /// </summary>
     public virtual void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         var baseUV = new Vector2(textureMap.Item1 * AtlasTileStride, textureMap.Item2 * AtlasTileStride);
 
@@ -139,7 +139,7 @@ public class BlockRenderer
         CreateUniformCubeInto(offset, baseUV, AtlasTileStride, faces, Color.White, lighting, vertices, indices);
     }
 
-    // ----- Legacy array-returning wrappers (cold path; used by IconRenderer) -----
+    // ----- Legacy array-returning wrappers (cold path; used by IconRenderer + HighlightModule) -----
 
     /// <summary>
     ///     Legacy form that returns freshly-allocated arrays. Retained for callers
@@ -150,36 +150,48 @@ public class BlockRenderer
         BlockDescriptor descriptor,
         VisibleFaces faces, Vector3 offset, int indexesOffset, out int[] indexes)
     {
-        var verts = new List<VertexPositionNormalColorTexture>();
-        var idxs = new List<int>();
+        var verts = new Buffer<VertexPositionNormalColorTexture>(64);
+        var idxs = new Buffer<int>(64);
         RenderBlockInto(provider, descriptor, faces, offset, verts, idxs);
 
         if (indexesOffset != 0)
             for (var i = 0; i < idxs.Count; i++)
-                idxs[i] += indexesOffset;
+                idxs.Array[i] += indexesOffset;
 
-        indexes = idxs.ToArray();
-        return verts.ToArray();
+        return DetachToExactSize(verts, idxs, out indexes);
     }
 
     /// <summary>
     ///     Legacy form retained for external callers like <c>HighlightModule</c>.
-    ///     Internally routes through <see cref="CreateUniformCubeInto"/>.
+    ///     Internally routes through <see cref="CreateUniformCubeInto(Vector3, Vector2[], VisibleFaces, Color, ReadOnlySpan{int}, Buffer{VertexPositionNormalColorTexture}, Buffer{int})"/>.
     /// </summary>
     public static VertexPositionNormalColorTexture[] CreateUniformCube(Vector3 offset, Vector2[] texture,
         VisibleFaces faces, int indexesOffset, out int[] indexes, Color color, int[] lighting = null)
     {
-        var verts = new List<VertexPositionNormalColorTexture>();
-        var idxs = new List<int>();
+        var verts = new Buffer<VertexPositionNormalColorTexture>(64);
+        var idxs = new Buffer<int>(64);
         ReadOnlySpan<int> lightingSpan = lighting ?? DefaultLighting;
         CreateUniformCubeInto(offset, texture, faces, color, lightingSpan, verts, idxs);
 
         if (indexesOffset != 0)
             for (var i = 0; i < idxs.Count; i++)
-                idxs[i] += indexesOffset;
+                idxs.Array[i] += indexesOffset;
 
-        indexes = idxs.ToArray();
-        return verts.ToArray();
+        return DetachToExactSize(verts, idxs, out indexes);
+    }
+
+    private static VertexPositionNormalColorTexture[] DetachToExactSize(
+        Buffer<VertexPositionNormalColorTexture> verts, Buffer<int> idxs, out int[] indexes)
+    {
+        var (vArr, vCount) = verts.Detach();
+        var (iArr, iCount) = idxs.Detach();
+        var vertOut = new VertexPositionNormalColorTexture[vCount];
+        indexes = new int[iCount];
+        Array.Copy(vArr, vertOut, vCount);
+        Array.Copy(iArr, indexes, iCount);
+        System.Buffers.ArrayPool<VertexPositionNormalColorTexture>.Shared.Return(vArr);
+        System.Buffers.ArrayPool<int>.Shared.Return(iArr);
+        return vertOut;
     }
 
     protected static VertexPositionNormalColorTexture[] CreateQuad(CubeFace face, Vector3 offset,
@@ -204,7 +216,7 @@ public class BlockRenderer
     /// </summary>
     protected static void CreateUniformCubeInto(Vector3 offset, Vector2[] texture, VisibleFaces faces,
         Color color, ReadOnlySpan<int> lighting,
-        List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+        Buffer<VertexPositionNormalColorTexture> vertexDest, Buffer<int> indexDest)
     {
         faces = VisibleFaces.All; // Temporary — same as the legacy path.
         if (lighting.IsEmpty)
@@ -234,7 +246,7 @@ public class BlockRenderer
     /// </summary>
     protected static void CreateUniformCubeInto(Vector3 offset, Vector2 baseUV, float stride,
         VisibleFaces faces, Color color, ReadOnlySpan<int> lighting,
-        List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+        Buffer<VertexPositionNormalColorTexture> vertexDest, Buffer<int> indexDest)
     {
         faces = VisibleFaces.All;
         if (lighting.IsEmpty)
@@ -259,7 +271,7 @@ public class BlockRenderer
     /// </summary>
     protected static void EmitQuadInto(CubeFace face, Vector3 offset, Vector2[] texture,
         int textureOffset, Color color,
-        List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+        Buffer<VertexPositionNormalColorTexture> vertexDest, Buffer<int> indexDest)
     {
         var faceIndex = (int) face;
         var unit = CubeMesh[faceIndex];
@@ -291,7 +303,7 @@ public class BlockRenderer
     /// </summary>
     protected static void EmitQuadInto(CubeFace face, Vector3 offset, Vector2 baseUV, float stride,
         Color color,
-        List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+        Buffer<VertexPositionNormalColorTexture> vertexDest, Buffer<int> indexDest)
     {
         var faceIndex = (int) face;
         var unit = CubeMesh[faceIndex];

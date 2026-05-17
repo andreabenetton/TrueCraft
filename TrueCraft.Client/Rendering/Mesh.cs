@@ -64,25 +64,37 @@ public class Mesh : IDisposable
     public static int IndiciesRendered { get; set; }
 
     /// <summary>
-    ///     Gets or sets the vertices in this mesh.
+    ///     Gets or sets the vertices in this mesh. The full array is
+    ///     uploaded to the GPU; for callers that maintain an oversize
+    ///     backing array with a live-count, use
+    ///     <see cref="SetVertices(VertexPositionNormalColorTexture[], int)"/>.
     /// </summary>
     public VertexPositionNormalColorTexture[] Vertices
     {
-        set
+        set => SetVertices(value, value.Length);
+    }
+
+    /// <summary>
+    ///     Uploads <paramref name="count"/> vertices from
+    ///     <paramref name="data"/> to the GPU. <paramref name="data"/> may
+    ///     be larger than <paramref name="count"/> (e.g. when rented from
+    ///     <see cref="System.Buffers.ArrayPool{T}"/>); only the live prefix
+    ///     is sent. The buffer is sized to exactly <paramref name="count"/>.
+    /// </summary>
+    public void SetVertices(VertexPositionNormalColorTexture[] data, int count)
+    {
+        _vertices?.Dispose();
+
+        _game.Invoke(() =>
         {
-            _vertices?.Dispose();
+            _vertices = new VertexBuffer(_graphicsDevice, VertexPositionNormalColorTexture.VertexDeclaration,
+                count, BufferUsage.WriteOnly);
+            _vertices.SetData(data, 0, count);
+            IsReady = true;
+        });
 
-            _game.Invoke(() =>
-            {
-                _vertices = new VertexBuffer(_graphicsDevice, VertexPositionNormalColorTexture.VertexDeclaration,
-                    value.Length, BufferUsage.WriteOnly);
-                _vertices.SetData(value);
-                IsReady = true;
-            });
-
-            if (_recalculateBounds)
-                BoundingBox = RecalculateBounds(value);
-        }
+        if (_recalculateBounds)
+            BoundingBox = RecalculateBounds(data, count);
     }
 
     public bool IsReady { get; private set; }
@@ -124,6 +136,17 @@ public class Mesh : IDisposable
     /// </summary>
     public void SetSubmesh(int index, int[] indices)
     {
+        SetSubmesh(index, indices, indices.Length);
+    }
+
+    /// <summary>
+    ///     Sets a submesh in this mesh, uploading only the first
+    ///     <paramref name="count"/> entries of <paramref name="indices"/>.
+    ///     Sibling of <see cref="SetVertices(VertexPositionNormalColorTexture[], int)"/>
+    ///     for callers that pool oversize index arrays.
+    /// </summary>
+    public void SetSubmesh(int index, int[] indices, int count)
+    {
         if (index < 0 || index > _indices.Length)
             throw new ArgumentOutOfRangeException();
 
@@ -135,8 +158,8 @@ public class Mesh : IDisposable
             _game.Invoke(() =>
             {
                 _indices[index] = new IndexBuffer(_graphicsDevice, typeof(int),
-                    indices.Length, BufferUsage.WriteOnly);
-                _indices[index].SetData(indices);
+                    count, BufferUsage.WriteOnly);
+                _indices[index].SetData(indices, 0, count);
                 if (index + 1 > Submeshes)
                     Submeshes = index + 1;
             });
@@ -219,25 +242,27 @@ public class Mesh : IDisposable
     }
 
     /// <summary>
-    ///     Recalculates the bounding box for this mesh.
+    ///     Recalculates the bounding box for this mesh. Inspects only the
+    ///     first <paramref name="count"/> elements of <paramref name="vertices"/>.
     /// </summary>
-    /// <param name="vertices">The vertices in this mesh.</param>
-    /// <returns></returns>
-    protected virtual BoundingBox RecalculateBounds(VertexPositionNormalColorTexture[] vertices)
+    protected virtual BoundingBox RecalculateBounds(VertexPositionNormalColorTexture[] vertices, int count)
     {
-        return ComputeAxisAlignedBounds(vertices);
+        return ComputeAxisAlignedBounds(vertices, count);
     }
 
-    internal static BoundingBox ComputeAxisAlignedBounds(VertexPositionNormalColorTexture[] vertices)
+    internal static BoundingBox ComputeAxisAlignedBounds(VertexPositionNormalColorTexture[] vertices) =>
+        ComputeAxisAlignedBounds(vertices, vertices?.Length ?? 0);
+
+    internal static BoundingBox ComputeAxisAlignedBounds(VertexPositionNormalColorTexture[] vertices, int count)
     {
-        if (vertices is null || vertices.Length == 0)
+        if (vertices is null || count == 0)
             return default;
 
         var first = vertices[0].Position;
         float minX = first.X, minY = first.Y, minZ = first.Z;
         float maxX = first.X, maxY = first.Y, maxZ = first.Z;
 
-        for (var i = 1; i < vertices.Length; i++)
+        for (var i = 1; i < count; i++)
         {
             var p = vertices[i].Position;
             if (p.X < minX) minX = p.X; else if (p.X > maxX) maxX = p.X;

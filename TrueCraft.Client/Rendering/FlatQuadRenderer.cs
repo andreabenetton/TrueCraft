@@ -74,7 +74,7 @@ public abstract class FlatQuadRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         RenderQuadsInto(descriptor, offset, Texture, Color.White, vertices, indices);
     }
@@ -85,7 +85,7 @@ public abstract class FlatQuadRenderer : BlockRenderer
     /// </summary>
     protected static void RenderQuadsInto(BlockDescriptor descriptor, Vector3 offset,
         Vector2[] textureMap, Color color,
-        List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+        Buffer<VertexPositionNormalColorTexture> vertexDest, Buffer<int> indexDest)
     {
         var textureIndex = 0;
         for (var face = 0; face < 4; face++)
@@ -102,7 +102,7 @@ public abstract class FlatQuadRenderer : BlockRenderer
     /// </summary>
     protected static void EmitAngledQuadInto(int face, Vector3 offset, Vector2[] texture,
         int textureOffset, Color color,
-        List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+        Buffer<VertexPositionNormalColorTexture> vertexDest, Buffer<int> indexDest)
     {
         var unit = QuadMesh[face];
         var normal = CubeNormals[face];

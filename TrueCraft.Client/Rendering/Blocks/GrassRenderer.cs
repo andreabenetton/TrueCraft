@@ -98,7 +98,7 @@ public class GrassRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         var texture = Texture;
         if (descriptor.Coordinates.Y < World.Height && descriptor.Chunk is not null)
@@ -112,7 +112,7 @@ public class GrassRenderer : BlockRenderer
         var start = vertices.Count;
         CreateUniformCubeInto(offset, texture, faces, Color.White, lighting, vertices, indices);
         // Apply biome colors to top of cube (PositiveY face = 4; 4 verts per face).
-        var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var span = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = (int) CubeFace.PositiveY * 4; i < (int) CubeFace.PositiveY * 4 + 4 && i < span.Length; i++)
             span[i].Color =
                 new Color(span[i].Color.ToVector3() * BiomeColor.ToVector3()); // TODO: Take this from biome

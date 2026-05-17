@@ -28,7 +28,7 @@ public class SnowRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         Span<int> lighting = stackalloc int[6];
         for (var i = 0; i < 6; i++)
@@ -37,7 +37,7 @@ public class SnowRenderer : BlockRenderer
         var start = vertices.Count;
         CreateUniformCubeInto(Vector3.Zero, Texture, faces, Color.White, lighting, vertices, indices);
         var heightMultiplier = new Vector3(1, (descriptor.Metadata + 1) / 16f, 1);
-        var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var span = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = 0; i < span.Length; i++)
         {
             if (span[i].Position.Y > 0)

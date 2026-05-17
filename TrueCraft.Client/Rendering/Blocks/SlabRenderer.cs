@@ -191,7 +191,7 @@ public class SlabRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         if (descriptor.ID == SlabBlock.BlockID)
             RenderSlabInto(descriptor, offset, vertices, indices);
@@ -200,7 +200,7 @@ public class SlabRenderer : BlockRenderer
     }
 
     protected virtual void RenderSlabInto(BlockDescriptor descriptor, Vector3 offset,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         Span<int> lighting = stackalloc int[6];
         for (var i = 0; i < 6; i++)
@@ -211,7 +211,7 @@ public class SlabRenderer : BlockRenderer
             GetTextureMap((SlabBlock.SlabMaterial) descriptor.Metadata), VisibleFaces.All,
             Color.White, lighting, vertices, indices);
 
-        var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var span = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = 0; i < 6; i++)
         {
             var face = (CubeFace) i;
@@ -236,7 +236,7 @@ public class SlabRenderer : BlockRenderer
     }
 
     protected virtual void RenderDoubleSlabInto(BlockDescriptor descriptor, Vector3 offset,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         ReadOnlySpan<int> defaultLighting = DefaultLighting;
         CreateUniformCubeInto(offset, GetTextureMap((SlabBlock.SlabMaterial) descriptor.Metadata),

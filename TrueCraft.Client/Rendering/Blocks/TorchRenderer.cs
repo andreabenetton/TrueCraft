@@ -55,7 +55,7 @@ public class TorchRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         Span<int> lighting = stackalloc int[6];
         for (var i = 0; i < 6; i++)
@@ -64,7 +64,7 @@ public class TorchRenderer : BlockRenderer
         var centerized = new Vector3(7f / 16f, 0, 7f / 16f);
         var start = vertices.Count;
         CreateUniformCubeInto(Vector3.Zero, Texture, VisibleFaces.All, Color.White, lighting, vertices, indices);
-        var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var span = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = 0; i < span.Length; i++)
         {
             span[i].Position.X *= 1f / 8f;

@@ -28,7 +28,7 @@ public class LadderRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         // EmitQuadInto's indices are derived from vertices.Count at emit time, so the
         // legacy "subtract faceCorrection to bring indices into [0..6)" step from the
@@ -62,7 +62,7 @@ public class LadderRenderer : BlockRenderer
                 break;
         }
 
-        var span = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var span = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = 0; i < span.Length; i++)
             span[i].Position += correction;
     }

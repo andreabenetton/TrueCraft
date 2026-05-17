@@ -103,7 +103,7 @@ public class VegitationRenderer : FlatQuadRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         if (descriptor.ID == RoseBlock.BlockID)
         {

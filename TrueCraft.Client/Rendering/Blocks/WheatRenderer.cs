@@ -37,7 +37,7 @@ public class WheatRenderer : BlockRenderer
 
     public override void RenderInto(BlockDescriptor descriptor, Vector3 offset, VisibleFaces faces,
         Tuple<int, int> textureMap,
-        List<VertexPositionNormalColorTexture> vertices, List<int> indices)
+        Buffer<VertexPositionNormalColorTexture> vertices, Buffer<int> indices)
     {
         // Wheat is rendered by rendering the four vertical faces of a cube, then moving
         // them towards the middle. A second set of four faces is rendered with reversed
@@ -58,7 +58,7 @@ public class WheatRenderer : BlockRenderer
             var faceStart = vertices.Count;
             var side = (CubeFace) _side;
             EmitQuadInto(side, center, texture, 0, Color.White, vertices, indices);
-            var span = CollectionsMarshal.AsSpan(vertices).Slice(faceStart);
+            var span = vertices.Array.AsSpan(faceStart, vertices.Count - faceStart);
             if (side == CubeFace.NegativeX || side == CubeFace.PositiveX)
                 for (var i = 0; i < span.Length; i++)
                 {
@@ -79,7 +79,7 @@ public class WheatRenderer : BlockRenderer
             var faceStart = vertices.Count;
             var side = (CubeFace) _side;
             EmitQuadInto(side, center, texture, 0, Color.White, vertices, indices);
-            var span = CollectionsMarshal.AsSpan(vertices).Slice(faceStart);
+            var span = vertices.Array.AsSpan(faceStart, vertices.Count - faceStart);
             if (side == CubeFace.NegativeX || side == CubeFace.PositiveX)
                 for (var i = 0; i < span.Length; i++)
                 {
@@ -97,7 +97,7 @@ public class WheatRenderer : BlockRenderer
         }
 
         // Final pass: subtract center and shift Y down by one texel.
-        var all = CollectionsMarshal.AsSpan(vertices).Slice(start);
+        var all = vertices.Array.AsSpan(start, vertices.Count - start);
         for (var i = 0; i < all.Length; i++)
         {
             all[i].Position.Y -= 1 / 16f;

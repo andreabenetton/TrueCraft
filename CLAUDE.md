@@ -51,3 +51,21 @@ a logger in `TrueCraft.Core` classes that are constructed by unit tests
 without bootstrapping a container), accept it as a nullable constructor
 parameter with `NullLogger<T>.Instance` (or equivalent) as the fallback —
 not as a static lookup from `App.Services`.
+
+## Logging strategy
+
+Diagnostic logging is configuration, not code churn. When chasing a bug:
+
+1. Add `LogDebug` / `LogTrace` calls at the suspected hot spots.
+2. Reproduce, read the log, find the cause, fix it.
+3. **Leave the log calls in.** Suppress them via the Serilog `MinimumLevel`
+   override in the relevant settings file (e.g. `launchersettings.json`'s
+   `Serilog.MinimumLevel.Override`) — flip the source from `Debug` to
+   `Information` so the calls compile out at the filter level instead of
+   being deleted from the source.
+
+The calls cost essentially nothing when filtered out, and next time we
+chase a similar bug we don't have to rewrite the instrumentation — flip
+one config line back to `Debug` and the trace reappears. Deleting log
+calls is a destructive move; reach for it only when the message itself
+turns out to be wrong or misleading, never for "this is noisy by default".

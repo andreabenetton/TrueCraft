@@ -13,7 +13,7 @@
       "Override": {
         "Microsoft": "Information",
         "System": "Information",
-        "TrueCraft.Core.World": "Debug"
+        "TrueCraft.Core.World": "Information"
       }
     },
     "WriteTo": [

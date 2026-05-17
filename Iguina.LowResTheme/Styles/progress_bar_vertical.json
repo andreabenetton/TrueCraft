@@ -1,0 +1,15 @@
+{
+    "DefaultWidth": {"Value": 32, "Unit": "Pixels"},
+    "DefaultHeight": {"Value": 100, "Unit": "Percents"},
+    "Default": {
+        "FillTextureFramed": {
+            "TextureId": "Textures/progressbar_vertical.png",
+            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 14, "Height": 34},
+            "FrameWidth": {"X": 0, "Y": 11}
+        },
+        "Padding": {"Left": 0, "Right": 4, "Top": 19, "Bottom": 19}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    }
+}

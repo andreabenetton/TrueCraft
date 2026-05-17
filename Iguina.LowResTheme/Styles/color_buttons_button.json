@@ -1,0 +1,35 @@
+{
+    "InheritFrom": "button.json",
+    "Default": {
+        "BackgroundColorPadding": {"Left": 2, "Right": 2, "Top": 2, "Bottom": 2},
+        "TextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "TextOutlineColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "NoValueTextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "Padding": {"Left": 4, "Right": 4, "Top": 4, "Bottom": 4}
+    },
+    "Targeted": {
+        "TextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "TextOutlineColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "NoValueTextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0}
+    },
+    "Interacted": {
+        "TextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "TextOutlineColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "NoValueTextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0}
+    },
+    "Checked": {
+        "TextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "TextOutlineColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "NoValueTextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0}
+    },
+    "TargetedChecked": {
+        "TextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "TextOutlineColor": {"R": 0, "G": 0, "B": 0, "A": 0},
+        "NoValueTextFillColor": {"R": 0, "G": 0, "B": 0, "A": 0}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {"Value": 32, "Unit": "Pixels"},
+    "DefaultHeight": {"Value": 24, "Unit": "Pixels"}
+}

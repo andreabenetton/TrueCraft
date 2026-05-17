@@ -1,0 +1,16 @@
+{
+    "Default": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/color_slider_horizontal.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 128, "Height": 8}
+        },
+        "Padding": {"Left": 6, "Right": 6, "Top": 0, "Bottom": 0},
+        "MarginBefore": {"X": 0, "Y": 8},
+        "MarginAfter": {"X": 0, "Y": 8}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {"Value": 100, "Unit": "Percents"},
+    "DefaultHeight": {"Value": 14, "Unit": "Pixels"}
+}

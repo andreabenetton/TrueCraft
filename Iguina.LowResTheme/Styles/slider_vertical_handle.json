@@ -1,0 +1,13 @@
+{
+    "Default": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/slider_default_mark_vertical.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 10, "Height": 5}
+        },
+        "DefaultWidth": {"Value": 20, "Unit": "Pixels"},
+        "DefaultHeight": {"Value": 12, "Unit": "Pixels"}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    }
+}

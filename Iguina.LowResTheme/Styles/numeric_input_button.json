@@ -1,0 +1,10 @@
+{
+    "InheritFrom": "button.json",
+    "Default": {
+        "Padding": {"Left": 0, "Right": 0, "Top": 0, "Bottom": 0},
+        "MarginBefore": {"X": 2, "Y": 0},
+        "MarginAfter": {"X": 2, "Y": 0}
+    },
+    "DefaultWidth": {"Value": 28, "Unit": "Pixels"},
+    "DefaultHeight": {"Value": 28, "Unit": "Pixels"}
+}

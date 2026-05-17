@@ -1,0 +1,15 @@
+{
+    "DefaultWidth": {"Value": 26, "Unit": "Pixels"},
+    "DefaultHeight": {"Value": 100, "Unit": "Percents"},
+    "DefaultAnchor": "BottomCenter",
+    "MinHeight": 8,
+    "Default": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/progressbar_fill_vertical.png",
+            "SourceRect": {"X": 0, "Y": 16, "Width": 14, "Height": 2}
+        }
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    }
+}

@@ -38,10 +38,15 @@
         "Labels": "Styles/paragraph.json",
         "Buttons": "Styles/button.json",
         "HorizontalLines": "Styles/horizontal_line.json",
+        "VerticalLines": "Styles/vertical_line.json",
         "CheckBoxes": "Styles/checkbox.json",
         "RadioButtons": "Styles/radio_button.json",
         "HorizontalSliders": "Styles/slider_horizontal.json",
         "HorizontalSlidersHandle": "Styles/slider_handle.json",
+        "VerticalSliders": "Styles/slider_vertical.json",
+        "VerticalSlidersHandle": "Styles/slider_vertical_handle.json",
+        "HorizontalColorSliders": "Styles/color_slider_horizontal.json",
+        "HorizontalColorSlidersHandle": "Styles/color_slider_horizontal_handle.json",
         "ListPanels": "Styles/list_panel.json",
         "ListItems": "Styles/list_item.json",
         "DropDownPanels": "Styles/list_panel.json",
@@ -50,9 +55,15 @@
         "VerticalScrollbars": "Styles/scrollbar_vertical.json",
         "VerticalScrollbarsHandle": "Styles/scrollbar_vertical_handle.json",
         "TextInput": "Styles/text_input.json",
+        "NumericTextInput": "Styles/numeric_input.json",
+        "NumericTextInputButton": "Styles/numeric_input_button.json",
         "HorizontalProgressBars": "Styles/progress_bar_horizontal.json",
         "HorizontalProgressBarsFill": "Styles/progress_bar_horizontal_fill.json",
+        "VerticalProgressBars": "Styles/progress_bar_vertical.json",
+        "VerticalProgressBarsFill": "Styles/progress_bar_vertical_fill.json",
         "ColorPickers": "Styles/color_picker.json",
-        "ColorPickersHandle": "Styles/color_picker_handle.json"
+        "ColorPickersHandle": "Styles/color_picker_handle.json",
+        "ColorButtonsPanel": "Styles/color_buttons_panel.json",
+        "ColorButtonsButton": "Styles/color_buttons_button.json"
     }
 }

@@ -55,11 +55,15 @@ CC0/CC-BY-licensed; the combined theme ships under MIT.
 
 Stylesheets included: panel, button (default + alternative + fancy),
 panel_simple, panel_fancy, panel_golden, panel_tabs_button, checkbox,
-radio_button, text_input, paragraph, title, horizontal_line, list_panel,
-list_item, dropdown_icon, slider_horizontal, slider_handle,
-scrollbar_vertical, scrollbar_vertical_handle, progress_bar_horizontal,
-progress_bar_horizontal_fill, message_box_backdrop, color_picker,
-color_picker_handle.
+radio_button, text_input, numeric_input, numeric_input_button,
+paragraph, title, horizontal_line, vertical_line, list_panel, list_item,
+dropdown_icon, slider_horizontal, slider_handle, slider_vertical,
+slider_vertical_handle, color_slider_horizontal,
+color_slider_horizontal_handle, scrollbar_vertical,
+scrollbar_vertical_handle, progress_bar_horizontal,
+progress_bar_horizontal_fill, progress_bar_vertical,
+progress_bar_vertical_fill, message_box_backdrop, color_picker,
+color_picker_handle, color_buttons_panel, color_buttons_button.
 
 Textures: top-level lowres widgets (38 PNGs) plus the `Icons/`
 subfolder (~50 item icons — Apple, Sword, Armor, etc.) for use with
@@ -68,8 +72,11 @@ the `Icon` / `Image` entities.
 Fonts: `Pixel_Regular.fnt` + `Pixel_Regular_0.png` (Pixel UniCode,
 bitmap-rasterized at 30px — the GeonBit lowres font, pixel-perfect).
 
-Not yet covered: vertical sliders, color sliders, color buttons,
-numeric input, vertical line. None of these had a counterpart in
-GeonBit.UI's LowRes theme — they're Iguina-only widgets. Add by
-creating a JSON under `Styles/` pointing at the corresponding
-`Textures/*.png`.
+All Iguina-supplied widget slots (per
+`Iguina/UISystem.cs::_DefaultStylesheets`) are now wired. The newer
+Iguina-only widgets (vertical sliders, vertical line, color slider,
+color buttons, numeric input, vertical progress bar) had no
+counterpart in GeonBit.UI's LowRes theme; their textures here are
+either generated (HSV gradient for the color picker / hue strip for
+the color slider) or built by rotating the matching horizontal
+LowRes texture 90° (sliders, progress bar, horizontal line).

@@ -1,0 +1,12 @@
+{
+    "Default": {
+        "Padding": {"Left": 0, "Right": 0, "Top": 0, "Bottom": 0},
+        "MarginBefore": {"X": 8, "Y": 8},
+        "MarginAfter": {"X": 8, "Y": 8}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {"Value": 100, "Unit": "Percents"},
+    "DefaultHeight": {"Value": 28, "Unit": "Pixels"}
+}

@@ -83,10 +83,16 @@ public class Mesh : IDisposable
     /// </summary>
     public void SetVertices(VertexPositionNormalColorTexture[] data, int count)
     {
-        _vertices?.Dispose();
-
+        // GraphicsResource disposal must happen on the GraphicsDevice's
+        // owning thread. SetVertices is called from worker threads in
+        // ChunkRenderer, so swap-and-dispose has to be marshalled
+        // through _game.Invoke too; doing _vertices.Dispose() here on
+        // the worker tears down GL objects off-thread and races with
+        // the main-thread render loop.
+        var old = _vertices;
         _game.Invoke(() =>
         {
+            old?.Dispose();
             _vertices = new VertexBuffer(_graphicsDevice, VertexPositionNormalColorTexture.VertexDeclaration,
                 count, BufferUsage.WriteOnly);
             _vertices.SetData(data, 0, count);
@@ -152,11 +158,15 @@ public class Mesh : IDisposable
 
         lock (SyncLock)
         {
-            if (_indices[index] is not null)
-                _indices[index].Dispose();
+            // As with SetVertices: GraphicsResource disposal must
+            // happen on the GraphicsDevice's thread. Marshal the
+            // dispose into the same Invoke that creates the
+            // replacement so off-thread GL teardown is avoided.
+            var old = _indices[index];
 
             _game.Invoke(() =>
             {
+                old?.Dispose();
                 _indices[index] = new IndexBuffer(_graphicsDevice, typeof(int),
                     count, BufferUsage.WriteOnly);
                 _indices[index].SetData(indices, 0, count);

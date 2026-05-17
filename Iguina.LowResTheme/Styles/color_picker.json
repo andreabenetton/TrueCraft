@@ -1,0 +1,18 @@
+{
+    "Default": {
+        "FillTextureStretched": {
+            "TextureId": "Textures/color_picker.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 64, "Height": 32}
+        },
+        "Padding": {"Left": 0, "Right": 0, "Top": 0, "Bottom": 0},
+        "MarginBefore": {"X": 8, "Y": 8},
+        "MarginAfter": {"X": 8, "Y": 8}
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {"Value": 100, "Unit": "Percents"},
+    "DefaultHeight": {"Value": 80, "Unit": "Pixels"},
+    "InterpolateStatesSpeed": 5,
+    "InterpolateOffsetsSpeed": 10
+}

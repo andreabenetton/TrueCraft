@@ -51,6 +51,8 @@
         "VerticalScrollbarsHandle": "Styles/scrollbar_vertical_handle.json",
         "TextInput": "Styles/text_input.json",
         "HorizontalProgressBars": "Styles/progress_bar_horizontal.json",
-        "HorizontalProgressBarsFill": "Styles/progress_bar_horizontal_fill.json"
+        "HorizontalProgressBarsFill": "Styles/progress_bar_horizontal_fill.json",
+        "ColorPickers": "Styles/color_picker.json",
+        "ColorPickersHandle": "Styles/color_picker_handle.json"
     }
 }

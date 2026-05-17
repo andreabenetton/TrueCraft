@@ -1,0 +1,15 @@
+{
+    "Default": {
+        "Icon": {
+            "TextureId": "Textures/color_picker_handle.png",
+            "SourceRect": {"X": 0, "Y": 0, "Width": 5, "Height": 5}
+        }
+    },
+    "Disabled": {
+        "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {"Value": 14, "Unit": "Pixels"},
+    "DefaultHeight": {"Value": 14, "Unit": "Pixels"},
+    "InterpolateStatesSpeed": 5,
+    "InterpolateOffsetsSpeed": 10
+}

@@ -58,7 +58,8 @@ panel_simple, panel_fancy, panel_golden, panel_tabs_button, checkbox,
 radio_button, text_input, paragraph, title, horizontal_line, list_panel,
 list_item, dropdown_icon, slider_horizontal, slider_handle,
 scrollbar_vertical, scrollbar_vertical_handle, progress_bar_horizontal,
-progress_bar_horizontal_fill, message_box_backdrop.
+progress_bar_horizontal_fill, message_box_backdrop, color_picker,
+color_picker_handle.
 
 Textures: top-level lowres widgets (38 PNGs) plus the `Icons/`
 subfolder (~50 item icons — Apple, Sword, Armor, etc.) for use with
@@ -67,5 +68,8 @@ the `Icon` / `Image` entities.
 Fonts: `Pixel_Regular.fnt` + `Pixel_Regular_0.png` (Pixel UniCode,
 bitmap-rasterized at 30px — the GeonBit lowres font, pixel-perfect).
 
-Not yet covered: vertical sliders, color picker. Add by creating a
-JSON under `Styles/` pointing at the corresponding `Textures/*.png`.
+Not yet covered: vertical sliders, color sliders, color buttons,
+numeric input, vertical line. None of these had a counterpart in
+GeonBit.UI's LowRes theme — they're Iguina-only widgets. Add by
+creating a JSON under `Styles/` pointing at the corresponding
+`Textures/*.png`.

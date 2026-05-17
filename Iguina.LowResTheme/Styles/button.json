@@ -1,6 +1,6 @@
 {
     "InheritFrom": "paragraph_base_style.json",
-    "MarginAfter": {"X": 0, "Y": 6},
+    "MarginAfter": {"X": 0, "Y": 8},
     "Default": {
         "FillTextureFramed": {
             "TextureId": "Textures/button_default.png",

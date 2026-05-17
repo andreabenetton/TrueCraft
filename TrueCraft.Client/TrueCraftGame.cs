@@ -79,11 +79,9 @@ public class TrueCraftGame : Game
 
     private List<IInputModule> InputModules { get; set; }
     private List<IGraphicalModule> GraphicalModules { get; set; }
-    private SpriteBatch SpriteBatch { get; set; }
     private KeyboardHandler KeyboardComponent { get; }
     private MouseHandler MouseComponent { get; }
     private GamePadHandler GamePadComponent { get; }
-    private RenderTarget2D RenderTarget { get; set; }
     private int ThreadID { get; set; }
 
     private FontRenderer Pixel { get; set; }
@@ -113,7 +111,6 @@ public class TrueCraftGame : Game
             ScaleFactor = 1.5f;
         IconRenderer.PrepareEffects(this);
         UpdateCamera();
-        CreateRenderTarget();
     }
 
     protected override void Initialize()
@@ -177,8 +174,6 @@ public class TrueCraftGame : Game
         GamePadComponent.ButtonDown += OnGamePadButtonDown;
         GamePadComponent.ButtonUp += OnGamePadButtonUp;
 
-        CreateRenderTarget();
-        SpriteBatch = new SpriteBatch(GraphicsDevice);
         ThreadID = Thread.CurrentThread.ManagedThreadId;
     }
 
@@ -188,13 +183,6 @@ public class TrueCraftGame : Game
             action();
         else
             PendingMainThreadActions.Add(action);
-    }
-
-    private void CreateRenderTarget()
-    {
-        RenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width,
-            GraphicsDevice.Viewport.Height,
-            false, GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
     }
 
     private void HandleClientPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -287,10 +275,14 @@ public class TrueCraftGame : Game
         var path = Path.Combine(Paths.Screenshots, DateTime.Now.ToString("yyyy-MM-dd_H.mm.ss") + ".png");
         if (!Directory.Exists(Path.GetDirectoryName(path)))
             Directory.CreateDirectory(Path.GetDirectoryName(path));
+        var width = GraphicsDevice.PresentationParameters.BackBufferWidth;
+        var height = GraphicsDevice.PresentationParameters.BackBufferHeight;
+        var data = new Color[width * height];
+        GraphicsDevice.GetBackBufferData(data);
+        using var texture = new Texture2D(GraphicsDevice, width, height);
+        texture.SetData(data);
         using (var stream = File.OpenWrite(path))
-        {
-            RenderTarget.SaveAsPng(stream, RenderTarget.Width, RenderTarget.Height);
-        }
+            texture.SaveAsPng(stream, width, height);
 
         ChatModule.AddMessage("Screenshot saved to " + Path.GetFileName(path));
     }
@@ -348,7 +340,14 @@ public class TrueCraftGame : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.SetRenderTarget(RenderTarget);
+        // Previously rendered into a same-sized RenderTarget2D then blit to
+        // the backbuffer; the intermediate texture had no consumer so the
+        // blit was pure overhead. The RT was created with
+        // RenderTargetUsage.DiscardContents, which gave us a free per-frame
+        // clear. Render straight to the backbuffer and clear explicitly so
+        // the depth buffer doesn't carry over between frames.
+        GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer,
+            Color.Black, 1f, 0);
         GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
 
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
@@ -357,12 +356,6 @@ public class TrueCraftGame : Game
         Mesh.ResetStats();
         foreach (var module in GraphicalModules)
             module.Draw(gameTime);
-
-        GraphicsDevice.SetRenderTarget(null);
-
-        SpriteBatch.Begin();
-        SpriteBatch.Draw(RenderTarget, Vector2.Zero, Color.White);
-        SpriteBatch.End();
 
         base.Draw(gameTime);
     }

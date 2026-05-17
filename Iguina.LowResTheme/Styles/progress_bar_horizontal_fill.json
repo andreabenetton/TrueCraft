@@ -2,7 +2,7 @@
     "Default": {
         "FillTextureStretched": {
             "TextureId": "Textures/progressbar_fill.png",
-            "SourceRect": {"X": 11, "Y": 0, "Width": 12, "Height": 14}
+            "SourceRect": {"X": 16, "Y": 0, "Width": 2, "Height": 14}
         }
     },
     "Disabled": {

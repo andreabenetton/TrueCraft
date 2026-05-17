@@ -46,11 +46,23 @@ public class ChunkRenderer : Renderer<ReadOnlyChunk>
     private TrueCraftGame Game { get; }
     private IBlockRepository BlockRepository { get; }
 
+    // One RenderState per worker thread. ProcessChunk Clear()s the
+    // internal lists / dictionary at entry, so the already-grown
+    // backing arrays survive across calls and the GC sees no churn
+    // from chunk-render bookkeeping. Renderer<T> workers run their
+    // queue serially, so a single per-thread instance is sufficient.
+    [ThreadStatic]
+    private static RenderState _threadRenderState;
+
     protected override bool TryRender(ReadOnlyChunk item, out Mesh result)
     {
-        var state = new RenderState();
+        var state = _threadRenderState ??= new RenderState();
         ProcessChunk(World, item, state);
 
+        // ToArray() snapshots the live portion of each list into a new
+        // array, so it's safe to keep mutating `state` after this point
+        // (next call to TryRender on the same worker thread will
+        // Clear() and reuse it). G8 will remove these ToArray copies.
         result = new ChunkMesh(item, Game, state.Verticies.ToArray(),
             state.OpaqueIndicies.ToArray(), state.TransparentIndicies.ToArray());
 

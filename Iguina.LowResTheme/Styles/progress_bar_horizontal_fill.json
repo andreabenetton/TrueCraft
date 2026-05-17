@@ -3,10 +3,12 @@
         "FillTextureStretched": {
             "TextureId": "Textures/progressbar_fill.png",
             "SourceRect": {"X": 16, "Y": 0, "Width": 2, "Height": 14}
-        }
+        },
+        "DefaultHeight": {"Value": 100, "Unit": "Percents"}
     },
     "Disabled": {
         "EffectIdentifier": "disabled"
     }
 }
+
 

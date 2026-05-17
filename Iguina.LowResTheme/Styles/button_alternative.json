@@ -8,7 +8,7 @@
         },
         "TextAlignment": "Center",
         "Padding": {"Left": 12, "Right": 12, "Top": 8, "Bottom": 8},
-        "DefaultWidth": {"Value": 100, "Unit": "Percents"}
+        "DefaultWidth": {"Value": 100, "Units": "PercentOfParent"}
     },
     "Targeted": {
         "FillTextureFramed": {

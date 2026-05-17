@@ -6,6 +6,6 @@
         }
     },
     "DefaultAnchor": "CenterRight",
-    "DefaultWidth": {"Value": 16, "Unit": "Pixels"},
-    "DefaultHeight": {"Value": 16, "Unit": "Pixels"}
+    "DefaultWidth": {"Value": 16, "Units": "Pixels"},
+    "DefaultHeight": {"Value": 16, "Units": "Pixels"}
 }

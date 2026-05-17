@@ -1,6 +1,6 @@
 {
-    "DefaultWidth": {"Value": 32, "Unit": "Pixels"},
-    "DefaultHeight": {"Value": 100, "Unit": "Percents"},
+    "DefaultWidth": {"Value": 32, "Units": "Pixels"},
+    "DefaultHeight": {"Value": 100, "Units": "PercentOfParent"},
     "Default": {
         "FillTextureFramed": {
             "TextureId": "Textures/progressbar_vertical.png",

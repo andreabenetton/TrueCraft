@@ -8,8 +8,8 @@
     "Disabled": {
         "EffectIdentifier": "disabled"
     },
-    "DefaultWidth": {"Value": 14, "Unit": "Pixels"},
-    "DefaultHeight": {"Value": 14, "Unit": "Pixels"},
+    "DefaultWidth": {"Value": 14, "Units": "Pixels"},
+    "DefaultHeight": {"Value": 14, "Units": "Pixels"},
     "InterpolateStatesSpeed": 5,
     "InterpolateOffsetsSpeed": 10
 }

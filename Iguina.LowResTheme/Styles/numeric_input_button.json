@@ -5,6 +5,6 @@
         "MarginBefore": {"X": 2, "Y": 0},
         "MarginAfter": {"X": 2, "Y": 0}
     },
-    "DefaultWidth": {"Value": 28, "Unit": "Pixels"},
-    "DefaultHeight": {"Value": 28, "Unit": "Pixels"}
+    "DefaultWidth": {"Value": 28, "Units": "Pixels"},
+    "DefaultHeight": {"Value": 28, "Units": "Pixels"}
 }

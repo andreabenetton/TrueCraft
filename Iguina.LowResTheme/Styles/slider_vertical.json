@@ -5,8 +5,8 @@
             "ExternalSourceRect": {"X": 3, "Y": 7, "Width": 2, "Height": 22},
             "FrameWidth": {"X": 0, "Y": 0}
         },
-        "DefaultWidth": {"Value": 12, "Unit": "Pixels"},
-        "DefaultHeight": {"Value": 100, "Unit": "Percents"}
+        "DefaultWidth": {"Value": 12, "Units": "Pixels"},
+        "DefaultHeight": {"Value": 100, "Units": "PercentOfParent"}
     },
     "Disabled": {
         "EffectIdentifier": "disabled"

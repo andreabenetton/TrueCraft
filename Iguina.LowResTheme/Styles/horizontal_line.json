@@ -4,7 +4,7 @@
             "TextureId": "Textures/horizontal_line.png",
             "SourceRect": {"X": 0, "Y": 0, "Width": 88, "Height": 4}
         },
-        "DefaultHeight": {"Value": 8, "Unit": "Pixels"},
+        "DefaultHeight": {"Value": 8, "Units": "Pixels"},
         "MarginBefore": {"X": 0, "Y": 4},
         "MarginAfter": {"X": 0, "Y": 4}
     }

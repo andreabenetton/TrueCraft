@@ -11,6 +11,6 @@
     "Disabled": {
         "EffectIdentifier": "disabled"
     },
-    "DefaultWidth": {"Value": 100, "Unit": "Percents"},
-    "DefaultHeight": {"Value": 14, "Unit": "Pixels"}
+    "DefaultWidth": {"Value": 100, "Units": "PercentOfParent"},
+    "DefaultHeight": {"Value": 14, "Units": "Pixels"}
 }

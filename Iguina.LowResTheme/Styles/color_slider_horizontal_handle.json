@@ -8,6 +8,6 @@
     "Disabled": {
         "EffectIdentifier": "disabled"
     },
-    "DefaultWidth": {"Value": 12, "Unit": "Pixels"},
-    "DefaultHeight": {"Value": 20, "Unit": "Pixels"}
+    "DefaultWidth": {"Value": 12, "Units": "Pixels"},
+    "DefaultHeight": {"Value": 20, "Units": "Pixels"}
 }

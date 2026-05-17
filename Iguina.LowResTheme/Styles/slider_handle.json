@@ -4,8 +4,8 @@
             "TextureId": "Textures/slider_default_mark.png",
             "SourceRect": {"X": 0, "Y": 0, "Width": 5, "Height": 10}
         },
-        "DefaultWidth": {"Value": 12, "Unit": "Pixels"},
-        "DefaultHeight": {"Value": 20, "Unit": "Pixels"}
+        "DefaultWidth": {"Value": 12, "Units": "Pixels"},
+        "DefaultHeight": {"Value": 20, "Units": "Pixels"}
     },
     "Disabled": {
         "EffectIdentifier": "disabled"

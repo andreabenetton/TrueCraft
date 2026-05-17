@@ -5,7 +5,7 @@
             "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 12, "Height": 48},
             "FrameWidth": {"X": 0, "Y": 14}
         },
-        "DefaultWidth": {"Value": 16, "Unit": "Pixels"}
+        "DefaultWidth": {"Value": 16, "Units": "Pixels"}
     },
     "Disabled": {
         "EffectIdentifier": "disabled"

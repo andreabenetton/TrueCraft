@@ -1,6 +1,6 @@
 {
-    "DefaultWidth": {"Value": 26, "Unit": "Pixels"},
-    "DefaultHeight": {"Value": 100, "Unit": "Percents"},
+    "DefaultWidth": {"Value": 26, "Units": "Pixels"},
+    "DefaultHeight": {"Value": 100, "Units": "PercentOfParent"},
     "DefaultAnchor": "BottomCenter",
     "MinHeight": 8,
     "Default": {

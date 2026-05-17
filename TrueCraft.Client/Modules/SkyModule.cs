@@ -23,8 +23,16 @@ public class SkyModule : IGraphicalModule
     public SkyModule(TrueCraftGame game)
     {
         Game = game;
-        CelestialPlaneEffect = new BasicEffect(Game.GraphicsDevice);
-        CelestialPlaneEffect.TextureEnabled = true;
+        // AlphaTestEffect (not BasicEffect) for the sun/moon plane: the
+        // texture has alpha=0 corners outside the visible disc; the
+        // alpha test discards those before they reach the blend stage,
+        // so the corners never write to the framebuffer regardless of
+        // which blend mode happens to be active.
+        CelestialPlaneEffect = new AlphaTestEffect(Game.GraphicsDevice)
+        {
+            AlphaFunction = CompareFunction.Greater,
+            ReferenceAlpha = 0
+        };
 
         SkyPlaneEffect = new BasicEffect(Game.GraphicsDevice);
         SkyPlaneEffect.VertexColorEnabled = false;
@@ -63,7 +71,7 @@ public class SkyModule : IGraphicalModule
 
     private TrueCraftGame Game { get; }
     private BasicEffect SkyPlaneEffect { get; }
-    private BasicEffect CelestialPlaneEffect { get; }
+    private AlphaTestEffect CelestialPlaneEffect { get; }
     private VertexBuffer SkyPlane { get; }
     private VertexBuffer CelestialPlane { get; }
 

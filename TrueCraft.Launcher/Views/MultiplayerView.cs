@@ -1,8 +1,8 @@
-using System.Diagnostics;
 using System.Linq;
 using Iguina.Defs;
 using Iguina.Entities;
 using TrueCraft.Core;
+using TrueCraft.Launcher.Sessions;
 
 namespace TrueCraft.Launcher.Views;
 
@@ -146,7 +146,18 @@ public sealed class MultiplayerView : ILauncherView
         var args = $"{ip} {_game.User.Username} {_game.User.SessionId}";
         try
         {
-            _game.StartClient(args).Start();
+            var process = _game.StartClient(args);
+            // Multiplayer sessions have no in-launcher server (server=null);
+            // worldPath is null so the registry's WorldPath dedupe doesn't
+            // fire — two clients to the same remote server are intentionally
+            // allowed.
+            var session = new GameSession(
+                label: $"Server: {ip}",
+                server: null,
+                client: process,
+                worldPath: null);
+            _game.Sessions.TryAdd(session, out _);
+            process.Start();
         }
         catch
         {

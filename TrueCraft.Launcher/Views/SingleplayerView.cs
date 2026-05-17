@@ -1,11 +1,11 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Iguina.Defs;
 using Iguina.Entities;
 using Microsoft.Extensions.DependencyInjection;
+using TrueCraft.Launcher.Sessions;
 using TrueCraft.Launcher.Singleplayer;
 
 namespace TrueCraft.Launcher.Views;
@@ -22,7 +22,6 @@ public sealed class SingleplayerView : ILauncherView
     private Paragraph _progressLabel;
     private Paragraph _errorLabel;
     private ProgressBar _progressBar;
-    private SingleplayerServer _server;
 
     public SingleplayerView(LauncherGame game)
     {
@@ -112,8 +111,22 @@ public sealed class SingleplayerView : ILauncherView
         var idx = _worldList.SelectedIndex;
         if (idx < 0) return;
 
-        _server = ActivatorUtilities.CreateInstance<SingleplayerServer>(
-            App.Services, Worlds.Local.Saves[idx]);
+        var world = Worlds.Local.Saves[idx];
+
+        // Refuse to spin up a second server for a world the registry already
+        // owns — two MultiplayerServers writing to the same world dir would
+        // corrupt the save.
+        if (_game.Sessions.TryFindByWorldPath(world.BaseDirectory, out _))
+        {
+            ShowError($"World '{world.Name}' is already running.");
+            return;
+        }
+
+        // SingleplayerServer is constructor-injected with a transient
+        // MultiplayerServer (see Program.cs), so each PlaySelectedWorld
+        // call gets a fresh server on its own random port.
+        var server = ActivatorUtilities.CreateInstance<SingleplayerServer>(
+            App.Services, world);
         SetInteractive(false);
         ShowError(null);
         _progressBar.Visible = true;
@@ -123,15 +136,15 @@ public sealed class SingleplayerView : ILauncherView
         {
             try
             {
-                _server.Initialize((value, stage) =>
+                server.Initialize((value, stage) =>
                     _game.Invoke(() =>
                     {
                         _progressLabel.Text = stage;
                         _progressBar.Value = Math.Clamp((int)(value * 100), 0, 100);
                     }));
-                _server.Start();
+                server.Start();
 
-                _game.Invoke(LaunchClient);
+                _game.Invoke(() => RegisterAndLaunch(server, world));
             }
             catch (Exception ex)
             {
@@ -146,28 +159,36 @@ public sealed class SingleplayerView : ILauncherView
         });
     }
 
-    private void LaunchClient()
+    private void RegisterAndLaunch(SingleplayerServer server, TrueCraft.Core.World.World world)
     {
-        var endpoint = _server.Server.EndPoint;
+        var endpoint = server.Server.EndPoint;
         var args = $"{endpoint} {_game.User.Username} {_game.User.SessionId}";
         var process = _game.StartClient(args);
-        process.Exited += (_, _) => _game.Invoke(OnClientExited);
-        process.Start();
-    }
+        var session = new GameSession(
+            label: $"World: {world.Name}",
+            server: server,
+            client: process,
+            worldPath: world.BaseDirectory);
 
-    private void OnClientExited()
-    {
+        if (!_game.Sessions.TryAdd(session, out var error))
+        {
+            // Race: another view added the same world in between our
+            // TryFindByWorldPath check and now. Roll back the server.
+            try { server.Stop(); } catch { }
+            ShowError(error);
+            _progressBar.Visible = false;
+            _progressLabel.Visible = false;
+            SetInteractive(true);
+            return;
+        }
+
+        process.Start();
+
+        // Server is up, client is launched, session is in the registry —
+        // the launcher UI is free again. The session continues to live
+        // independently; ActiveGamesView exposes per-session controls.
         _progressBar.Visible = false;
         _progressLabel.Visible = false;
-        try
-        {
-            _server.Stop();
-            _server.World.Save();
-        }
-        catch
-        {
-            // Save best-effort.
-        }
         SetInteractive(true);
     }
 

@@ -13,10 +13,12 @@ namespace TrueCraft.Launcher.Singleplayer;
 public class Worlds
 {
     private readonly ILogger<Worlds> Log;
+    private readonly ILoggerFactory _loggerFactory;
 
-    public Worlds(ILogger<Worlds> log)
+    public Worlds(ILogger<Worlds> log, ILoggerFactory loggerFactory)
     {
         Log = log;
+        _loggerFactory = loggerFactory;
     }
 
     public static Worlds Local { get; set; }
@@ -35,7 +37,7 @@ public class Worlds
         foreach (var d in directories)
             try
             {
-                var w = World.LoadWorld(d);
+                var w = World.LoadWorld(d, _loggerFactory);
                 saves.Add(w);
             }
             catch (Exception e)
@@ -51,7 +53,7 @@ public class Worlds
         if (!int.TryParse(seed, out var s))
             // TODO: Hash seed string
             s = MathHelper.Random.Next();
-        var world = new World(name, s, new StandardGenerator());
+        var world = new World(name, s, new StandardGenerator(), _loggerFactory);
         world.BlockRepository = BlockRepository;
         var safeName = name;
         foreach (var c in Path.GetInvalidFileNameChars())

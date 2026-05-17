@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using TrueCraft.API;
 using TrueCraft.API.Logic;
 using TrueCraft.API.World;
@@ -15,6 +17,14 @@ namespace TrueCraft.Core.World;
 
 public class World : IDisposable, IWorld, IEnumerable<IChunk>
 {
+    /// <summary>
+    /// Logger for this World instance and the factory used to create per-Region
+    /// loggers. Both are constructor-injected. Tests that don't bootstrap a
+    /// container construct World with no arguments and get NullLoggers.
+    /// </summary>
+    private readonly ILogger<World> _log;
+    private readonly ILoggerFactory _loggerFactory;
+
     public static readonly int Height = 128;
     private int _Seed;
     private Coordinates3D? _SpawnPoint;
@@ -22,25 +32,27 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
     private readonly Dictionary<Thread, IChunk> ChunkCache = new Dictionary<Thread, IChunk>();
     private readonly object ChunkCacheLock = new object();
 
-    public World()
+    public World(ILoggerFactory loggerFactory = null)
     {
+        _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+        _log = _loggerFactory.CreateLogger<World>();
         Regions = new Dictionary<Coordinates2D, IRegion>();
         BaseTime = DateTime.UtcNow;
     }
 
-    public World(string name) : this()
+    public World(string name, ILoggerFactory loggerFactory = null) : this(loggerFactory)
     {
         Name = name;
         Seed = MathHelper.Random.Next();
     }
 
-    public World(string name, IChunkProvider chunkProvider) : this(name)
+    public World(string name, IChunkProvider chunkProvider, ILoggerFactory loggerFactory = null) : this(name, loggerFactory)
     {
         ChunkProvider = chunkProvider;
         ChunkProvider.Initialize(this);
     }
 
-    public World(string name, int seed, IChunkProvider chunkProvider) : this(name, chunkProvider)
+    public World(string name, int seed, IChunkProvider chunkProvider, ILoggerFactory loggerFactory = null) : this(name, chunkProvider, loggerFactory)
     {
         Seed = seed;
     }
@@ -106,14 +118,21 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
 
     public IChunk GetChunk(Coordinates2D coordinates, bool generate = true)
     {
+        _log.LogDebug("World.GetChunk({Chunk}) start", coordinates);
         var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
         var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
 
         var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ), generate);
         if (region is null)
+        {
+            _log.LogDebug("World.GetChunk({Chunk}) -> null region", coordinates);
             return null;
-        return region.GetChunk(new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32),
-            generate);
+        }
+        var local = new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32);
+        _log.LogDebug("World.GetChunk({Chunk}) -> region.GetChunk({Local})", coordinates, local);
+        var chunk = region.GetChunk(local, generate);
+        _log.LogDebug("World.GetChunk({Chunk}) done", coordinates);
+        return chunk;
     }
 
     public byte GetBlockID(Coordinates3D coordinates)
@@ -370,12 +389,12 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
         return GetEnumerator();
     }
 
-    public static World LoadWorld(string baseDirectory)
+    public static World LoadWorld(string baseDirectory, ILoggerFactory loggerFactory = null)
     {
         if (!Directory.Exists(baseDirectory))
             throw new DirectoryNotFoundException();
 
-        var world = new World(Path.GetFileName(baseDirectory));
+        var world = new World(Path.GetFileName(baseDirectory), loggerFactory);
         world.BaseDirectory = baseDirectory;
 
         if (File.Exists(Path.Combine(baseDirectory, "manifest.nbt")))
@@ -398,12 +417,12 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
 
 
     public static async Task<World> LoadWorldAsync(string baseDirectory,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, ILoggerFactory loggerFactory = null)
     {
         if (!Directory.Exists(baseDirectory))
             throw new DirectoryNotFoundException();
 
-        var world = new World(Path.GetFileName(baseDirectory));
+        var world = new World(Path.GetFileName(baseDirectory), loggerFactory);
         world.BaseDirectory = baseDirectory;
 
         var manifestPath = Path.Combine(baseDirectory, "manifest.nbt");
@@ -484,22 +503,32 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
 
     private Region LoadOrGenerateRegion(Coordinates2D coordinates, bool generate = true)
     {
+        _log.LogDebug("LoadOrGenerateRegion({Region}) start, cached={Cached}", coordinates, Regions.ContainsKey(coordinates));
         if (Regions.ContainsKey(coordinates))
             return (Region) Regions[coordinates];
         if (!generate)
             return null;
+        var regionLog = _loggerFactory.CreateLogger<Region>();
         Region region;
         if (BaseDirectory is not null)
         {
             var file = Path.Combine(BaseDirectory, Region.GetRegionFileName(coordinates));
-            if (File.Exists(file))
-                region = new Region(coordinates, this, file);
+            var exists = File.Exists(file);
+            _log.LogDebug("LoadOrGenerateRegion({Region}) file={File} exists={Exists}", coordinates, file, exists);
+            if (exists)
+            {
+                _log.LogDebug("LoadOrGenerateRegion({Region}) opening existing region file", coordinates);
+                region = new Region(coordinates, this, file, regionLog);
+                _log.LogDebug("LoadOrGenerateRegion({Region}) region opened", coordinates);
+            }
             else
-                region = new Region(coordinates, this);
+            {
+                region = new Region(coordinates, this, regionLog);
+            }
         }
         else
         {
-            region = new Region(coordinates, this);
+            region = new Region(coordinates, this, regionLog);
         }
 
         lock (Regions)
@@ -507,6 +536,7 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
             Regions[coordinates] = region;
         }
 
+        _log.LogDebug("LoadOrGenerateRegion({Region}) done", coordinates);
         return region;
     }
 

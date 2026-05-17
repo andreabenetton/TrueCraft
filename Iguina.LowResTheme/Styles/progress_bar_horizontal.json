@@ -7,7 +7,7 @@
             "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 34, "Height": 14},
             "FrameWidth": {"X": 11, "Y": 0}
         },
-        "Padding": {"Left": 14, "Right": 14, "Top": 0, "Bottom": 0}
+        "Padding": {"Left": 17, "Right": 14, "Top": 0, "Bottom": 5}
     },
     "Disabled": {
         "EffectIdentifier": "disabled"

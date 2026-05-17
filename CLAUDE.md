@@ -35,3 +35,19 @@ Do not bundle "while I'm here" cleanups into a fix commit. If a stale comment
 or unrelated drift is discovered mid-fix, either: (a) note it explicitly and
 defer it; or (b) handle it as its own follow-up commit after the in-scope fix
 is committed.
+
+## Dependency injection
+
+Get every dependency through the constructor. The DI container does this for
+you when types are resolved via `ActivatorUtilities.CreateInstance` or via
+`services.GetRequiredService<T>`. Inside a type's body, do not reach into the
+global service provider (`App.Services.GetService<T>()` / `App.LoggerFor<T>()`
+into a static field) to fetch dependencies — that's the service-locator
+anti-pattern: hidden coupling, broken testability, surprising order-of-init
+bugs when the static field initializer runs before the container is built.
+
+If a dependency is genuinely optional and most callers don't have one (e.g.
+a logger in `TrueCraft.Core` classes that are constructed by unit tests
+without bootstrapping a container), accept it as a nullable constructor
+parameter with `NullLogger<T>.Instance` (or equivalent) as the fallback —
+not as a static lookup from `App.Services`.

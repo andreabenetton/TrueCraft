@@ -12,8 +12,7 @@
       "Default": "Debug",
       "Override": {
         "Microsoft": "Information",
-        "System": "Information",
-        "TrueCraft.Core.World": "Debug"
+        "System": "Information"
       }
     },
     "WriteTo": [

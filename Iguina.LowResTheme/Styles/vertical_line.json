@@ -2,11 +2,28 @@
     "Default": {
         "FillTextureStretched": {
             "TextureId": "Textures/vertical_line.png",
-            "SourceRect": {"X": 0, "Y": 0, "Width": 4, "Height": 88}
+            "SourceRect": {
+                "X": 0,
+                "Y": 0,
+                "Width": 4,
+                "Height": 88
+            }
         },
-        "DefaultWidth": {"Value": 8, "Units": "Pixels"},
-        "DefaultHeight": {"Value": 100, "Units": "PercentOfParent"},
-        "MarginBefore": {"X": 4, "Y": 0},
-        "MarginAfter": {"X": 4, "Y": 0}
+        "MarginBefore": {
+            "X": 4,
+            "Y": 0
+        },
+        "MarginAfter": {
+            "X": 4,
+            "Y": 0
+        }
+    },
+    "DefaultWidth": {
+        "Value": 8,
+        "Units": "Pixels"
+    },
+    "DefaultHeight": {
+        "Value": 100,
+        "Units": "PercentOfParent"
     }
 }

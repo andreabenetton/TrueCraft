@@ -2,12 +2,23 @@
     "Default": {
         "FillTextureFramed": {
             "TextureId": "Textures/scrollbar.png",
-            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 12, "Height": 48},
-            "FrameWidth": {"X": 0, "Y": 14}
-        },
-        "DefaultWidth": {"Value": 16, "Units": "Pixels"}
+            "ExternalSourceRect": {
+                "X": 0,
+                "Y": 0,
+                "Width": 12,
+                "Height": 48
+            },
+            "FrameWidth": {
+                "X": 0,
+                "Y": 14
+            }
+        }
     },
     "Disabled": {
         "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {
+        "Value": 16,
+        "Units": "Pixels"
     }
 }

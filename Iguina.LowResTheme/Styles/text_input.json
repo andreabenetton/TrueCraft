@@ -3,23 +3,50 @@
     "Default": {
         "FillTextureFramed": {
             "TextureId": "Textures/panel_listbackground.png",
-            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 32, "Height": 32},
-            "FrameWidth": {"X": 6, "Y": 6}
+            "ExternalSourceRect": {
+                "X": 0,
+                "Y": 0,
+                "Width": 32,
+                "Height": 32
+            },
+            "FrameWidth": {
+                "X": 6,
+                "Y": 6
+            }
         },
         "TextAlignment": "Left",
-        "Padding": {"Left": 8, "Right": 8, "Top": 4, "Bottom": 4},
-        "DefaultWidth": {"Value": 100, "Units": "PercentOfParent"},
-        "DefaultHeight": {"Value": 36, "Units": "Pixels"}
+        "Padding": {
+            "Left": 8,
+            "Right": 8,
+            "Top": 4,
+            "Bottom": 4
+        }
     },
     "Targeted": {
         "FillTextureFramed": {
             "TextureId": "Textures/panel_listbackground.png",
-            "ExternalSourceRect": {"X": 0, "Y": 0, "Width": 32, "Height": 32},
-            "FrameWidth": {"X": 6, "Y": 6}
+            "ExternalSourceRect": {
+                "X": 0,
+                "Y": 0,
+                "Width": 32,
+                "Height": 32
+            },
+            "FrameWidth": {
+                "X": 6,
+                "Y": 6
+            }
         }
     },
     "Disabled": {
         "EffectIdentifier": "disabled"
     },
-    "InterpolateStatesSpeed": 5
+    "InterpolateStatesSpeed": 5,
+    "DefaultWidth": {
+        "Value": 100,
+        "Units": "PercentOfParent"
+    },
+    "DefaultHeight": {
+        "Value": 36,
+        "Units": "Pixels"
+    }
 }

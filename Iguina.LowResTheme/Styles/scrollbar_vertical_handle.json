@@ -2,12 +2,23 @@
     "Default": {
         "FillTextureStretched": {
             "TextureId": "Textures/scrollbar_mark.png",
-            "SourceRect": {"X": 0, "Y": 0, "Width": 10, "Height": 10}
-        },
-        "DefaultWidth": {"Value": 16, "Units": "Pixels"},
-        "DefaultHeight": {"Value": 16, "Units": "Pixels"}
+            "SourceRect": {
+                "X": 0,
+                "Y": 0,
+                "Width": 10,
+                "Height": 10
+            }
+        }
     },
     "Disabled": {
         "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {
+        "Value": 16,
+        "Units": "Pixels"
+    },
+    "DefaultHeight": {
+        "Value": 16,
+        "Units": "Pixels"
     }
 }

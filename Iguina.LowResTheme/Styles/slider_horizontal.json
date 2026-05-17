@@ -2,13 +2,27 @@
     "Default": {
         "FillTextureFramed": {
             "TextureId": "Textures/slider_default.png",
-            "ExternalSourceRect": {"X": 7, "Y": 3, "Width": 22, "Height": 2},
-            "FrameWidth": {"X": 0, "Y": 0}
-        },
-        "DefaultHeight": {"Value": 12, "Units": "Pixels"},
-        "DefaultWidth": {"Value": 100, "Units": "PercentOfParent"}
+            "ExternalSourceRect": {
+                "X": 7,
+                "Y": 3,
+                "Width": 22,
+                "Height": 2
+            },
+            "FrameWidth": {
+                "X": 0,
+                "Y": 0
+            }
+        }
     },
     "Disabled": {
         "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {
+        "Value": 100,
+        "Units": "PercentOfParent"
+    },
+    "DefaultHeight": {
+        "Value": 12,
+        "Units": "Pixels"
     }
 }

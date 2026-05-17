@@ -2,12 +2,23 @@
     "Default": {
         "FillTextureStretched": {
             "TextureId": "Textures/slider_default_mark_vertical.png",
-            "SourceRect": {"X": 0, "Y": 0, "Width": 10, "Height": 5}
-        },
-        "DefaultWidth": {"Value": 20, "Units": "Pixels"},
-        "DefaultHeight": {"Value": 12, "Units": "Pixels"}
+            "SourceRect": {
+                "X": 0,
+                "Y": 0,
+                "Width": 10,
+                "Height": 5
+            }
+        }
     },
     "Disabled": {
         "EffectIdentifier": "disabled"
+    },
+    "DefaultWidth": {
+        "Value": 20,
+        "Units": "Pixels"
+    },
+    "DefaultHeight": {
+        "Value": 12,
+        "Units": "Pixels"
     }
 }

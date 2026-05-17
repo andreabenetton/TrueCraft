@@ -39,6 +39,12 @@ public static class Program
                 opts.Singleplayer = true;
                 opts.Query = false;
                 opts.MOTD = null;
+                // The TrueCraft.Client process does its own lighting; the
+                // embedded server doesn't need to. Disabling avoids the
+                // ChunkLoaded → WorldLighting.GenerateHeightMap cascade that
+                // re-enters World.GetChunk for every neighbour block during
+                // the second-launch chunk-load loop.
+                opts.EnableLighting = false;
             })
             .ValidateDataAnnotations();
         services.AddOptions<DebugOptions>().ValidateDataAnnotations();

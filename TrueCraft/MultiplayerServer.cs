@@ -200,8 +200,17 @@ public class MultiplayerServer : IMultiplayerServer, IDisposable
         world.BlockChanged += HandleBlockChanged;
         var manager = new EntityManager(this, world);
         EntityManagers.Add(manager);
-        var lighter = new WorldLighting(world, BlockRepository, Profiler);
-        WorldLighters.Add(lighter);
+        // Construct WorldLighting only when lighting is enabled. The constructor
+        // subscribes to ChunkLoaded / ChunkGenerated and walks every block of the
+        // chunk to build the height map — under EnableLighting=false (e.g. the
+        // launcher's single-player server, which delegates lighting to the
+        // client) that cascade triggers neighbour chunk loads and blows up the
+        // load loop with hundreds of thousands of GetChunk calls per chunk.
+        if (_node.EnableLighting)
+        {
+            var lighter = new WorldLighting(world, BlockRepository, Profiler);
+            WorldLighters.Add(lighter);
+        }
         foreach (var chunk in world)
             HandleChunkLoaded(world, new ChunkLoadedEventArgs(chunk));
     }

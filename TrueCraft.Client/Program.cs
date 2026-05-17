@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
 using TrueCraft.Client.Handlers;
 using TrueCraft.Core;
+using TrueCraft.Core.Profiling;
 
 namespace TrueCraft.Client;
 
@@ -18,6 +19,10 @@ public static class Program
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<PacketHandlers>();
+        // WorldLighting (resolved by ChunkModule via ActivatorUtilities) takes a
+        // Profiler from DI; register it here so the client doesn't fall back to
+        // the empty fallback container.
+        services.AddSingleton<Profiler>();
         App.Services = services.BuildServiceProvider();
 
         UserSettings.Local = UserSettings.Load();

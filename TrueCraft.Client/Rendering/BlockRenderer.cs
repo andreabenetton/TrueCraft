@@ -117,6 +117,11 @@ public class BlockRenderer
     }
 
     /// <summary>
+    ///     Tile size in atlas-normalised UV space (16 px tile / 256 px atlas).
+    /// </summary>
+    protected const float AtlasTileStride = 16f / 256f;
+
+    /// <summary>
     ///     Appends this block's geometry into <paramref name="vertices"/> and
     ///     <paramref name="indices"/>. The default implementation emits a uniform
     ///     cube using the provider's single texture-map coordinate.
@@ -125,22 +130,13 @@ public class BlockRenderer
         Tuple<int, int> textureMap,
         List<VertexPositionNormalColorTexture> vertices, List<int> indices)
     {
-        var texCoords = new Vector2(textureMap.Item1, textureMap.Item2);
-        var texture = new[]
-        {
-            texCoords + Vector2.UnitX + Vector2.UnitY,
-            texCoords + Vector2.UnitY,
-            texCoords,
-            texCoords + Vector2.UnitX
-        };
-        for (var i = 0; i < texture.Length; i++)
-            texture[i] *= new Vector2(16f / 256f);
+        var baseUV = new Vector2(textureMap.Item1 * AtlasTileStride, textureMap.Item2 * AtlasTileStride);
 
         Span<int> lighting = stackalloc int[6];
         for (var i = 0; i < 6; i++)
             lighting[i] = GetLight(descriptor.Chunk, descriptor.Coordinates + FaceCoords[i]);
 
-        CreateUniformCubeInto(offset, texture, faces, Color.White, lighting, vertices, indices);
+        CreateUniformCubeInto(offset, baseUV, AtlasTileStride, faces, Color.White, lighting, vertices, indices);
     }
 
     // ----- Legacy array-returning wrappers (cold path; used by IconRenderer) -----
@@ -200,7 +196,11 @@ public class BlockRenderer
     /// <summary>
     ///     Appends a uniform cube into <paramref name="vertexDest"/> /
     ///     <paramref name="indexDest"/>. Walks the 6 cube faces, calling
-    ///     <see cref="EmitQuadInto"/> for each visible one.
+    ///     <see cref="EmitQuadInto(CubeFace, Vector3, Vector2[], int, Color, List{VertexPositionNormalColorTexture}, List{int})"/>
+    ///     for each visible one. Per-face texture coordinates are taken from
+    ///     <paramref name="texture"/>, which lays out 4 corners per face × 6
+    ///     faces — used by renderers that need distinct textures per face
+    ///     (logs, slabs, grass, …).
     /// </summary>
     protected static void CreateUniformCubeInto(Vector3 offset, Vector2[] texture, VisibleFaces faces,
         Color color, ReadOnlySpan<int> lighting,
@@ -228,6 +228,31 @@ public class BlockRenderer
     }
 
     /// <summary>
+    ///     Uniform-cube overload that takes a single UV origin + tile stride
+    ///     instead of a per-face Vector2[]. All six faces use the same UV
+    ///     rectangle. Caller does not need to allocate any per-block array.
+    /// </summary>
+    protected static void CreateUniformCubeInto(Vector3 offset, Vector2 baseUV, float stride,
+        VisibleFaces faces, Color color, ReadOnlySpan<int> lighting,
+        List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+    {
+        faces = VisibleFaces.All;
+        if (lighting.IsEmpty)
+            lighting = DefaultLighting;
+
+        for (var _side = 0; _side < 6; _side++)
+        {
+            if ((faces & VisibleForCubeFace[_side]) == 0)
+                continue;
+
+            var lightColor = LightColor.ToVector3() * CubeBrightness[lighting[_side]];
+            var side = (CubeFace) _side;
+            EmitQuadInto(side, offset, baseUV, stride,
+                new Color(lightColor * color.ToVector3()), vertexDest, indexDest);
+        }
+    }
+
+    /// <summary>
     ///     Appends one cube-face quad to the destination lists. Indices reference
     ///     vertices by absolute position in <paramref name="vertexDest"/> at append
     ///     time; no caller-provided index offset is needed.
@@ -250,6 +275,39 @@ public class BlockRenderer
             offset + unit[2], normal, faceColor, texture[textureOffset + 2]));
         vertexDest.Add(new VertexPositionNormalColorTexture(
             offset + unit[3], normal, faceColor, texture[textureOffset + 3]));
+
+        indexDest.Add(baseIdx + 0);
+        indexDest.Add(baseIdx + 1);
+        indexDest.Add(baseIdx + 3);
+        indexDest.Add(baseIdx + 1);
+        indexDest.Add(baseIdx + 2);
+        indexDest.Add(baseIdx + 3);
+    }
+
+    /// <summary>
+    ///     Per-face emitter for the uniform-cube path: same UV rectangle on
+    ///     every face, computed inline from a single origin + stride. Avoids
+    ///     the 4-element Vector2[] the array-based overload requires.
+    /// </summary>
+    protected static void EmitQuadInto(CubeFace face, Vector3 offset, Vector2 baseUV, float stride,
+        Color color,
+        List<VertexPositionNormalColorTexture> vertexDest, List<int> indexDest)
+    {
+        var faceIndex = (int) face;
+        var unit = CubeMesh[faceIndex];
+        var normal = CubeNormals[faceIndex];
+        var faceColor = new Color(FaceBrightness[faceIndex] * color.ToVector3());
+
+        var uv0 = new Vector2(baseUV.X + stride, baseUV.Y + stride);
+        var uv1 = new Vector2(baseUV.X,          baseUV.Y + stride);
+        var uv2 = baseUV;
+        var uv3 = new Vector2(baseUV.X + stride, baseUV.Y);
+
+        var baseIdx = vertexDest.Count;
+        vertexDest.Add(new VertexPositionNormalColorTexture(offset + unit[0], normal, faceColor, uv0));
+        vertexDest.Add(new VertexPositionNormalColorTexture(offset + unit[1], normal, faceColor, uv1));
+        vertexDest.Add(new VertexPositionNormalColorTexture(offset + unit[2], normal, faceColor, uv2));
+        vertexDest.Add(new VertexPositionNormalColorTexture(offset + unit[3], normal, faceColor, uv3));
 
         indexDest.Add(baseIdx + 0);
         indexDest.Add(baseIdx + 1);

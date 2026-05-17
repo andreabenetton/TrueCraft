@@ -64,12 +64,13 @@ public class BlockRendererAllocationTest
 
         var perCall = (after - before) / (double) Iterations;
 
-        // Target: essentially zero. The default renderer's RenderInto only allocates
-        // a 4-vector texture array (~32 bytes) which is the texture coordinates;
-        // everything else (lighting, indices, vertices) is stack/preallocated.
-        // 200-byte budget covers that with margin; older code path was ~1100/call,
-        // post-refactor lifted-into-list growth is ~0 once the list is pre-sized.
-        Assert.InRange(perCall, 0, 200.0);
+        // Target: 24 bytes/call — the Tuple<int,int> allocated by
+        // StoneBlock.GetTextureMap (a separate root cause; tracked
+        // for follow-up). The Vector2[4] UV array previously emitted
+        // by BlockRenderer.RenderInto is now gone, so this is the
+        // only remaining per-call allocation. 40-byte budget gives a
+        // small margin and still catches regressions in the UV path.
+        Assert.InRange(perCall, 0, 40.0);
     }
 
     /// <summary>

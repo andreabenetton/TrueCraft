@@ -83,6 +83,10 @@ public class ChunkModule : IGraphicalModule
     // Reused per-frame to avoid GC churn from rebuilding the visible-chunk list.
     private readonly List<ChunkMesh> _visibleChunks = new List<ChunkMesh>();
 
+    // Parallel list of per-chunk visible-section bitmasks (bit N == section N
+    // passes the frustum test). Indexed in lockstep with _visibleChunks.
+    private readonly List<uint> _visibleSectionMasks = new List<uint>();
+
     private BasicEffect OpaqueEffect { get; }
     private AlphaTestEffect TransparentEffect { get; }
 
@@ -123,28 +127,59 @@ public class ChunkModule : IGraphicalModule
                                                                               0.25f + Game.SkyModule
                                                                                   .BrightnessModifier);
 
-        // Classify visible chunks once, then run all three passes against the same list.
+        // Two-tier culling: chunk AABB first (fast reject of whole
+        // columns out-of-view), then per-section AABB (cull
+        // subterranean / above-skyline slabs of nearby chunks). The
+        // per-section masks are reused across the three render passes
+        // so the per-section frustum test runs only once per chunk.
         var frustum = Game.Camera.Frustum;
         _visibleChunks.Clear();
+        _visibleSectionMasks.Clear();
         foreach (var chunkMesh in ChunkMeshes)
-            if (frustum.Intersects(chunkMesh.BoundingBox))
-                _visibleChunks.Add(chunkMesh);
+        {
+            if (!frustum.Intersects(chunkMesh.BoundingBox))
+                continue;
+            uint mask = 0;
+            for (var s = 0; s < ChunkMesh.SectionsPerChunk; s++)
+                if (frustum.Intersects(chunkMesh.SectionBounds[s]))
+                    mask |= 1u << s;
+            if (mask == 0)
+                continue;
+            _visibleChunks.Add(chunkMesh);
+            _visibleSectionMasks.Add(mask);
+        }
 
         Game.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-        foreach (var chunkMesh in _visibleChunks)
+        for (var c = 0; c < _visibleChunks.Count; c++)
         {
-            chunkMesh.Draw(OpaqueEffect, 0);
-            if (!chunkMesh.IsReady || chunkMesh.Submeshes != 2)
+            var chunkMesh = _visibleChunks[c];
+            var mask = _visibleSectionMasks[c];
+            for (var s = 0; s < ChunkMesh.SectionsPerChunk; s++)
+                if ((mask & (1u << s)) != 0)
+                    chunkMesh.Draw(OpaqueEffect, ChunkMesh.OpaqueSubmesh(s));
+            if (!chunkMesh.IsReady || chunkMesh.Submeshes != ChunkMesh.SectionsPerChunk * 2)
                 Log.LogWarning("Rendered chunk that was not ready");
         }
 
         Game.GraphicsDevice.BlendState = ColorWriteDisable;
-        foreach (var chunkMesh in _visibleChunks)
-            chunkMesh.Draw(TransparentEffect, 1);
+        for (var c = 0; c < _visibleChunks.Count; c++)
+        {
+            var chunkMesh = _visibleChunks[c];
+            var mask = _visibleSectionMasks[c];
+            for (var s = 0; s < ChunkMesh.SectionsPerChunk; s++)
+                if ((mask & (1u << s)) != 0)
+                    chunkMesh.Draw(TransparentEffect, ChunkMesh.TransparentSubmesh(s));
+        }
 
         Game.GraphicsDevice.BlendState = BlendState.NonPremultiplied;
-        foreach (var chunkMesh in _visibleChunks)
-            chunkMesh.Draw(TransparentEffect, 1);
+        for (var c = 0; c < _visibleChunks.Count; c++)
+        {
+            var chunkMesh = _visibleChunks[c];
+            var mask = _visibleSectionMasks[c];
+            for (var s = 0; s < ChunkMesh.SectionsPerChunk; s++)
+                if ((mask & (1u << s)) != 0)
+                    chunkMesh.Draw(TransparentEffect, ChunkMesh.TransparentSubmesh(s));
+        }
 
         ChunksRendered = _visibleChunks.Count;
     }

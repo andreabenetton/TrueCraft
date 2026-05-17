@@ -65,12 +65,19 @@ public class ChunkRenderer : Renderer<ReadOnlyChunk>
         // disposed (when the chunk unloads). No per-chunk allocations
         // from this hand-off path.
         var (vertArr, vertCount) = state.Verticies.Detach();
-        var (opaqueArr, opaqueCount) = state.OpaqueIndicies.Detach();
-        var (transparentArr, transparentCount) = state.TransparentIndicies.Detach();
+        var opaqueArrs = new int[ChunkMesh.SectionsPerChunk][];
+        var opaqueCounts = new int[ChunkMesh.SectionsPerChunk];
+        var transparentArrs = new int[ChunkMesh.SectionsPerChunk][];
+        var transparentCounts = new int[ChunkMesh.SectionsPerChunk];
+        for (var s = 0; s < ChunkMesh.SectionsPerChunk; s++)
+        {
+            (opaqueArrs[s], opaqueCounts[s]) = state.OpaqueIndicesPerSection[s].Detach();
+            (transparentArrs[s], transparentCounts[s]) = state.TransparentIndicesPerSection[s].Detach();
+        }
         result = new ChunkMesh(item, Game,
             vertArr, vertCount,
-            opaqueArr, opaqueCount,
-            transparentArr, transparentCount);
+            opaqueArrs, opaqueCounts,
+            transparentArrs, transparentCounts);
 
         return result is not null;
     }
@@ -195,10 +202,7 @@ public class ChunkRenderer : Renderer<ReadOnlyChunk>
 
     private void ProcessChunk(ReadOnlyWorld world, ReadOnlyChunk chunk, RenderState state)
     {
-        state.Verticies.Clear();
-        state.OpaqueIndicies.Clear();
-        state.TransparentIndicies.Clear();
-        state.DrawableCoordinates.Clear();
+        state.Clear();
 
         for (byte x = 0; x < Chunk.Width; x++)
         for (byte z = 0; z < Chunk.Depth; z++)
@@ -239,9 +243,13 @@ public class ChunkRenderer : Renderer<ReadOnlyChunk>
                 Chunk = chunk.Chunk
             };
             var provider = BlockRepository.GetBlockProvider(descriptor.ID);
+            // Route this block's index data to the section it falls into
+            // so we can frustum-cull per section at draw time.
+            var sectionIdx = c.Y / ChunkMesh.SectionHeight;
+            if (sectionIdx >= ChunkMesh.SectionsPerChunk) sectionIdx = ChunkMesh.SectionsPerChunk - 1;
             var indexTarget = provider.RenderOpaque
-                ? state.OpaqueIndicies
-                : state.TransparentIndicies;
+                ? state.OpaqueIndicesPerSection[sectionIdx]
+                : state.TransparentIndicesPerSection[sectionIdx];
             BlockRenderer.RenderBlockInto(provider, descriptor, coords.Value,
                 new Vector3(chunk.X * Chunk.Width + c.X, c.Y, chunk.Z * Chunk.Depth + c.Z),
                 state.Verticies, indexTarget);
@@ -271,11 +279,38 @@ public class ChunkRenderer : Renderer<ReadOnlyChunk>
         public readonly Dictionary<Coordinates3D, VisibleFaces> DrawableCoordinates
             = new Dictionary<Coordinates3D, VisibleFaces>();
 
-        public readonly Buffer<int> OpaqueIndicies = new Buffer<int>(8192);
-        public readonly Buffer<int> TransparentIndicies = new Buffer<int>(2048);
+        // Per-section index buffers. A block at world-Y `y` routes into
+        // section `y / ChunkMesh.SectionHeight`. There's one Buffer<int>
+        // per section per opacity class, so the geometry can be drawn
+        // (and frustum-culled) per section.
+        public readonly Buffer<int>[] OpaqueIndicesPerSection;
+        public readonly Buffer<int>[] TransparentIndicesPerSection;
 
+        // Single shared vertex buffer — all sections index into it.
         public readonly Buffer<VertexPositionNormalColorTexture> Verticies
             = new Buffer<VertexPositionNormalColorTexture>(16384);
+
+        public RenderState()
+        {
+            OpaqueIndicesPerSection = new Buffer<int>[ChunkMesh.SectionsPerChunk];
+            TransparentIndicesPerSection = new Buffer<int>[ChunkMesh.SectionsPerChunk];
+            for (var s = 0; s < ChunkMesh.SectionsPerChunk; s++)
+            {
+                OpaqueIndicesPerSection[s] = new Buffer<int>(1024);
+                TransparentIndicesPerSection[s] = new Buffer<int>(256);
+            }
+        }
+
+        public void Clear()
+        {
+            DrawableCoordinates.Clear();
+            Verticies.Clear();
+            for (var s = 0; s < ChunkMesh.SectionsPerChunk; s++)
+            {
+                OpaqueIndicesPerSection[s].Clear();
+                TransparentIndicesPerSection[s].Clear();
+            }
+        }
     }
 }
 

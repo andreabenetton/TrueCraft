@@ -12,7 +12,7 @@ public class Mesh : IDisposable
     /// <summary>
     ///     The maximum number of submeshes stored in a single mesh.
     /// </summary>
-    public const int SubmeshLimit = 16;
+    public const int SubmeshLimit = 32;
 
     // Used for synchronous access to the graphics device.
     private static readonly object SyncLock =

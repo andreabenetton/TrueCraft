@@ -38,6 +38,9 @@ public class DebugInfoModule : InputModule, IGraphicalModule
     private string _highlightLine;
     private int _lastPendingChunks = int.MinValue;
     private string _pendingChunksLine;
+    private int _lastRebuilds = int.MinValue;
+    private long _lastVertexBytes = long.MinValue;
+    private string _meshLine;
 
     public void Draw(GameTime gameTime)
     {
@@ -81,6 +84,19 @@ public class DebugInfoModule : InputModule, IGraphicalModule
             _lastPendingChunks = pending;
         }
 
+        // Mesh.* counters were reset by TrueCraftGame.Draw at the top of
+        // this frame, then the chunk module's Draw incremented them.
+        // We sample them here (DebugInfoModule runs last) so the
+        // displayed numbers cover the just-rendered frame.
+        var rebuilds = Rendering.Mesh.MeshRebuilds;
+        var vertBytes = Rendering.Mesh.VertexBytesUploaded;
+        if (rebuilds != _lastRebuilds || vertBytes != _lastVertexBytes)
+        {
+            _meshLine = ChatColor.Gray + rebuilds + " mesh upload(s), " + (vertBytes / 1024) + " KB vtx";
+            _lastRebuilds = rebuilds;
+            _lastVertexBytes = vertBytes;
+        }
+
         const int xOrigin = 10;
         const int yOrigin = 5;
         const int yOffset = 25;
@@ -90,6 +106,7 @@ public class DebugInfoModule : InputModule, IGraphicalModule
         Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 1, _positionLine);
         Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 2, _highlightLine);
         Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 3, _pendingChunksLine);
+        Font.DrawText(SpriteBatch, xOrigin, yOrigin + yOffset * 4, _meshLine);
         SpriteBatch.End();
     }
 

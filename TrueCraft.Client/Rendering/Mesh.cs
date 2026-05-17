@@ -63,6 +63,15 @@ public class Mesh : IDisposable
     public static int VerticiesRendered { get; set; }
     public static int IndiciesRendered { get; set; }
 
+    /// <summary>Number of vertex/index upload operations this frame.</summary>
+    public static int MeshRebuilds { get; set; }
+
+    /// <summary>Bytes copied to GPU vertex buffers this frame.</summary>
+    public static long VertexBytesUploaded { get; set; }
+
+    /// <summary>Bytes copied to GPU index buffers this frame.</summary>
+    public static long IndexBytesUploaded { get; set; }
+
     /// <summary>
     ///     Gets or sets the vertices in this mesh. The full array is
     ///     uploaded to the GPU; for callers that maintain an oversize
@@ -97,6 +106,8 @@ public class Mesh : IDisposable
                 count, BufferUsage.WriteOnly);
             _vertices.SetData(data, 0, count);
             IsReady = true;
+            MeshRebuilds++;
+            VertexBytesUploaded += (long) count * VertexPositionNormalColorTexture.VertexDeclaration.VertexStride;
         });
 
         if (_recalculateBounds)
@@ -135,6 +146,9 @@ public class Mesh : IDisposable
     {
         VerticiesRendered = 0;
         IndiciesRendered = 0;
+        MeshRebuilds = 0;
+        VertexBytesUploaded = 0;
+        IndexBytesUploaded = 0;
     }
 
     /// <summary>
@@ -172,6 +186,7 @@ public class Mesh : IDisposable
                 _indices[index].SetData(indices, 0, count);
                 if (index + 1 > Submeshes)
                     Submeshes = index + 1;
+                IndexBytesUploaded += (long) count * sizeof(int);
             });
         }
     }

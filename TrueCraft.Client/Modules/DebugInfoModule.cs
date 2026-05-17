@@ -27,6 +27,8 @@ public class DebugInfoModule : InputModule, IGraphicalModule
     private SpriteBatch SpriteBatch { get; }
     private bool Enabled { get; set; }
 
+    private static readonly string[] BlockFaceNames = Enum.GetNames(typeof(BlockFace));
+
     private int _lastFps = int.MinValue;
     private string _fpsLine;
     private double _lastPosX = double.NaN, _lastPosY = double.NaN, _lastPosZ = double.NaN;
@@ -62,8 +64,12 @@ public class DebugInfoModule : InputModule, IGraphicalModule
         if (!Equals(highlightedBlock, _lastHighlightedBlock) ||
             Game.HighlightedBlockFace != _lastHighlightedFace)
         {
+            var faceIdx = (int) Game.HighlightedBlockFace;
+            var faceName = (uint) faceIdx < (uint) BlockFaceNames.Length
+                ? BlockFaceNames[faceIdx]
+                : faceIdx.ToString();
             _highlightLine = ChatColor.Gray + "Looking at " + Game.HighlightedBlock +
-                             " (" + Enum.GetName(typeof(BlockFace), Game.HighlightedBlockFace) + ")";
+                             " (" + faceName + ")";
             _lastHighlightedBlock = highlightedBlock;
             _lastHighlightedFace = Game.HighlightedBlockFace;
         }

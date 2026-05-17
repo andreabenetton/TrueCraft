@@ -33,6 +33,11 @@
     <ProjectReference Include="..\TrueCraft.Core\TrueCraft.Core.csproj" />
     <ProjectReference Include="..\TrueCraft.Nbt\TrueCraft.Nbt.csproj" />
     <ProjectReference Include="..\TrueCraft\TrueCraft.csproj" />
+    <!-- TrueCraft.Client is launched as a separate process by SingleplayerView /
+         MultiplayerView. Referenced here so MSBuild copies its .dll + transitive
+         dependencies next to the launcher binary; LauncherGame.StartClient resolves
+         the dll via AppContext.BaseDirectory and runs it via 'dotnet'. -->
+    <ProjectReference Include="..\TrueCraft.Client\TrueCraft.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>

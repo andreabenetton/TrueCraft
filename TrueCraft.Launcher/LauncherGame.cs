@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -78,6 +79,29 @@ public sealed class LauncherGame : Game
     ///     from <c>Task.Run</c> continuations to safely mutate UI state.
     /// </summary>
     public void Invoke(Action action) => _mainThreadActions.Enqueue(action);
+
+    /// <summary>
+    ///     Spawn the TrueCraft.Client game process for the given endpoint. The
+    ///     client DLL is copied into the launcher's bin directory by the project
+    ///     reference; we invoke it via <c>dotnet TrueCraft.Client.dll &lt;args&gt;</c>
+    ///     so the resolution works regardless of the launcher's cwd or whether the
+    ///     native apphost was emitted. Environment variables (including
+    ///     <c>LIBGL_ALWAYS_SOFTWARE</c> for Qubes AppVM GL fallback) inherit from
+    ///     the launcher process by default.
+    /// </summary>
+    public Process StartClient(string clientArgs)
+    {
+        var dllPath = Path.Combine(AppContext.BaseDirectory, "TrueCraft.Client.dll");
+        return new Process
+        {
+            StartInfo = new ProcessStartInfo("dotnet", $"\"{dllPath}\" {clientArgs}")
+            {
+                UseShellExecute = false,
+                WorkingDirectory = AppContext.BaseDirectory,
+            },
+            EnableRaisingEvents = true,
+        };
+    }
 
     public void ShowView(ILauncherView view)
     {

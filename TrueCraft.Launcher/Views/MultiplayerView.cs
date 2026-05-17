@@ -144,17 +144,9 @@ public sealed class MultiplayerView : ILauncherView
         UserSettings.Local.Save();
 
         var args = $"{ip} {_game.User.Username} {_game.User.SessionId}";
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo("TrueCraft.Client", args)
-            {
-                UseShellExecute = false,
-            },
-            EnableRaisingEvents = true,
-        };
         try
         {
-            process.Start();
+            _game.StartClient(args).Start();
         }
         catch
         {

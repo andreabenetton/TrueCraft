@@ -150,14 +150,7 @@ public sealed class SingleplayerView : ILauncherView
     {
         var endpoint = _server.Server.EndPoint;
         var args = $"{endpoint} {_game.User.Username} {_game.User.SessionId}";
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo("TrueCraft.Client", args)
-            {
-                UseShellExecute = false,
-            },
-            EnableRaisingEvents = true,
-        };
+        var process = _game.StartClient(args);
         process.Exited += (_, _) => _game.Invoke(OnClientExited);
         process.Start();
     }

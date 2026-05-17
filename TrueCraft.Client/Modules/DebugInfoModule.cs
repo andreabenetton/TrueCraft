@@ -15,9 +15,6 @@ public class DebugInfoModule : InputModule, IGraphicalModule
         Game = game;
         Font = font;
         SpriteBatch = new SpriteBatch(Game.GraphicsDevice);
-#if DEBUG
-        Enabled = true;
-#endif
     }
 
     public bool Chunks { get; set; }

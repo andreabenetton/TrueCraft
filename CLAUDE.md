@@ -64,8 +64,37 @@ Diagnostic logging is configuration, not code churn. When chasing a bug:
    `Information` so the calls compile out at the filter level instead of
    being deleted from the source.
 
-The calls cost essentially nothing when filtered out, and next time we
-chase a similar bug we don't have to rewrite the instrumentation — flip
-one config line back to `Debug` and the trace reappears. Deleting log
-calls is a destructive move; reach for it only when the message itself
-turns out to be wrong or misleading, never for "this is noisy by default".
+Deleting log calls is a destructive move; reach for it only when the
+message itself turns out to be wrong or misleading, never for "this is
+noisy by default".
+
+### Hot-path guards
+
+`ILogger.LogDebug(template, args...)` is **not** free when the level is
+disabled — `args` are still evaluated and boxed into an `object[]` even
+if the formatter never runs. In a hot path (called hundreds of thousands
+of times per frame: `World.GetChunk`, `Region.GetChunk`,
+`LoadOrGenerateRegion`, etc.) that allocation alone produces enough
+pressure to overrun Serilog's bounded `Async` sink queue and trigger
+"unable to enqueue" warnings.
+
+**Where guards belong:** methods that run inside a tight loop or get
+called from one (per-frame, per-chunk-access, per-block, etc.). At the
+top of such a method, cache `IsEnabled` once and short-circuit each
+call site:
+
+```csharp
+var debug = _log.IsEnabled(LogLevel.Debug);
+if (debug) _log.LogDebug("World.GetChunk({Chunk}) start", coordinates);
+// ... work ...
+if (debug) _log.LogDebug("World.GetChunk({Chunk}) done", coordinates);
+```
+
+**Where guards do NOT belong:** code paths that only run a handful of
+times per process — constructors, one-shot startup steps, error
+branches, file I/O at world-load time, etc. There the
+allocation cost is irrelevant and the guard is just noise. Plain
+`_log.LogDebug(...)` is fine.
+
+Rule of thumb: ask "could this method ever run >1000× per second?" If
+yes, guard. If no, don't.

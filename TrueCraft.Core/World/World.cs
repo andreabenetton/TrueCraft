@@ -118,20 +118,27 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
 
     public IChunk GetChunk(Coordinates2D coordinates, bool generate = true)
     {
-        _log.LogDebug("World.GetChunk({Chunk}) start", coordinates);
+        // Diagnostic instrumentation: kept behind explicit IsEnabled guards so the
+        // hot path (this method runs hundreds of thousands of times per chunk
+        // during simulation through cached lookups) is zero-cost when the
+        // 'TrueCraft.Core.World' Serilog source isn't at Debug. Flip the
+        // source's MinimumLevel in launchersettings.json to Debug to surface
+        // them when chasing a chunk-load bug.
+        var debug = _log.IsEnabled(LogLevel.Debug);
+        if (debug) _log.LogDebug("World.GetChunk({Chunk}) start", coordinates);
         var regionX = coordinates.X / Region.Width - (coordinates.X < 0 ? 1 : 0);
         var regionZ = coordinates.Z / Region.Depth - (coordinates.Z < 0 ? 1 : 0);
 
         var region = LoadOrGenerateRegion(new Coordinates2D(regionX, regionZ), generate);
         if (region is null)
         {
-            _log.LogDebug("World.GetChunk({Chunk}) -> null region", coordinates);
+            if (debug) _log.LogDebug("World.GetChunk({Chunk}) -> null region", coordinates);
             return null;
         }
         var local = new Coordinates2D(coordinates.X - regionX * 32, coordinates.Z - regionZ * 32);
-        _log.LogDebug("World.GetChunk({Chunk}) -> region.GetChunk({Local})", coordinates, local);
+        if (debug) _log.LogDebug("World.GetChunk({Chunk}) -> region.GetChunk({Local})", coordinates, local);
         var chunk = region.GetChunk(local, generate);
-        _log.LogDebug("World.GetChunk({Chunk}) done", coordinates);
+        if (debug) _log.LogDebug("World.GetChunk({Chunk}) done", coordinates);
         return chunk;
     }
 
@@ -503,7 +510,8 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
 
     private Region LoadOrGenerateRegion(Coordinates2D coordinates, bool generate = true)
     {
-        _log.LogDebug("LoadOrGenerateRegion({Region}) start, cached={Cached}", coordinates, Regions.ContainsKey(coordinates));
+        var debug = _log.IsEnabled(LogLevel.Debug);
+        if (debug) _log.LogDebug("LoadOrGenerateRegion({Region}) start, cached={Cached}", coordinates, Regions.ContainsKey(coordinates));
         if (Regions.ContainsKey(coordinates))
             return (Region) Regions[coordinates];
         if (!generate)
@@ -514,12 +522,12 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
         {
             var file = Path.Combine(BaseDirectory, Region.GetRegionFileName(coordinates));
             var exists = File.Exists(file);
-            _log.LogDebug("LoadOrGenerateRegion({Region}) file={File} exists={Exists}", coordinates, file, exists);
+            if (debug) _log.LogDebug("LoadOrGenerateRegion({Region}) file={File} exists={Exists}", coordinates, file, exists);
             if (exists)
             {
-                _log.LogDebug("LoadOrGenerateRegion({Region}) opening existing region file", coordinates);
+                if (debug) _log.LogDebug("LoadOrGenerateRegion({Region}) opening existing region file", coordinates);
                 region = new Region(coordinates, this, file, regionLog);
-                _log.LogDebug("LoadOrGenerateRegion({Region}) region opened", coordinates);
+                if (debug) _log.LogDebug("LoadOrGenerateRegion({Region}) region opened", coordinates);
             }
             else
             {
@@ -536,7 +544,7 @@ public class World : IDisposable, IWorld, IEnumerable<IChunk>
             Regions[coordinates] = region;
         }
 
-        _log.LogDebug("LoadOrGenerateRegion({Region}) done", coordinates);
+        if (debug) _log.LogDebug("LoadOrGenerateRegion({Region}) done", coordinates);
         return region;
     }
 

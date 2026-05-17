@@ -25,7 +25,6 @@ public class ChatModule : InputModule, IGraphicalModule
         SpriteBatch = new SpriteBatch(Game.GraphicsDevice);
         Watch = new Stopwatch();
         Watch.Start();
-        Text = string.Empty;
         Game.Client.ChatMessage += (sender, e) => AddMessage(e.Message);
     }
 
@@ -36,7 +35,18 @@ public class ChatModule : InputModule, IGraphicalModule
     private List<Message> Messages { get; }
     private Stopwatch Watch { get; }
     private bool Editing { get; set; }
-    private string Text { get; set; }
+
+    private string _text = string.Empty;
+    private string _textWithCursor = "_";
+    private string Text
+    {
+        get => _text;
+        set
+        {
+            _text = value;
+            _textWithCursor = value + "_";
+        }
+    }
 
     public void Draw(GameTime gameTime)
     {
@@ -69,10 +79,8 @@ public class ChatModule : InputModule, IGraphicalModule
             SpriteBatch.Draw(Background,
                 new Rectangle(0, Game.GraphicsDevice.Viewport.Height - height,
                     Game.GraphicsDevice.Viewport.Width, height), Color.White);
-            if (Watch.Elapsed.Seconds % 2 == 0)
-                Font.DrawText(SpriteBatch, 3, Game.GraphicsDevice.Viewport.Height - height - 5, Text);
-            else
-                Font.DrawText(SpriteBatch, 3, Game.GraphicsDevice.Viewport.Height - height - 5, Text + "_");
+            var displayText = Watch.Elapsed.Seconds % 2 == 0 ? _text : _textWithCursor;
+            Font.DrawText(SpriteBatch, 3, Game.GraphicsDevice.Viewport.Height - height - 5, displayText);
         }
 
         SpriteBatch.End();

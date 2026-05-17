@@ -23,7 +23,7 @@ namespace ProgressBarProbe;
 /// </summary>
 public sealed class Probe : Game
 {
-    private const int ProbeValue = 50;
+    private const int ProbeValue = 100;
     private const float ProbePeriodSeconds = 8f;
     private const string ThemeFolder = "IguinaTheme";
 

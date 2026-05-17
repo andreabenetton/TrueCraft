@@ -3,8 +3,9 @@
         "FillTextureStretched": {
             "TextureId": "Textures/arrow_down.png",
             "SourceRect": {"X": 0, "Y": 0, "Width": 12, "Height": 12}
-        },
-        "DefaultWidth": {"Value": 16, "Unit": "Pixels"},
-        "DefaultHeight": {"Value": 16, "Unit": "Pixels"}
-    }
+        }
+    },
+    "DefaultAnchor": "CenterRight",
+    "DefaultWidth": {"Value": 16, "Unit": "Pixels"},
+    "DefaultHeight": {"Value": 16, "Unit": "Pixels"}
 }

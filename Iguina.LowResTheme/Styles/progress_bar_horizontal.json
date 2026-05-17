@@ -6,9 +6,11 @@
             "FrameWidth": {"X": 11, "Y": 0}
         },
         "DefaultHeight": {"Value": 24, "Unit": "Pixels"},
-        "DefaultWidth": {"Value": 100, "Unit": "Percents"}
+        "DefaultWidth": {"Value": 100, "Unit": "Percents"},
+        "Padding": {"Left": 11, "Right": 11, "Top": 0, "Bottom": 0}
     },
     "Disabled": {
         "EffectIdentifier": "disabled"
     }
 }
+

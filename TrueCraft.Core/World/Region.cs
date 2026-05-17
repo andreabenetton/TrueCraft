@@ -51,13 +51,18 @@ public class Region : IDisposable, IRegion
     public Region(Coordinates2D position, World world, string file, ILogger<Region> log = null)
         : this(position, world, log)
     {
+        _log.LogDebug("Region({Pos}) ctor file={File}, fileExists={Exists}", position, file, File.Exists(file));
         if (File.Exists(file))
         {
+            _log.LogDebug("Region({Pos}) opening existing file", position);
             regionFile = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+            _log.LogDebug("Region({Pos}) file opened, reading 8KB header", position);
             regionFile.ReadExactly(HeaderCache, 0, 8192);
+            _log.LogDebug("Region({Pos}) header read", position);
         }
         else
         {
+            _log.LogDebug("Region({Pos}) creating new file", position);
             regionFile = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
             CreateRegionHeader();
         }
@@ -134,41 +139,53 @@ public class Region : IDisposable, IRegion
     /// <param name="position">The position of the requested local chunk coordinates.</param>
     public IChunk GetChunk(Coordinates2D position, bool generate = true)
     {
+        _log.LogDebug("Region({Region}).GetChunk({Local}) start, cached={Cached}", Position, position, Chunks.ContainsKey(position));
         if (!Chunks.ContainsKey(position))
         {
             if (regionFile is not null)
             {
-                // Search the stream for that region
+                _log.LogDebug("Region({Region}).GetChunk({Local}) looking up table", Position, position);
                 var chunkData = GetChunkFromTable(position);
+                _log.LogDebug("Region({Region}).GetChunk({Local}) table result null={Null}", Position, position, chunkData is null);
                 if (chunkData is null)
                 {
                     if (World.ChunkProvider is null)
                         throw new ArgumentException("The requested chunk is not loaded.", "position");
                     if (generate)
+                    {
+                        _log.LogDebug("Region({Region}).GetChunk({Local}) generating", Position, position);
                         GenerateChunk(position);
+                    }
                     else
                         return null;
                     return Chunks[position];
                 }
 
+                _log.LogDebug("Region({Region}).GetChunk({Local}) acquiring streamLock", Position, position);
                 streamLock.Wait();
+                _log.LogDebug("Region({Region}).GetChunk({Local}) streamLock acquired", Position, position);
                 try
                 {
+                    _log.LogDebug("Region({Region}).GetChunk({Local}) seeking to offset {Offset}", Position, position, chunkData.Item1);
                     regionFile.Seek(chunkData.Item1, SeekOrigin.Begin);
                     /*int length = */
                     new MinecraftStream(regionFile)
                         .ReadInt32(); // TODO: Avoid making new objects here, and in the WriteInt32
                     var compressionMode = regionFile.ReadByte();
+                    _log.LogDebug("Region({Region}).GetChunk({Local}) compressionMode={Mode}", Position, position, compressionMode);
                     switch (compressionMode)
                     {
                         case 1: // gzip
                             throw new NotImplementedException("gzipped chunks are not implemented");
                         case 2: // zlib
+                            _log.LogDebug("Region({Region}).GetChunk({Local}) loading NBT zlib stream", Position, position);
                             var nbt = new NbtFile();
                             nbt.LoadFromStream(regionFile, NbtCompression.ZLib, null);
+                            _log.LogDebug("Region({Region}).GetChunk({Local}) NBT loaded, parsing Chunk", Position, position);
                             var chunk = Chunk.FromNbt(nbt);
                             chunk.ParentRegion = this;
                             Chunks[position] = chunk;
+                            _log.LogDebug("Region({Region}).GetChunk({Local}) chunk parsed", Position, position);
                             World.OnChunkLoaded(new ChunkLoadedEventArgs(chunk));
                             break;
                         default:
@@ -178,6 +195,7 @@ public class Region : IDisposable, IRegion
                 finally
                 {
                     streamLock.Release();
+                    _log.LogDebug("Region({Region}).GetChunk({Local}) streamLock released", Position, position);
                 }
             }
             else if (World.ChunkProvider is null)
@@ -193,6 +211,7 @@ public class Region : IDisposable, IRegion
             }
         }
 
+        _log.LogDebug("Region({Region}).GetChunk({Local}) done", Position, position);
         return Chunks[position];
     }
 

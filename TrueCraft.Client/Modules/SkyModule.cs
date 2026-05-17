@@ -6,6 +6,20 @@ namespace TrueCraft.Client.Modules;
 
 public class SkyModule : IGraphicalModule
 {
+    private const float AtmosphereBlendFactor = 0.29f;
+
+    // World matrices for the sun, moon and void planes. The two axes
+    // around which they rotate per frame (CelestialAngle) are computed
+    // fresh each draw, but the base translations + flips are constant.
+    private static readonly Matrix SkyDomeBaseMatrix =
+        Matrix.CreateRotationX(MathHelper.Pi) * Matrix.CreateTranslation(0, 100, 0);
+    private static readonly Matrix MoonOriginMatrix =
+        Matrix.CreateTranslation(0, -100, 0);
+    private static readonly Matrix VoidPlaneMatrix =
+        Matrix.CreateTranslation(0, -16, 0);
+    private static readonly Vector3 VoidTintScale = new(0.2f, 0.2f, 0.6f);
+    private static readonly Vector3 VoidTintBias = new(0.04f, 0.04f, 0.1f);
+
     public SkyModule(TrueCraftGame game)
     {
         Game = game;
@@ -102,20 +116,28 @@ public class SkyModule : IGraphicalModule
     {
         get
         {
-            const float blendFactor = 0.29f; // TODO: Compute based on view distance
-            Func<float, float, float> blend = (source, destination) =>
-                destination + (source - destination) * blendFactor;
             var fog = WorldFogColor.ToVector3();
             var sky = WorldSkyColor.ToVector3();
-            var color = new Vector3(blend(sky.X, fog.X), blend(sky.Y, fog.Y), blend(sky.Z, fog.Z));
-            // TODO: more stuff
-            return new Color(color);
+            return new Color(new Vector3(
+                Blend(sky.X, fog.X),
+                Blend(sky.Y, fog.Y),
+                Blend(sky.Z, fog.Z)));
         }
     }
 
+    private static float Blend(float source, float destination) =>
+        destination + (source - destination) * AtmosphereBlendFactor;
+
     public void Draw(GameTime gameTime)
     {
-        Game.GraphicsDevice.Clear(AtmosphereColor);
+        var celestialAngle = CelestialAngle;
+        var atmosphere = AtmosphereColor;
+        var skyVec = WorldSkyColor.ToVector3();
+        var celestialRotation = Matrix.CreateRotationX(MathHelper.TwoPi * celestialAngle);
+        var skyDomeWorld = SkyDomeBaseMatrix * celestialRotation;
+        var moonWorld = MoonOriginMatrix * celestialRotation;
+
+        Game.GraphicsDevice.Clear(atmosphere);
         Game.GraphicsDevice.SetVertexBuffer(SkyPlane);
 
         var position = Game.Camera.Position;
@@ -127,11 +149,9 @@ public class SkyModule : IGraphicalModule
         Game.Camera.ApplyTo(CelestialPlaneEffect);
         Game.Camera.Position = position;
         // Sky
-        SkyPlaneEffect.FogColor = AtmosphereColor.ToVector3();
-        SkyPlaneEffect.World = Matrix.CreateRotationX(MathHelper.Pi)
-                               * Matrix.CreateTranslation(0, 100, 0)
-                               * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
-        SkyPlaneEffect.AmbientLightColor = WorldSkyColor.ToVector3();
+        SkyPlaneEffect.FogColor = atmosphere.ToVector3();
+        SkyPlaneEffect.World = skyDomeWorld;
+        SkyPlaneEffect.AmbientLightColor = skyVec;
         foreach (var pass in SkyPlaneEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
@@ -144,9 +164,7 @@ public class SkyModule : IGraphicalModule
         Game.GraphicsDevice.BlendState = BlendState.Additive;
         Game.GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
         CelestialPlaneEffect.Texture = Game.TextureMapper.GetTexture("terrain/sun.png");
-        CelestialPlaneEffect.World = Matrix.CreateRotationX(MathHelper.Pi)
-                                     * Matrix.CreateTranslation(0, 100, 0)
-                                     * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
+        CelestialPlaneEffect.World = skyDomeWorld;
         foreach (var pass in CelestialPlaneEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
@@ -155,8 +173,7 @@ public class SkyModule : IGraphicalModule
 
         // Moon
         CelestialPlaneEffect.Texture = Game.TextureMapper.GetTexture("terrain/moon.png");
-        CelestialPlaneEffect.World = Matrix.CreateTranslation(0, -100, 0)
-                                     * Matrix.CreateRotationX(MathHelper.TwoPi * CelestialAngle);
+        CelestialPlaneEffect.World = moonWorld;
         foreach (var pass in CelestialPlaneEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
@@ -168,10 +185,8 @@ public class SkyModule : IGraphicalModule
 
         // Void
         Game.GraphicsDevice.SetVertexBuffer(SkyPlane);
-        SkyPlaneEffect.World = Matrix.CreateTranslation(0, -16, 0);
-        SkyPlaneEffect.AmbientLightColor = WorldSkyColor.ToVector3()
-                                           * new Vector3(0.2f, 0.2f, 0.6f)
-                                           + new Vector3(0.04f, 0.04f, 0.1f);
+        SkyPlaneEffect.World = VoidPlaneMatrix;
+        SkyPlaneEffect.AmbientLightColor = skyVec * VoidTintScale + VoidTintBias;
         foreach (var pass in SkyPlaneEffect.CurrentTechnique.Passes)
         {
             pass.Apply();

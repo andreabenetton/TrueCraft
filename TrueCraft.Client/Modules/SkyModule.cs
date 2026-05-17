@@ -31,7 +31,7 @@ public class SkyModule : IGraphicalModule
         CelestialPlaneEffect = new AlphaTestEffect(Game.GraphicsDevice)
         {
             AlphaFunction = CompareFunction.Greater,
-            ReferenceAlpha = 128
+            ReferenceAlpha = 0
         };
 
         SkyPlaneEffect = new BasicEffect(Game.GraphicsDevice);
@@ -180,12 +180,13 @@ public class SkyModule : IGraphicalModule
         // Sun
         Game.GraphicsDevice.SetVertexBuffer(CelestialPlane);
         var backup = Game.GraphicsDevice.BlendState;
-        // Additive: the sun/moon textures have a dark-yellow gradient ring
-        // around the bright core (RGB like 9,8,2..43,43,12). Additive
-        // *adds* that to the sky, producing a soft halo glow. AlphaBlend
-        // would draw those same dark RGB values opaquely, painting a
-        // visible dark ring on the sky.
-        Game.GraphicsDevice.BlendState = BlendState.Additive;
+        // NonPremultiplied: the texture's alpha channel has been baked to
+        // match per-pixel brightness, so the bright core (alpha=255)
+        // overwrites the sky with its yellow RGB while the dim outer ring
+        // (alpha ~ brightness) softly blends toward the sky for a smooth
+        // halo. Additive would saturate every channel against the bright
+        // noon sky and turn the core white.
+        Game.GraphicsDevice.BlendState = BlendState.NonPremultiplied;
         Game.GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
         CelestialPlaneEffect.Texture = Game.TextureMapper.GetTexture("terrain/sun.png");
         CelestialPlaneEffect.World = skyDomeWorld;
